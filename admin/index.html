@@ -64,6 +64,21 @@ hr{border:0;border-top:1px solid #eee;margin:16px 0}
   .grid,.menu,.check-grid{grid-template-columns:1fr}
   .user-row,.record-row{align-items:flex-start;flex-direction:column}
 }
+
+.committee-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.section-tabs{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}
+.section-tabs button{background:#fff;color:#333;border:1px solid #ddd;padding:8px 11px}
+.section-tabs button.active{background:var(--red);color:#fff;border-color:var(--red)}
+.entry-card{border:1px solid var(--border);border-radius:10px;padding:12px;margin:8px 0;background:#fff}
+.entry-card h4{margin:0 0 5px}
+.entry-card p{margin:4px 0;color:#4b5563}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat-box{border:1px solid var(--border);border-radius:12px;padding:13px;background:#fafafa}
+.stat-box strong{display:block;font-size:22px;color:var(--red-dark)}
+.committee-picker{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.committee-picker button{text-align:left;min-height:70px}
+@media(max-width:760px){.stat-grid,.committee-picker{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
@@ -114,7 +129,7 @@ hr{border:0;border-top:1px solid #eee;margin:16px 0}
    CONFIGURATION
    Paste the deployed Apps Script Web App /exec URL below.
    Example:
-   const API_URL = 'https://script.google.com/macros/s/XXXXX/exec';
+   const API_URL = 'https://script.google.com/macros/s/AKfycbwM6bagjlHKao-NCB3d_nDwX29zO4EFKcoj50vABCQP7bKJuSI4j7772Zam9LwNiLCqNg/exec';
    ============================================================ */
 const API_URL = 'https://script.google.com/macros/s/AKfycbwM6bagjlHKao-NCB3d_nDwX29zO4EFKcoj50vABCQP7bKJuSI4j7772Zam9LwNiLCqNg/exec';
 
@@ -205,15 +220,35 @@ function renderApp(){
 
   const items=[];
   if(hasModule('OFFICIALS')) items.push(['Officials','officials']);
-  if(hasModule('COMMITTEE_ASSIGNMENTS')) items.push(['Committee Assignments','assignments']);
+
+  // Committee Assignments is ADMIN-ONLY.
+  if(['SUPER_ADMIN','ADMIN'].includes(me.role))
+    items.push(['Committee Assignments','assignments']);
+
   if(hasModule('BARANGAY_STATISTICS')) items.push(['Barangay Statistics','stats']);
   if(hasModule('LIVESTOCK')) items.push(['Livestock Statistics','livestock']);
+
   if(hasModule('CONTENT') || (me.assignedModules||'').includes('COM-'))
     items.push(['Announcements & Activities','content']);
-  if(['SUPER_ADMIN','ADMIN'].includes(me.role)) items.push(['Users','users']);
+
+  if(['SUPER_ADMIN','ADMIN'].includes(me.role))
+    items.push(['Users','users']);
+
+  const committees=window.BTO_COMMITTEES_CACHE||[];
+
+  if(['SUPER_ADMIN','ADMIN'].includes(me.role)){
+    items.push(['Committee Profiles','committeeProfiles']);
+  }else{
+    const allowed=String(me.assignedModules||'')
+      .split(',').map(x=>x.trim().toUpperCase()).filter(x=>x.startsWith('COM-'));
+
+    committees
+      .filter(c=>allowed.includes(String(c.committeeId).toUpperCase()))
+      .forEach(c=>items.push([c.committeeName,'committee:'+c.committeeId]));
+  }
 
   document.getElementById('moduleMenu').innerHTML=
-    items.map(i=>`<button onclick="openModule('${i[1]}')">${i[0]}</button>`).join('');
+    items.map(i=>`<button onclick="openModule('${i[1]}')">${esc(i[0])}</button>`).join('');
 
   document.getElementById('moduleArea').innerHTML='';
 }
@@ -244,6 +279,8 @@ async function openModule(name){
   if(name==='officials') return officialsForm();
   if(name==='assignments') return assignmentForm();
   if(name==='users') return usersForm();
+  if(name==='committeeProfiles') return committeeProfilesPicker();
+  if(name.startsWith('committee:')) return openCommittee(name.split(':')[1]);
 }
 
 async function loadStats(){
@@ -439,7 +476,6 @@ async function usersForm(){
 
   const systemModules=[
     ['OFFICIALS','Officials Management'],
-    ['COMMITTEE_ASSIGNMENTS','Committee Assignments'],
     ['BARANGAY_STATISTICS','Barangay Statistics'],
     ['LIVESTOCK','Livestock Statistics'],
     ['CONTENT','Announcements & Activities']
@@ -595,6 +631,335 @@ async function saveUser(){
 
   alert('User saved successfully.');
   usersForm();
+}
+
+
+function committeeProfilesPicker(){
+  const list=window.BTO_COMMITTEES_CACHE||[];
+  document.getElementById('moduleArea').innerHTML=`
+    <div class="card">
+      <h2>Committee Profiles</h2>
+      <p class="help">Select a committee to manage its public profile.</p>
+      <div class="committee-picker">
+        ${list.map(c=>`<button onclick="openCommittee('${esc(c.committeeId)}')">${esc(c.committeeName)}</button>`).join('')}
+      </div>
+    </div>`;
+}
+
+let currentCommitteeId='';
+let currentCommitteeData=null;
+let currentCommitteeSection='STATISTIC';
+
+async function openCommittee(committeeId){
+  currentCommitteeId=committeeId;
+  document.getElementById('moduleArea').innerHTML='<div class="card">Loading committee profile...</div>';
+
+  const r=await api('getCommitteeWorkspace',{committeeId});
+  if(!r.success){showModuleError(r.message);return}
+
+  currentCommitteeData=r;
+  currentCommitteeSection='STATISTIC';
+  renderCommitteeWorkspace();
+}
+
+function renderCommitteeWorkspace(){
+  const c=currentCommitteeData.committee;
+  const entries=currentCommitteeData.entries||[];
+  const content=currentCommitteeData.content||[];
+
+  const stats=entries.filter(x=>x.Section==='STATISTIC' && String(x.Status).toUpperCase()==='ACTIVE');
+
+  document.getElementById('moduleArea').innerHTML=`
+    <div class="card">
+      <div class="committee-head">
+        <div>
+          <h2 style="margin-bottom:4px">${esc(c.committeeName)}</h2>
+          <div class="help">Committee Profile Management</div>
+        </div>
+        <button class="light" onclick="refreshCommittee()">Refresh</button>
+      </div>
+
+      ${stats.length ? `
+      <div class="stat-grid">
+        ${stats.slice(0,6).map(s=>`
+          <div class="stat-box">
+            <small>${esc(s.Title)}</small>
+            <strong>${esc(s.Value || '—')} ${esc(s.Unit || '')}</strong>
+            <small>As of ${esc(s['As Of Date'] || '—')}</small>
+          </div>`).join('')}
+      </div>` : ''}
+
+      <div class="section-tabs">
+        ${[
+          ['STATISTIC','Statistics'],
+          ['ORGANIZATION','Organizations'],
+          ['SERVICE','Services'],
+          ['PROGRAM','Programs & Projects'],
+          ['ACTIVITY','Activities'],
+          ['REPORT','Reports / Documents']
+        ].map(x=>`<button class="${currentCommitteeSection===x[0]?'active':''}" onclick="setCommitteeSection('${x[0]}')">${x[1]}</button>`).join('')}
+      </div>
+
+      <div id="committeeSectionBody"></div>
+    </div>`;
+
+  renderCommitteeSectionBody(entries,content);
+}
+
+function setCommitteeSection(section){
+  currentCommitteeSection=section;
+  renderCommitteeWorkspace();
+}
+
+function renderCommitteeSectionBody(entries,content){
+  const body=document.getElementById('committeeSectionBody');
+
+  if(currentCommitteeSection==='ACTIVITY'){
+    const today=new Date(); today.setHours(0,0,0,0);
+    const rows=content.slice().sort((a,b)=>String(b['Event Date']||'').localeCompare(String(a['Event Date']||'')));
+
+    const upcoming=rows.filter(x=>{
+      if(!x['Event Date']) return false;
+      const d=new Date(x['Event Date']); d.setHours(0,0,0,0);
+      return d>=today;
+    });
+    const recent=rows.filter(x=>{
+      if(!x['Event Date']) return true;
+      const d=new Date(x['Event Date']); d.setHours(0,0,0,0);
+      return d<today;
+    });
+
+    body.innerHTML=`
+      <h3>Upcoming Activities / Announcements</h3>
+      ${renderCommitteeContentRows(upcoming)}
+      <h3 style="margin-top:18px">Recent Activities</h3>
+      ${renderCommitteeContentRows(recent)}
+      <button onclick="openCommitteeQuickActivity()">Add Committee Activity / Announcement</button>`;
+    return;
+  }
+
+  const sectionEntries=entries.filter(x=>
+    String(x.Section).toUpperCase()===currentCommitteeSection &&
+    String(x.Status).toUpperCase()!=='DELETED'
+  );
+
+  body.innerHTML=`
+    <div id="committeeEntryForm">${committeeEntryFormHtml()}</div>
+    <hr>
+    <h3>Existing ${committeeSectionLabel(currentCommitteeSection)}</h3>
+    ${sectionEntries.length ? sectionEntries.map(renderCommitteeEntry).join('') : '<p class="help">No records yet.</p>'}`;
+}
+
+function committeeSectionLabel(section){
+  return ({
+    STATISTIC:'Statistics',
+    ORGANIZATION:'Organizations / Associations',
+    SERVICE:'Services',
+    PROGRAM:'Programs & Projects',
+    REPORT:'Reports / Documents'
+  })[section] || section;
+}
+
+function committeeEntryFormHtml(entry={}){
+  const section=currentCommitteeSection;
+  const isStat=section==='STATISTIC';
+  const isReport=section==='REPORT';
+
+  return `
+    <h3>${entry['Entry ID']?'Edit':'Add'} ${committeeSectionLabel(section)}</h3>
+    <input id="cpEntryId" type="hidden" value="${esc(entry['Entry ID']||'')}">
+
+    <label>Title</label>
+    <input id="cpTitle" value="${esc(entry.Title||'')}" placeholder="${isStat?'Example: Registered Farmers':'Title'}">
+
+    ${isStat ? `
+      <div class="grid">
+        <div><label>Value</label><input id="cpValue" value="${esc(entry.Value||'')}"></div>
+        <div><label>Unit</label><input id="cpUnit" value="${esc(entry.Unit||'')}" placeholder="persons, heads, households..."></div>
+      </div>
+      <label>As Of Date</label>
+      <input id="cpAsOf" type="date" value="${dateInputValue(entry['As Of Date'])}">
+    ` : ''}
+
+    <label>Description</label>
+    <textarea id="cpDescription">${esc(entry.Description||'')}</textarea>
+
+    ${isReport ? `
+      <label>Document / Report File</label>
+      <input id="cpFile" type="file">
+      <div class="help">You may upload a PDF/image/document, or paste an existing URL below.</div>
+    ` : ''}
+
+    <label>${isReport?'File / Document URL':'Link URL (optional)'}</label>
+    <input id="cpLink" value="${esc(entry['Link URL']||'')}">
+
+    <div class="grid">
+      <div>
+        <label>Status</label>
+        <select id="cpStatus">
+          <option ${String(entry.Status||'ACTIVE')==='ACTIVE'?'selected':''}>ACTIVE</option>
+          <option ${String(entry.Status)==='INACTIVE'?'selected':''}>INACTIVE</option>
+        </select>
+      </div>
+      <div>
+        <label>Sort Order</label>
+        <input id="cpSort" type="number" value="${esc(entry['Sort Order']||0)}">
+      </div>
+    </div>
+
+    <div class="row">
+      <button onclick="saveCommitteeEntry()">Save</button>
+      ${entry['Entry ID']?'<button class="secondary" onclick="cancelCommitteeEdit()">Cancel</button>':''}
+    </div>`;
+}
+
+function renderCommitteeEntry(e){
+  const extra=[];
+  if(e.Value) extra.push(`${esc(e.Value)} ${esc(e.Unit||'')}`);
+  if(e['As Of Date']) extra.push(`As of ${esc(e['As Of Date'])}`);
+
+  return `
+    <div class="entry-card">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <h4>${esc(e.Title||'(Untitled)')}</h4>
+          ${extra.length?`<p><strong>${extra.join(' · ')}</strong></p>`:''}
+          ${e.Description?`<p>${esc(e.Description)}</p>`:''}
+          ${e['Link URL']?`<p><a href="${esc(e['Link URL'])}" target="_blank">Open link/document</a></p>`:''}
+          <small>${esc(e.Status||'')}</small>
+        </div>
+        <div class="row">
+          <button onclick='editCommitteeEntry(${JSON.stringify(e)})'>Edit</button>
+          <button class="secondary" onclick="deleteCommitteeEntry('${esc(e['Entry ID'])}')">Delete</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function editCommitteeEntry(e){
+  document.getElementById('committeeEntryForm').innerHTML=committeeEntryFormHtml(e);
+  document.getElementById('committeeEntryForm').scrollIntoView({behavior:'smooth'});
+}
+
+function cancelCommitteeEdit(){
+  document.getElementById('committeeEntryForm').innerHTML=committeeEntryFormHtml();
+}
+
+async function saveCommitteeEntry(){
+  let linkUrl=document.getElementById('cpLink').value.trim();
+  const file=document.getElementById('cpFile')?.files?.[0];
+
+  if(file){
+    const base64=await fileToBase64(file);
+    const up=await api('uploadBase64',{fileName:file.name,mimeType:file.type||'application/octet-stream',base64});
+    if(!up.success){alert(up.message);return}
+    linkUrl=up.url;
+  }
+
+  const data={
+    entryId:document.getElementById('cpEntryId').value,
+    committeeId:currentCommitteeId,
+    section:currentCommitteeSection,
+    title:document.getElementById('cpTitle').value.trim(),
+    value:document.getElementById('cpValue')?.value || '',
+    unit:document.getElementById('cpUnit')?.value || '',
+    description:document.getElementById('cpDescription').value.trim(),
+    linkUrl,
+    status:document.getElementById('cpStatus').value,
+    sortOrder:document.getElementById('cpSort').value,
+    asOfDate:document.getElementById('cpAsOf')?.value || ''
+  };
+
+  if(!data.title){alert('Title is required.');return}
+
+  const r=await api('saveCommitteeProfileEntry',data);
+  if(!r.success){alert(r.message);return}
+
+  await refreshCommittee();
+}
+
+async function deleteCommitteeEntry(entryId){
+  if(!confirm('Delete this committee profile entry?')) return;
+  const r=await api('deleteCommitteeProfileEntry',{committeeId:currentCommitteeId,entryId});
+  if(!r.success){alert(r.message);return}
+  await refreshCommittee();
+}
+
+async function refreshCommittee(){
+  const r=await api('getCommitteeWorkspace',{committeeId:currentCommitteeId});
+  if(!r.success){showModuleError(r.message);return}
+  currentCommitteeData=r;
+  renderCommitteeWorkspace();
+}
+
+function renderCommitteeContentRows(rows){
+  if(!rows.length) return '<p class="help">No records yet.</p>';
+  return rows.map(x=>`
+    <div class="entry-card">
+      <h4>${esc(x.Title||'')}</h4>
+      <p>${esc(x.Type||'')} ${x['Event Date']?'· '+esc(x['Event Date']):''} ${x.Time?'· '+esc(x.Time):''}</p>
+      ${x.Venue?`<p>Venue: ${esc(x.Venue)}</p>`:''}
+      ${x.Description?`<p>${esc(x.Description)}</p>`:''}
+    </div>`).join('');
+}
+
+function openCommitteeQuickActivity(){
+  const c=currentCommitteeData.committee;
+  document.getElementById('committeeSectionBody').innerHTML=`
+    <h3>Add Activity / Announcement</h3>
+    <label>Type</label>
+    <select id="qaType"><option>ACTIVITY</option><option>ANNOUNCEMENT</option></select>
+    <label>Title</label><input id="qaTitle">
+    <div class="grid">
+      <div><label>Date</label><input id="qaDate" type="date"></div>
+      <div><label>Time</label><input id="qaTime" type="time"></div>
+    </div>
+    <label>Venue</label><input id="qaVenue">
+    <label>Description</label><textarea id="qaDesc"></textarea>
+    <label>Featured Photo</label><input id="qaPhoto" type="file" accept="image/*">
+    <div class="row">
+      <button onclick="saveCommitteeQuickActivity()">Save & Publish</button>
+      <button class="secondary" onclick="setCommitteeSection('ACTIVITY')">Cancel</button>
+    </div>`;
+}
+
+async function saveCommitteeQuickActivity(){
+  let photoUrl='';
+  const file=document.getElementById('qaPhoto').files[0];
+
+  if(file){
+    const base64=await fileToBase64(file);
+    const u=await api('uploadBase64',{fileName:file.name,mimeType:file.type,base64});
+    if(!u.success){alert(u.message);return}
+    photoUrl=u.url;
+  }
+
+  const r=await api('saveContent',{
+    type:document.getElementById('qaType').value,
+    title:document.getElementById('qaTitle').value.trim(),
+    eventDate:document.getElementById('qaDate').value,
+    time:document.getElementById('qaTime').value,
+    venue:document.getElementById('qaVenue').value.trim(),
+    committeeId:currentCommitteeId,
+    description:document.getElementById('qaDesc').value.trim(),
+    featuredPhotoUrl:photoUrl,
+    status:'PUBLISHED'
+  });
+
+  if(!r.success){alert(r.message);return}
+  await refreshCommittee();
+  currentCommitteeSection='ACTIVITY';
+  renderCommitteeWorkspace();
+}
+
+function dateInputValue(v){
+  if(!v) return '';
+  if(typeof v==='string') return v.slice(0,10);
+  try{
+    const d=new Date(v);
+    if(isNaN(d)) return '';
+    return d.toISOString().slice(0,10);
+  }catch(e){return ''}
 }
 
 function showModuleError(message){
