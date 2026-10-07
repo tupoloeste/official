@@ -1074,6 +1074,64 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
   }
 }
 
+
+/* ===== Event/activity multi-photo gallery ===== */
+.public-gallery{
+  margin-top:12px;
+  border-top:1px solid #eee;
+  padding-top:10px;
+}
+.public-gallery-title{
+  font-size:12px;
+  font-weight:800;
+  color:#555;
+  margin-bottom:8px;
+}
+.public-gallery-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(105px,1fr));
+  gap:8px;
+}
+.public-gallery-grid img{
+  width:100%;
+  height:90px;
+  object-fit:cover;
+  border-radius:8px;
+  cursor:pointer;
+  background:#f3f4f6;
+  transition:transform .15s ease;
+}
+.public-gallery-grid img:hover{transform:scale(1.02)}
+.public-gallery-viewer{
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  background:rgba(0,0,0,.88);
+  padding:20px;
+}
+.public-gallery-viewer.active{display:flex}
+.public-gallery-viewer img{
+  max-width:min(1100px,96vw);
+  max-height:88vh;
+  object-fit:contain;
+}
+.public-gallery-close{
+  position:absolute;
+  top:14px;
+  right:18px;
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  border:0;
+  background:#fff;
+  color:#111;
+  font-size:23px;
+  font-weight:900;
+}
+
 </style>
 </head>
 <body>
@@ -2276,6 +2334,7 @@ function renderPublicContentList(id,rows){
           <h4>${publicEsc(x.Title||'')}</h4>
           <p>${contentMeta(x)}</p>
           ${x.Description?`<p>${publicEsc(x.Description)}</p>`:''}
+          ${galleryHtml(x)}
         </div>`).join('')+'</div>'
     : '<div class="live-empty">Coming Soon</div>');
 }
@@ -2304,6 +2363,52 @@ function normalizePublicImageUrl(url){
   }
 
   return url;
+}
+
+
+function contentGalleryUrls(row){
+  const raw=String(row['Gallery URLs']||'').trim();
+  if(!raw) return [];
+  return raw
+    .split(/\r?\n|,\s*(?=https?:\/\/)/)
+    .map(x=>x.trim())
+    .filter(Boolean)
+    .map(normalizePublicImageUrl);
+}
+
+function galleryHtml(row){
+  const urls=contentGalleryUrls(row);
+  if(!urls.length) return '';
+
+  return `<div class="public-gallery">
+    <div class="public-gallery-title">${urls.length} gallery photo${urls.length>1?'s':''}</div>
+    <div class="public-gallery-grid">
+      ${urls.map((url,i)=>`
+        <img src="${publicEsc(url)}"
+          loading="lazy"
+          alt="${publicEsc(row.Title||'Activity')} photo ${i+1}"
+          referrerpolicy="no-referrer"
+          onclick="openPublicGallery('${publicEsc(url)}',event)"
+          onerror="this.style.display='none'">`).join('')}
+    </div>
+  </div>`;
+}
+
+function openPublicGallery(url,event){
+  if(event) event.stopPropagation();
+  const viewer=document.getElementById('public-gallery-viewer');
+  const img=document.getElementById('public-gallery-viewer-img');
+  if(!viewer || !img) return;
+  img.src=url;
+  viewer.classList.add('active');
+  document.body.style.overflow='hidden';
+}
+
+function closePublicGallery(event){
+  if(event) event.stopPropagation();
+  const viewer=document.getElementById('public-gallery-viewer');
+  if(viewer) viewer.classList.remove('active');
+  document.body.style.overflow='';
 }
 
 function contentPhotoUrl(row){
@@ -2467,6 +2572,7 @@ function renderAllAnnouncements(data){
         <h3>${publicEsc(x.Title||'')}</h3>
         ${x.Description?`<p>${publicEsc(x.Description)}</p>`:''}
         ${committeeName(data,x['Committee ID'])?`<span class="tag">${publicEsc(committeeName(data,x['Committee ID']))}</span>`:''}
+        ${galleryHtml(x)}
       </div>`).join('')
       : '<div class="live-empty">No incoming events.</div>';
   }
@@ -2479,6 +2585,7 @@ function renderAllAnnouncements(data){
         <h3>${publicEsc(x.Title||'')}</h3>
         ${x.Description?`<p>${publicEsc(x.Description)}</p>`:''}
         ${committeeName(data,x['Committee ID'])?`<span class="tag">${publicEsc(committeeName(data,x['Committee ID']))}</span>`:''}
+        ${galleryHtml(x)}
       </div>`).join('')
       : '<div class="live-empty">No recent activities yet.</div>';
   }
@@ -2748,5 +2855,11 @@ window.addEventListener('load',()=>{
   loadPublicData();
 });
 </script>
+
+<div class="public-gallery-viewer" id="public-gallery-viewer" onclick="closePublicGallery(event)">
+  <button class="public-gallery-close" type="button" onclick="closePublicGallery(event)">×</button>
+  <img id="public-gallery-viewer-img" alt="Activity photo">
+</div>
+
 </body>
 </html>
