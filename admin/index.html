@@ -1021,7 +1021,7 @@ function renderCommitteeWorkspace(){
           <div class="stat-box">
             <small>${esc(s.Title)}</small>
             <strong>${esc(s.Value || '—')} ${esc(s.Unit || '')}</strong>
-            <small>As of ${esc(s['As Of Date'] || '—')}</small>
+            <small>As of ${s['As Of Date'] ? displayDate(s['As Of Date']) : '—'}</small>
           </div>`).join('')}
       </div>` : ''}
 
@@ -1153,7 +1153,7 @@ function committeeEntryFormHtml(entry={}){
 function renderCommitteeEntry(e){
   const extra=[];
   if(e.Value) extra.push(`${esc(e.Value)} ${esc(e.Unit||'')}`);
-  if(e['As Of Date']) extra.push(`As of ${esc(e['As Of Date'])}`);
+  if(e['As Of Date']) extra.push(`As of ${displayDate(e['As Of Date'])}`);
 
   return `
     <div class="entry-card">
@@ -1281,7 +1281,7 @@ function renderCommitteeContentRows(rows){
   return rows.map(x=>`
     <div class="entry-card">
       <h4>${esc(x.Title||'')}</h4>
-      <p>${esc(x.Type||'')} ${x['Event Date']?'· '+esc(x['Event Date']):''} ${x.Time?'· '+esc(x.Time):''}</p>
+      <p>${esc(x.Type||'')} ${x['Event Date']?'· '+displayDate(x['Event Date']):''} ${x.Time?'· '+displayTime(x.Time):''}</p>
       ${x.Venue?`<p>Venue: ${esc(x.Venue)}</p>`:''}
       ${x.Description?`<p>${esc(x.Description)}</p>`:''}
     </div>`).join('');
@@ -1382,6 +1382,52 @@ async function saveCommitteeQuickActivity(){
       currentBtn.textContent='Save & Publish';
     }
   }
+}
+
+
+function displayDate(v){
+  if(!v) return '';
+  try{
+    const d=new Date(v);
+    if(isNaN(d)) return String(v);
+    return d.toLocaleDateString('en-PH',{
+      year:'numeric',
+      month:'long',
+      day:'numeric'
+    });
+  }catch(e){
+    return String(v);
+  }
+}
+
+function displayTime(v){
+  if(!v) return '';
+
+  // Handles plain HH:mm / HH:mm:ss
+  const s=String(v);
+  const m=s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+  if(m){
+    let h=Number(m[1]);
+    const min=m[2];
+    const ap=h>=12?'PM':'AM';
+    h=h%12||12;
+    return `${h}:${min} ${ap}`;
+  }
+
+  // Handles Google Sheets time values serialized as 1899-12-30T...
+  try{
+    const d=new Date(v);
+    if(!isNaN(d)){
+      return d.toLocaleTimeString('en-PH',{
+        hour:'numeric',
+        minute:'2-digit',
+        hour12:true,
+        timeZone:'Asia/Manila'
+      });
+    }
+  }catch(e){}
+
+  return s;
 }
 
 function dateInputValue(v){
