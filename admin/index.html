@@ -489,8 +489,10 @@ function renderApp(){
   if(hasModule('CONTENT') || (me.assignedModules||'').includes('COM-'))
     items.push(['Announcements & Activities','content']);
 
-  if(['SUPER_ADMIN','ADMIN'].includes(me.role))
+  if(['SUPER_ADMIN','ADMIN'].includes(me.role)){
     items.push(['Users','users']);
+    items.push(['Homepage Media','siteMedia']);
+  }
 
   const committees=window.BTO_COMMITTEES_CACHE||[];
 
@@ -570,6 +572,7 @@ async function openModule(name,title='Module'){
   if(name==='officials') return officialsForm();
   if(name==='assignments') return assignmentForm();
   if(name==='users') return usersForm();
+  if(name==='siteMedia') return siteMediaForm();
   if(name==='committeeProfiles') return committeeProfilesPicker();
   if(name.startsWith('committee:')) return openCommittee(name.split(':')[1]);
 }
@@ -1450,6 +1453,102 @@ function backToModules(){
   dv.style.animation='btoFadeUp .28s ease both';
   document.getElementById('moduleArea').innerHTML='';
   window.scrollTo({top:0,behavior:'smooth'});
+}
+
+
+async function siteMediaForm(){
+  document.getElementById('moduleArea').innerHTML=
+    '<div class="bto-loading"><span class="bto-spinner"></span><span>Loading homepage media...</span></div>';
+
+  const r=await api('getSiteMedia');
+  if(!r.success){showModuleError(r.message);return}
+
+  const item=(r.data||[]).find(x=>x.mediaKey==='OFFICIALS_GROUP_PHOTO') || {
+    mediaKey:'OFFICIALS_GROUP_PHOTO',
+    label:'Barangay Officials Group Photo',
+    url:'',
+    status:'ACTIVE'
+  };
+
+  document.getElementById('moduleArea').innerHTML=`
+    <div class="card">
+      <h2>Homepage Media</h2>
+      <p class="help">Update the Barangay Officials group photo shown on the public homepage.</p>
+
+      <div id="siteMediaPreview" style="margin:12px 0">
+        ${item.url
+          ? `<img src="${esc(normalizePortalImageUrl(item.url))}" alt="Barangay Officials"
+              style="width:100%;max-width:560px;aspect-ratio:16/9;object-fit:cover;border-radius:12px;border:1px solid #e5e7eb">`
+          : '<div class="live-empty">No officials group photo uploaded yet.</div>'}
+      </div>
+
+      <label>Barangay Officials Group Photo</label>
+      <input id="siteMediaFile" type="file" accept="image/*">
+
+      <div class="row">
+        <button id="siteMediaSaveBtn" onclick="saveSiteMediaPhoto()">Upload & Save</button>
+        <span id="siteMediaSaveStatus" class="save-status"></span>
+      </div>
+    </div>`;
+}
+
+function normalizePortalImageUrl(url){
+  url=String(url||'').trim();
+  if(!url) return '';
+  if(url.includes('drive.google.com')){
+    let id='';
+    let m=url.match(/[?&]id=([^&]+)/);
+    if(m) id=m[1];
+    if(!id){
+      m=url.match(/\/d\/([^/]+)/);
+      if(m) id=m[1];
+    }
+    if(id) return `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w1600`;
+  }
+  return url;
+}
+
+async function saveSiteMediaPhoto(){
+  const file=document.getElementById('siteMediaFile').files[0];
+  const btn=document.getElementById('siteMediaSaveBtn');
+  const status=document.getElementById('siteMediaSaveStatus');
+
+  if(!file){alert('Please select a photo first.');return}
+
+  btn.disabled=true;
+  btn.innerHTML='<span class="save-mini-spinner"></span> Uploading...';
+  status.textContent='Uploading photo...';
+
+  try{
+    const base64=await fileToBase64(file);
+    const up=await api('uploadBase64',{
+      fileName:file.name,
+      mimeType:file.type,
+      base64
+    });
+    if(!up.success) throw new Error(up.message);
+
+    status.textContent='Saving homepage photo...';
+
+    const r=await api('saveSiteMedia',{
+      mediaKey:'OFFICIALS_GROUP_PHOTO',
+      label:'Barangay Officials Group Photo',
+      url:up.url,
+      status:'ACTIVE'
+    });
+    if(!r.success) throw new Error(r.message);
+
+    status.className='save-status ok';
+    status.textContent='Saved successfully.';
+    setTimeout(siteMediaForm,600);
+
+  }catch(err){
+    status.className='save-status err';
+    status.textContent=err.message||'Upload failed.';
+  }finally{
+    btn.disabled=false;
+    btn.textContent='Upload & Save';
+  }
 }
 
 function showModuleError(message){
