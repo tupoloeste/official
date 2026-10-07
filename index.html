@@ -413,6 +413,55 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
 }
 @keyframes publicSpin{to{transform:rotate(360deg)}}
 
+
+/* ===== Live announcement/activity photos ===== */
+.live-photo{
+  width:100%;
+  aspect-ratio:16/9;
+  object-fit:cover;
+  display:block;
+  background:#f3f4f6;
+}
+.live-photo-wrap{
+  border-radius:12px;
+  overflow:hidden;
+  background:#f3f4f6;
+  margin-bottom:10px;
+}
+.live-photo-placeholder{
+  width:100%;
+  aspect-ratio:16/9;
+  display:grid;
+  place-items:center;
+  background:linear-gradient(135deg,#fff1f3,#f5f6f8);
+  color:#b4233c;
+  font-size:34px;
+}
+.news-card .live-photo-wrap{
+  margin:0;
+  border-radius:0;
+}
+.news-card .live-photo,
+.news-card .live-photo-placeholder{
+  aspect-ratio:16/9;
+}
+.activity-live-card{
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  padding:14px;
+  margin-bottom:12px;
+  background:#fff;
+}
+.activity-live-card h3,
+.activity-live-card h4{
+  margin:0 0 6px;
+}
+.activity-live-meta{
+  color:#6b7280;
+  font-size:13px;
+  margin-bottom:7px;
+}
+
 </style>
 </head>
 <body>
@@ -511,33 +560,9 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
         <button onclick="showView('announcements')">View All →</button>
       </div>
 
-      <div class="news-grid">
-        <article class="news-card">
-          <div class="thumb">📣</div>
-          <div class="body">
-            <span class="label">Upcoming</span>
-            <h3>Limpyo Iloilo</h3>
-            <p>October 11, 2026 · 8:30 AM. Barangay-wide community clean-up activity.</p>
-          </div>
-        </article>
-
-        <article class="news-card">
-          <div class="thumb">📄</div>
-          <div class="body">
-            <span class="label">Public Notice</span>
-            <h3>Barangay Service Information</h3>
-            <p>Requirements and procedures for barangay documents will be published here.</p>
-          </div>
-        </article>
-
-        <article class="news-card">
-          <div class="thumb">📌</div>
-          <div class="body">
-            <span class="label">Advisory</span>
-            <h3>Additional Announcements</h3>
-            <p>Future official notices and schedules will appear here.</p>
-          </div>
-        </article>
+      
+      <div class="news-grid" id="home-public-announcements">
+        <div class="live-empty">Loading announcements...</div>
       </div>
     </div>
   </section>
@@ -549,33 +574,9 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
         <button onclick="showView('announcements')">View Activities →</button>
       </div>
 
-      <div class="news-grid">
-        <article class="news-card">
-          <div class="thumb">🌾</div>
-          <div class="body">
-            <span class="label">Agriculture</span>
-            <h3>Farmer & Agriculture Activities</h3>
-            <p>Recent agriculture-related activities and updates will appear here.</p>
-          </div>
-        </article>
-
-        <article class="news-card">
-          <div class="thumb">♻️</div>
-          <div class="body">
-            <span class="label">Environment</span>
-            <h3>Environmental Activities</h3>
-            <p>Clean-up drives and environmental programs will appear here.</p>
-          </div>
-        </article>
-
-        <article class="news-card">
-          <div class="thumb">❤️</div>
-          <div class="body">
-            <span class="label">Community</span>
-            <h3>Health & Social Activities</h3>
-            <p>Community health, senior citizen, and social welfare activities will appear here.</p>
-          </div>
-        </article>
+      
+      <div class="news-grid" id="home-recent-activities">
+        <div class="live-empty">Loading recent activities...</div>
       </div>
     </div>
   </section>
@@ -728,12 +729,11 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
       <button class="tab-btn" onclick="switchTab('announcements','ann-recent',this)">Recent Activities</button>
     </div>
     <div class="tab-panel active" id="ann-upcoming">
-      <div class="activity"><div class="date">October 11, 2026 · 8:30 AM</div><strong>Limpyo Iloilo</strong><p>Barangay officials, tanods, volunteers, SK officials, farmers, women’s groups, and other barangay organizations are encouraged to participate.</p></div>
-      <div class="activity"><div class="date">COMING SOON</div><strong>Additional Announcements</strong><p>Future barangay schedules and notices will appear here.</p></div>
-    </div>
+      <div id="all-upcoming-announcements"><div class="live-empty">Loading announcements...</div></div>
+</div>
     <div class="tab-panel" id="ann-recent">
-      <div class="activity"><div class="date">RECENT ACTIVITY</div><strong>Activity Records</strong><p>Completed activities, reports, and photos will appear here.</p></div>
-    </div>
+      <div id="all-recent-activities"><div class="live-empty">Loading activities...</div></div>
+</div>
   </div></div>
 </div>
 
@@ -1548,12 +1548,33 @@ function publicDate(v){
 
 function publicTime(v){
   if(!v) return '';
+
   const s=String(v);
-  const m=s.match(/^(\d{1,2}):(\d{2})/);
-  if(!m) return s;
-  let h=Number(m[1]), min=m[2], ap=h>=12?'PM':'AM';
-  h=h%12||12;
-  return `${h}:${min} ${ap}`;
+
+  // Plain HH:mm or HH:mm:ss
+  const m=s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+  if(m){
+    let h=Number(m[1]);
+    const min=m[2];
+    const ap=h>=12?'PM':'AM';
+    h=h%12||12;
+    return `${h}:${min} ${ap}`;
+  }
+
+  // Google Sheets time values may serialize as 1899-12-30T...
+  try{
+    const d=new Date(v);
+    if(!isNaN(d)){
+      return d.toLocaleTimeString('en-PH',{
+        hour:'numeric',
+        minute:'2-digit',
+        hour12:true,
+        timeZone:'Asia/Manila'
+      });
+    }
+  }catch(e){}
+
+  return s;
 }
 
 function renderCommitteePublic(data, committeeId){
@@ -1638,19 +1659,149 @@ function renderPublicContentList(id,rows){
   root.innerHTML=title+(rows.length
     ? '<div class="live-list">'+rows.map(x=>`
         <div class="live-item">
+          ${photoHtml(x,'📷')}
           <h4>${publicEsc(x.Title||'')}</h4>
-          <p>
-            ${x['Event Date']?publicDate(x['Event Date']):''}
-            ${x.Time?' · '+publicTime(x.Time):''}
-            ${x.Venue?' · '+publicEsc(x.Venue):''}
-          </p>
+          <p>${contentMeta(x)}</p>
           ${x.Description?`<p>${publicEsc(x.Description)}</p>`:''}
         </div>`).join('')+'</div>'
     : '<div class="live-empty">Coming Soon</div>');
 }
 
+
+function contentPhotoUrl(row){
+  return String(row['Featured Photo URL'] || '').trim();
+}
+
+function photoHtml(row,placeholder='📣'){
+  const url=contentPhotoUrl(row);
+  if(!url){
+    return `<div class="live-photo-wrap"><div class="live-photo-placeholder">${placeholder}</div></div>`;
+  }
+  return `<div class="live-photo-wrap">
+    <img class="live-photo" src="${publicEsc(url)}" alt="${publicEsc(row.Title||'Barangay update')}"
+      loading="lazy"
+      onerror="this.parentElement.innerHTML='<div class=&quot;live-photo-placeholder&quot;>📷</div>'">
+  </div>`;
+}
+
+function contentMeta(row){
+  const parts=[];
+  if(row['Event Date']) parts.push(publicDate(row['Event Date']));
+  if(row.Time) parts.push(publicTime(row.Time));
+  if(row.Venue) parts.push(publicEsc(row.Venue));
+  return parts.join(' · ');
+}
+
+function committeeName(data,committeeId){
+  const c=(data.committees||[]).find(x=>String(x['Committee ID']||x.committeeId||'')===String(committeeId||''));
+  return c ? (c['Committee Name']||c.committeeName||'') : '';
+}
+
+function renderHomeAnnouncements(data){
+  const root=document.getElementById('home-public-announcements');
+  if(!root) return;
+
+  const rows=(data.content||[])
+    .filter(x=>String(x.Type||'').toUpperCase()==='ANNOUNCEMENT')
+    .sort((a,b)=>String(b['Event Date']||b['Created At']||'').localeCompare(String(a['Event Date']||a['Created At']||'')))
+    .slice(0,3);
+
+  root.innerHTML=rows.length ? rows.map(x=>`
+    <article class="news-card" onclick="showView('announcements')" style="cursor:pointer">
+      ${photoHtml(x,'📣')}
+      <div class="body">
+        <span class="label">${publicEsc(committeeName(data,x['Committee ID'])||'Announcement')}</span>
+        <h3>${publicEsc(x.Title||'')}</h3>
+        <p>${contentMeta(x)}</p>
+        ${x.Description?`<p>${publicEsc(x.Description)}</p>`:''}
+      </div>
+    </article>`).join('')
+    : '<div class="live-empty">No public announcements yet.</div>';
+}
+
+function renderHomeRecentActivities(data){
+  const root=document.getElementById('home-recent-activities');
+  if(!root) return;
+
+  const now=new Date(); now.setHours(0,0,0,0);
+  const rows=(data.content||[])
+    .filter(x=>{
+      const type=String(x.Type||'').toUpperCase();
+      if(type==='ACTIVITY') return true;
+      if(x['Event Date']){
+        const d=new Date(x['Event Date']); d.setHours(0,0,0,0);
+        return d<now;
+      }
+      return false;
+    })
+    .sort((a,b)=>String(b['Event Date']||b['Created At']||'').localeCompare(String(a['Event Date']||a['Created At']||'')))
+    .slice(0,3);
+
+  root.innerHTML=rows.length ? rows.map(x=>`
+    <article class="news-card" onclick="showView('announcements')" style="cursor:pointer">
+      ${photoHtml(x,'📷')}
+      <div class="body">
+        <span class="label">${publicEsc(committeeName(data,x['Committee ID'])||'Activity')}</span>
+        <h3>${publicEsc(x.Title||'')}</h3>
+        <p>${contentMeta(x)}</p>
+        ${x.Description?`<p>${publicEsc(x.Description)}</p>`:''}
+      </div>
+    </article>`).join('')
+    : '<div class="live-empty">No recent activities yet.</div>';
+}
+
+function renderAllAnnouncements(data){
+  const upcomingRoot=document.getElementById('all-upcoming-announcements');
+  const recentRoot=document.getElementById('all-recent-activities');
+  if(!upcomingRoot && !recentRoot) return;
+
+  const now=new Date(); now.setHours(0,0,0,0);
+  const all=(data.content||[]).slice();
+
+  const upcoming=all.filter(x=>{
+    if(String(x.Type||'').toUpperCase()!=='ANNOUNCEMENT') return false;
+    if(!x['Event Date']) return true;
+    const d=new Date(x['Event Date']); d.setHours(0,0,0,0);
+    return d>=now;
+  }).sort((a,b)=>String(a['Event Date']||'9999').localeCompare(String(b['Event Date']||'9999')));
+
+  const recent=all.filter(x=>{
+    if(String(x.Type||'').toUpperCase()==='ACTIVITY') return true;
+    if(!x['Event Date']) return false;
+    const d=new Date(x['Event Date']); d.setHours(0,0,0,0);
+    return d<now;
+  }).sort((a,b)=>String(b['Event Date']||b['Created At']||'').localeCompare(String(a['Event Date']||a['Created At']||'')));
+
+  if(upcomingRoot){
+    upcomingRoot.innerHTML=upcoming.length ? upcoming.map(x=>`
+      <div class="activity-live-card">
+        ${photoHtml(x,'📣')}
+        <div class="activity-live-meta">${contentMeta(x)}</div>
+        <h3>${publicEsc(x.Title||'')}</h3>
+        ${x.Description?`<p>${publicEsc(x.Description)}</p>`:''}
+        ${committeeName(data,x['Committee ID'])?`<span class="tag">${publicEsc(committeeName(data,x['Committee ID']))}</span>`:''}
+      </div>`).join('')
+      : '<div class="live-empty">No incoming announcements.</div>';
+  }
+
+  if(recentRoot){
+    recentRoot.innerHTML=recent.length ? recent.map(x=>`
+      <div class="activity-live-card">
+        ${photoHtml(x,'📷')}
+        <div class="activity-live-meta">${contentMeta(x)}</div>
+        <h3>${publicEsc(x.Title||'')}</h3>
+        ${x.Description?`<p>${publicEsc(x.Description)}</p>`:''}
+        ${committeeName(data,x['Committee ID'])?`<span class="tag">${publicEsc(committeeName(data,x['Committee ID']))}</span>`:''}
+      </div>`).join('')
+      : '<div class="live-empty">No recent activities yet.</div>';
+  }
+}
+
 function applyPublicData(data){
   if(!data || !data.success) return;
+  renderHomeAnnouncements(data);
+  renderHomeRecentActivities(data);
+  renderAllAnnouncements(data);
   renderCommitteePublic(data,'COM-001');
   renderCommitteePublic(data,'COM-003');
 }
