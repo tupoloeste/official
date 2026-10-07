@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!-- BTO ADMIN BUILD: 2026-10-07 LOGIN-TIMEOUT-FIX-4 -->
+<!-- BTO ADMIN BUILD: 2026-10-07 LOGIN-FINAL-FIX-5 -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#f8324b">
@@ -460,7 +460,7 @@ button.secondary .btn-spinner{
 </div>
 
 <script>
-console.info('BTO ADMIN BUILD: 2026-10-07 LOGIN-TIMEOUT-FIX-4');
+console.info('BTO ADMIN BUILD: 2026-10-07 LOGIN-FINAL-FIX-5');
 
 function ensureGlobalActionStatus(){
   let el=document.getElementById('globalActionStatus');
@@ -638,36 +638,6 @@ async function api(action,data={}){
 
   }finally{
     clearTimeout(timeout);
-  }
-}){
-  if(!apiConfigured()){
-    return {success:false,message:'Apps Script API URL is not configured.'};
-  }
-
-  const payload={action,token,data};
-
-  if(action==='login'){
-    payload.username=data.username || '';
-    payload.password=data.password || '';
-  }
-
-  try{
-    const response=await fetch(API_URL,{
-      method:'POST',
-      redirect:'follow',
-      headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body:JSON.stringify(payload)
-    });
-
-    const text=await response.text();
-
-    try{
-      return JSON.parse(text);
-    }catch(e){
-      throw new Error('Backend returned a non-JSON response. Check the Apps Script deployment URL and access settings.');
-    }
-  }catch(err){
-    return {success:false,message:err.message || String(err)};
   }
 }
 
