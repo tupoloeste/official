@@ -264,6 +264,34 @@ button.is-saving{
   opacity:.8;
 }
 
+
+.gallery-upload-preview{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(110px,1fr));
+  gap:8px;
+  margin:10px 0 4px;
+}
+.gallery-upload-preview .preview-item{
+  border:1px solid #e5e7eb;
+  border-radius:10px;
+  overflow:hidden;
+  background:#fafafa;
+}
+.gallery-upload-preview img{
+  width:100%;
+  height:90px;
+  object-fit:cover;
+  display:block;
+}
+.gallery-upload-preview small{
+  display:block;
+  padding:6px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  color:#6b7280;
+}
+
 </style>
 </head>
 <body>
@@ -1303,12 +1331,33 @@ function openCommitteeQuickActivity(){
     </div>
     <label>Venue</label><input id="qaVenue">
     <label>Description</label><textarea id="qaDesc"></textarea>
-    <label>Featured Photo</label><input id="qaPhoto" type="file" accept="image/*">
+    <label>Featured Photo</label>
+    <input id="qaPhoto" type="file" accept="image/*">
+    <div class="help">Main photo shown on the homepage/event card.</div>
+
+    <label style="margin-top:12px">Gallery Photos</label>
+    <input id="qaGallery" type="file" accept="image/*" multiple>
+    <div class="help">Select multiple photos at once for the event/activity gallery.</div>
+    <div id="qaGalleryPreview" class="gallery-upload-preview"></div>
+
     <div class="row">
       <button id="qaSaveBtn" onclick="saveCommitteeQuickActivity()">Save & Publish</button>
       <span id="qaSaveStatus" class="save-status"></span>
       <button class="secondary" onclick="setCommitteeSection('ACTIVITY')">Cancel</button>
     </div>`;
+
+  const galleryInput=document.getElementById('qaGallery');
+  if(galleryInput){
+    galleryInput.addEventListener('change',()=>{
+      const preview=document.getElementById('qaGalleryPreview');
+      const files=Array.from(galleryInput.files||[]);
+      preview.innerHTML=files.map(file=>`
+        <div class="preview-item">
+          <img src="${URL.createObjectURL(file)}" alt="">
+          <small>${esc(file.name)}</small>
+        </div>`).join('');
+    });
+  }
 }
 
 async function saveCommitteeQuickActivity(){
@@ -1325,36 +1374,57 @@ async function saveCommitteeQuickActivity(){
   }
   if(status){
     status.className='save-status';
-    status.textContent='Please wait...';
+    status.textContent='Preparing files...';
   }
 
   try{
-    let photoUrl='';
-    const file=document.getElementById('qaPhoto').files[0];
+    let featuredPhotoUrl='';
+    const featuredFile=document.getElementById('qaPhoto')?.files?.[0];
 
-    if(file){
-      if(status) status.textContent='Uploading photo...';
-      const base64=await fileToBase64(file);
+    if(featuredFile){
+      if(status) status.textContent='Uploading featured photo...';
+      const base64=await fileToBase64(featuredFile);
       const u=await api('uploadBase64',{
-        fileName:file.name,
-        mimeType:file.type,
+        fileName:featuredFile.name,
+        mimeType:featuredFile.type||'image/jpeg',
         base64
       });
       if(!u.success) throw new Error(u.message);
-      photoUrl=u.url;
+      featuredPhotoUrl=u.url;
     }
 
-    if(status) status.textContent='Publishing...';
+    const galleryFiles=Array.from(document.getElementById('qaGallery')?.files||[]);
+    const galleryUrls=[];
+
+    for(let i=0;i<galleryFiles.length;i++){
+      const file=galleryFiles[i];
+      if(status) status.textContent=`Uploading gallery photo ${i+1} of ${galleryFiles.length}...`;
+
+      const base64=await fileToBase64(file);
+      const u=await api('uploadBase64',{
+        fileName:file.name,
+        mimeType:file.type||'image/jpeg',
+        base64
+      });
+      if(!u.success) throw new Error(u.message);
+      galleryUrls.push(u.url);
+    }
+
+    if(status) status.textContent='Publishing event/activity...';
+
+    const title=document.getElementById('qaTitle').value.trim();
+    if(!title) throw new Error('Title is required.');
 
     const r=await api('saveContent',{
       type:document.getElementById('qaType').value,
-      title:document.getElementById('qaTitle').value.trim(),
+      title,
       eventDate:document.getElementById('qaDate').value,
       time:document.getElementById('qaTime').value,
       venue:document.getElementById('qaVenue').value.trim(),
       committeeId:currentCommitteeId,
       description:document.getElementById('qaDesc').value.trim(),
-      featuredPhotoUrl:photoUrl,
+      featuredPhotoUrl,
+      galleryUrls:galleryUrls.join('\n'),
       status:'PUBLISHED'
     });
 
