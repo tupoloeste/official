@@ -106,16 +106,130 @@ hr{border:0;border-top:1px solid #eee;margin:16px 0}
   .topbar-left{align-items:flex-start}
 }
 
+
+/* ===== Subtle portal animations ===== */
+@keyframes btoFadeUp{
+  from{opacity:0;transform:translateY(14px)}
+  to{opacity:1;transform:translateY(0)}
+}
+@keyframes btoScaleIn{
+  from{opacity:0;transform:scale(.985)}
+  to{opacity:1;transform:scale(1)}
+}
+@keyframes btoPulse{
+  0%,100%{opacity:.45}
+  50%{opacity:1}
+}
+@keyframes btoSpin{
+  to{transform:rotate(360deg)}
+}
+
+.topbar,
+#dashboardView > .card,
+#moduleView > .card,
+#loginCard{
+  animation:btoFadeUp .38s ease both;
+}
+
+.menu button{
+  transition:transform .18s ease, box-shadow .18s ease, filter .18s ease;
+  animation:btoFadeUp .38s ease both;
+}
+.menu button:nth-child(1){animation-delay:.03s}
+.menu button:nth-child(2){animation-delay:.07s}
+.menu button:nth-child(3){animation-delay:.11s}
+.menu button:nth-child(4){animation-delay:.15s}
+.menu button:nth-child(5){animation-delay:.19s}
+.menu button:nth-child(6){animation-delay:.23s}
+.menu button:nth-child(7){animation-delay:.27s}
+.menu button:nth-child(8){animation-delay:.31s}
+
+.menu button:hover{
+  transform:translateY(-3px);
+  box-shadow:0 10px 22px rgba(0,0,0,.10);
+  filter:brightness(.98);
+}
+.menu button:active{
+  transform:translateY(-1px) scale(.99);
+}
+
+button{
+  transition:transform .15s ease, filter .15s ease, box-shadow .15s ease;
+}
+button:hover{
+  transform:translateY(-1px);
+}
+button:active{
+  transform:translateY(0) scale(.985);
+}
+
+#moduleView:not(.hidden){
+  animation:btoScaleIn .28s ease both;
+}
+
+.entry-card,
+.stat-box,
+.user-row,
+.record-row{
+  animation:btoFadeUp .28s ease both;
+}
+
+.bto-loading{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:16px 4px;
+  color:var(--muted);
+  animation:btoFadeUp .2s ease both;
+}
+.bto-spinner{
+  width:18px;
+  height:18px;
+  border:3px solid #e5e7eb;
+  border-top-color:var(--red);
+  border-radius:50%;
+  animation:btoSpin .75s linear infinite;
+}
+
+.user-avatar{
+  transition:transform .2s ease, box-shadow .2s ease;
+}
+.user-avatar:hover{
+  transform:scale(1.04);
+  box-shadow:0 6px 18px rgba(0,0,0,.12);
+}
+
+.brand-logo{
+  animation:btoScaleIn .35s ease both;
+  transition:transform .22s ease;
+}
+.brand-logo:hover{
+  transform:scale(1.04);
+}
+
+input,select,textarea{
+  transition:border-color .16s ease, box-shadow .16s ease, background .16s ease;
+}
+input:focus,select:focus,textarea:focus{
+  outline:none;
+  border-color:var(--red);
+  box-shadow:0 0 0 3px rgba(248,50,75,.10);
+}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.01ms!important;
+    scroll-behavior:auto!important;
+  }
+}
+
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="brand">
-    <img class="brand-logo" src="../barangay-logo.png" alt="Barangay Tupol Oeste Logo">
-    <div><strong>Barangay Tupol Oeste</strong><small>Encoder Portal</small></div>
-  </div>
-
-  <div id="apiWarning" class="card hidden">
+<div id="apiWarning" class="card hidden">
     <div class="msg err">
       Apps Script API URL is not configured yet. Edit <b>admin/index.html</b> and set <b>API_URL</b>.
     </div>
@@ -402,9 +516,13 @@ async function restore(){
 
 async function openModule(name,title='Module'){
   document.getElementById('dashboardView').classList.add('hidden');
-  document.getElementById('moduleView').classList.remove('hidden');
+  const mv=document.getElementById('moduleView');
+  mv.classList.remove('hidden');
+  mv.style.animation='none';
+  void mv.offsetWidth;
+  mv.style.animation='btoScaleIn .28s ease both';
   document.getElementById('modulePageTitle').textContent=title;
-  document.getElementById('moduleArea').innerHTML='<div style="padding:10px 0">Loading...</div>';
+  document.getElementById('moduleArea').innerHTML='<div class="bto-loading"><span class="bto-spinner"></span><span>Loading...</span></div>';
   window.scrollTo({top:0,behavior:'smooth'});
 
   if(name==='stats') return loadStats();
@@ -613,7 +731,7 @@ async function saveAssignment(){
 }
 
 async function usersForm(){
-  document.getElementById('moduleArea').innerHTML='<div class="card">Loading users...</div>';
+  document.getElementById('moduleArea').innerHTML='<div class="bto-loading"><span class="bto-spinner"></span><span>Loading users...</span></div>';
 
   let bundleCached=cacheGet('usersBundle',2*60*1000);
   if(bundleCached){
@@ -823,7 +941,7 @@ async function openCommittee(committeeId){
     renderCommitteeWorkspace();
     setStatus('Showing cached committee data… refreshing');
   }else{
-    document.getElementById('moduleArea').innerHTML='<div class="card">Loading committee profile...</div>';
+    document.getElementById('moduleArea').innerHTML='<div class="bto-loading"><span class="bto-spinner"></span><span>Loading committee profile...</span></div>';
   }
 
   const r=await api('getCommitteeWorkspace',{committeeId});
@@ -1143,7 +1261,11 @@ function dateInputValue(v){
 
 function backToModules(){
   document.getElementById('moduleView').classList.add('hidden');
-  document.getElementById('dashboardView').classList.remove('hidden');
+  const dv=document.getElementById('dashboardView');
+  dv.classList.remove('hidden');
+  dv.style.animation='none';
+  void dv.offsetWidth;
+  dv.style.animation='btoFadeUp .28s ease both';
   document.getElementById('moduleArea').innerHTML='';
   window.scrollTo({top:0,behavior:'smooth'});
 }
