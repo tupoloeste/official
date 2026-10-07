@@ -377,6 +377,42 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
   .disclosure-grid{grid-template-columns:1fr}
 }
 
+
+/* ===== Live committee profile data ===== */
+.live-status{
+  display:inline-flex;align-items:center;gap:7px;
+  font-size:12px;color:var(--muted);margin-top:4px
+}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#16a34a}
+.live-empty{
+  border:1px dashed #d9dde3;border-radius:12px;padding:18px;
+  color:var(--muted);background:#fafafa
+}
+.live-list{display:grid;gap:10px}
+.live-item{
+  border:1px solid #e5e7eb;border-radius:12px;padding:14px;background:#fff
+}
+.live-item h4{margin:0 0 6px;font-size:15px}
+.live-item p{margin:5px 0;color:#56606c;line-height:1.55}
+.live-item a{color:var(--red-dark);font-weight:700;text-decoration:none}
+.live-item a:hover{text-decoration:underline}
+.committee-person-list{display:grid;gap:8px}
+.committee-person-row{
+  display:flex;justify-content:space-between;gap:10px;
+  border-bottom:1px solid #eee;padding:8px 0
+}
+.committee-person-row:last-child{border-bottom:0}
+.committee-person-row span{color:var(--muted)}
+.public-loader{
+  display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px
+}
+.public-loader:before{
+  content:"";width:14px;height:14px;border:2px solid #ddd;
+  border-top-color:var(--red);border-radius:50%;
+  animation:publicSpin .8s linear infinite
+}
+@keyframes publicSpin{to{transform:rotate(360deg)}}
+
 </style>
 </head>
 <body>
@@ -851,7 +887,7 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
 
 <div class="view" id="view-committee-agriculture">
   <div class="page-head"><div class="container page-head-row">
-    <div><h1>Committee on Agriculture</h1><p>Committee profile and sector information.</p></div>
+    <div><h1>Committee on Agriculture</h1><p>Committee profile and sector information.</p><div class="live-status"><span class="live-dot"></span>Updated from the Barangay Encoder Portal</div></div>
     <button class="back-btn" onclick="showView('officials')">← Back to Officials</button>
   </div></div>
   <div class="page-content"><div class="container">
@@ -863,23 +899,26 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
       <button class="tab-btn" onclick="switchTab('committee-agriculture','agriculture-reports',this)">Reports</button>
     </div>
     <div class="tab-panel active" id="agriculture-profile">
-      <div class="info-block"><h3>Committee Information</h3><ul class="clean-list">
-        <li>Chairperson: <span class="coming">Coming Soon</span></li>
-        <li>Vice Chairperson: <span class="coming">Coming Soon</span></li>
-        <li>Members: <span class="coming">Coming Soon</span></li>
-        <li>Mandate / Responsibilities: <span class="coming">Coming Soon</span></li>
-      </ul></div>
-      <h3 style="margin-top:24px">Sector Statistics</h3>
-      <div class="stats-grid"><div class="stat"><small>Total Farmers</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Rice Farmers</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Livestock Raisers</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Farm Area</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Carabao</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Cattle</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Swine</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Goat</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Chicken / Poultry</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Duck</small><strong>—</strong><span class="coming">Coming Soon</span></div></div>
-      <div class="info-block"><h3>Organizations / Associations</h3><ul class="clean-list"><li>Tupol Oeste Farmers Association</li><li>Other farmer groups / associations — Coming Soon</li></ul></div>
-    </div>
-    <div class="tab-panel" id="agriculture-services"><div class="info-block"><h3>Available Services</h3><ul class="clean-list"><li>Seed Assistance</li><li>Fertilizer Distribution</li><li>Farm Inputs</li><li>Livestock Vaccination</li><li>Deworming</li><li>Artificial Insemination</li><li>Veterinary Services</li><li>Crop / Livestock Consultation</li><li>Farmer Registration / RSBA Assistance</li><li>Trainings & Seminars</li></ul></div></div>
-    <div class="tab-panel" id="agriculture-programs"><div class="info-block"><h3>Programs & Projects</h3><span class="coming">Coming Soon</span></div></div>
+<div id="public-committee-info-COM-001" class="info-block">
+  <h3>Committee Information</h3><div class="public-loader">Loading official committee information...</div>
+</div>
+<h3 style="margin-top:24px">Sector Statistics</h3>
+<div id="public-stats-COM-001" class="stats-grid"><div class="live-empty">Coming Soon</div></div>
+<div id="public-organizations-COM-001" class="info-block"><h3>Organizations / Associations</h3><div class="live-empty">Coming Soon</div></div>
+</div>
+    <div class="tab-panel" id="agriculture-services">
+<div id="public-services-COM-001" class="info-block"><h3>Available Services</h3><div class="live-empty">Coming Soon</div></div>
+</div>
+    <div class="tab-panel" id="agriculture-programs">
+<div id="public-programs-COM-001" class="info-block"><h3>Programs & Projects</h3><div class="live-empty">Coming Soon</div></div>
+</div>
     <div class="tab-panel" id="agriculture-activities">
-      <div class="info-block"><h3>Upcoming Activities</h3><span class="coming">Coming Soon</span></div>
-      <div class="info-block"><h3>Recent Activities</h3><span class="coming">Coming Soon</span></div>
-    </div>
-    <div class="tab-panel" id="agriculture-reports"><div class="info-block"><h3>Reports & Documents</h3><span class="coming">Coming Soon</span></div></div>
+<div id="public-upcoming-COM-001" class="info-block"><h3>Upcoming Activities</h3><div class="live-empty">Coming Soon</div></div>
+<div id="public-recent-COM-001" class="info-block"><h3>Recent Activities</h3><div class="live-empty">Coming Soon</div></div>
+</div>
+    <div class="tab-panel" id="agriculture-reports">
+<div id="public-reports-COM-001" class="info-block"><h3>Reports & Documents</h3><div class="live-empty">Coming Soon</div></div>
+</div>
   </div></div>
 </div>
 
@@ -919,7 +958,7 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
 
 <div class="view" id="view-committee-environment">
   <div class="page-head"><div class="container page-head-row">
-    <div><h1>Committee on Environmental Protection</h1><p>Committee profile and sector information.</p></div>
+    <div><h1>Committee on Environmental Protection</h1><p>Committee profile and sector information.</p><div class="live-status"><span class="live-dot"></span>Updated from the Barangay Encoder Portal</div></div>
     <button class="back-btn" onclick="showView('officials')">← Back to Officials</button>
   </div></div>
   <div class="page-content"><div class="container">
@@ -931,23 +970,26 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
       <button class="tab-btn" onclick="switchTab('committee-environment','environment-reports',this)">Reports</button>
     </div>
     <div class="tab-panel active" id="environment-profile">
-      <div class="info-block"><h3>Committee Information</h3><ul class="clean-list">
-        <li>Chairperson: <span class="coming">Coming Soon</span></li>
-        <li>Vice Chairperson: <span class="coming">Coming Soon</span></li>
-        <li>Members: <span class="coming">Coming Soon</span></li>
-        <li>Mandate / Responsibilities: <span class="coming">Coming Soon</span></li>
-      </ul></div>
-      <h3 style="margin-top:24px">Sector Statistics</h3>
-      <div class="stats-grid"><div class="stat"><small>Households Covered</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Waste Collection Areas</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Clean-up Activities</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Environmental Projects</small><strong>—</strong><span class="coming">Coming Soon</span></div></div>
-      <div class="info-block"><h3>Organizations / Associations</h3><ul class="clean-list"><li>Environmental volunteers / groups — Coming Soon</li></ul></div>
-    </div>
-    <div class="tab-panel" id="environment-services"><div class="info-block"><h3>Available Services</h3><ul class="clean-list"><li>Clean-up Drives</li><li>Waste Management Coordination</li><li>Community Beautification</li><li>Environmental Awareness</li></ul></div></div>
-    <div class="tab-panel" id="environment-programs"><div class="info-block"><h3>Programs & Projects</h3><span class="coming">Coming Soon</span></div></div>
+<div id="public-committee-info-COM-003" class="info-block">
+  <h3>Committee Information</h3><div class="public-loader">Loading official committee information...</div>
+</div>
+<h3 style="margin-top:24px">Sector Statistics</h3>
+<div id="public-stats-COM-003" class="stats-grid"><div class="live-empty">Coming Soon</div></div>
+<div id="public-organizations-COM-003" class="info-block"><h3>Organizations / Associations</h3><div class="live-empty">Coming Soon</div></div>
+</div>
+    <div class="tab-panel" id="environment-services">
+<div id="public-services-COM-003" class="info-block"><h3>Available Services</h3><div class="live-empty">Coming Soon</div></div>
+</div>
+    <div class="tab-panel" id="environment-programs">
+<div id="public-programs-COM-003" class="info-block"><h3>Programs & Projects</h3><div class="live-empty">Coming Soon</div></div>
+</div>
     <div class="tab-panel" id="environment-activities">
-      <div class="info-block"><h3>Upcoming Activities</h3><span class="coming">Coming Soon</span></div>
-      <div class="info-block"><h3>Recent Activities</h3><span class="coming">Coming Soon</span></div>
-    </div>
-    <div class="tab-panel" id="environment-reports"><div class="info-block"><h3>Reports & Documents</h3><span class="coming">Coming Soon</span></div></div>
+<div id="public-upcoming-COM-003" class="info-block"><h3>Upcoming Activities</h3><div class="live-empty">Coming Soon</div></div>
+<div id="public-recent-COM-003" class="info-block"><h3>Recent Activities</h3><div class="live-empty">Coming Soon</div></div>
+</div>
+    <div class="tab-panel" id="environment-reports">
+<div id="public-reports-COM-003" class="info-block"><h3>Reports & Documents</h3><div class="live-empty">Coming Soon</div></div>
+</div>
   </div></div>
 </div>
 
@@ -1468,11 +1510,174 @@ function switchTab(scope,panelId,btn){
   btn.classList.add('active');
 }
 
+
+const BTO_PUBLIC_API = "https://script.google.com/macros/s/AKfycbwM6bagjlHKao-NCB3d_nDwX29zO4EFKcoj50vABCQP7bKJuSI4j7772Zam9LwNiLCqNg/exec?action=publicData";
+const BTO_PUBLIC_CACHE_KEY = 'bto_public_data_v2';
+const BTO_PUBLIC_CACHE_MS = 5 * 60 * 1000;
+
+function publicEsc(v){
+  return String(v ?? '').replace(/[&<>"']/g,m=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[m]));
+}
+
+function publicCacheGet(){
+  try{
+    const raw=localStorage.getItem(BTO_PUBLIC_CACHE_KEY);
+    if(!raw) return null;
+    const obj=JSON.parse(raw);
+    if(!obj || Date.now()-obj.savedAt>BTO_PUBLIC_CACHE_MS) return null;
+    return obj.data;
+  }catch(e){ return null; }
+}
+
+function publicCacheSet(data){
+  try{
+    localStorage.setItem(BTO_PUBLIC_CACHE_KEY,JSON.stringify({savedAt:Date.now(),data}));
+  }catch(e){}
+}
+
+function publicDate(v){
+  if(!v) return '';
+  try{
+    const d=new Date(v);
+    if(isNaN(d)) return String(v);
+    return d.toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'});
+  }catch(e){ return String(v); }
+}
+
+function publicTime(v){
+  if(!v) return '';
+  const s=String(v);
+  const m=s.match(/^(\d{1,2}):(\d{2})/);
+  if(!m) return s;
+  let h=Number(m[1]), min=m[2], ap=h>=12?'PM':'AM';
+  h=h%12||12;
+  return `${h}:${min} ${ap}`;
+}
+
+function renderCommitteePublic(data, committeeId){
+  const entries=(data.committeeProfileData||[]).filter(x=>String(x['Committee ID'])===committeeId);
+  const officials=data.officials||[];
+  const content=(data.content||[]).filter(x=>String(x['Committee ID'])===committeeId);
+
+  const infoEl=document.getElementById('public-committee-info-'+committeeId);
+  if(infoEl){
+    const assigned=[];
+    officials.forEach(o=>{
+      (o.committees||[]).forEach(a=>{
+        if(String(a.committeeId)===committeeId){
+          assigned.push({name:o['Full Name']||'',position:o['Position']||'',role:a.role||'Member'});
+        }
+      });
+    });
+
+    const roleOrder={'Chairperson':1,'Vice Chairperson':2,'Member':3};
+    assigned.sort((a,b)=>(roleOrder[a.role]||9)-(roleOrder[b.role]||9));
+
+    infoEl.innerHTML='<h3>Committee Information</h3>'+
+      (assigned.length
+        ? '<div class="committee-person-list">'+assigned.map(x=>
+            `<div class="committee-person-row"><strong>${publicEsc(x.role)}</strong><span>${publicEsc(x.name)}${x.position?' · '+publicEsc(x.position):''}</span></div>`
+          ).join('')+'</div>'
+        : '<div class="live-empty">Coming Soon</div>');
+  }
+
+  const stats=entries.filter(x=>String(x.Section).toUpperCase()==='STATISTIC');
+  const statsEl=document.getElementById('public-stats-'+committeeId);
+  if(statsEl){
+    statsEl.innerHTML=stats.length ? stats.map(x=>`
+      <div class="stat">
+        <small>${publicEsc(x.Title)}</small>
+        <strong>${publicEsc(x.Value||'—')}</strong>
+        <span>${publicEsc(x.Unit||'')}${x['As Of Date']?' · As of '+publicDate(x['As Of Date']):''}</span>
+      </div>`).join('') : '<div class="live-empty">Coming Soon</div>';
+  }
+
+  renderPublicEntryList('public-organizations-'+committeeId,entries,'ORGANIZATION');
+  renderPublicEntryList('public-services-'+committeeId,entries,'SERVICE');
+  renderPublicEntryList('public-programs-'+committeeId,entries,'PROGRAM');
+  renderPublicEntryList('public-reports-'+committeeId,entries,'REPORT');
+
+  const now=new Date(); now.setHours(0,0,0,0);
+  const sorted=content.slice().sort((a,b)=>String(b['Event Date']||'').localeCompare(String(a['Event Date']||'')));
+  const upcoming=sorted.filter(x=>{
+    if(!x['Event Date']) return false;
+    const d=new Date(x['Event Date']); d.setHours(0,0,0,0);
+    return d>=now;
+  });
+  const recent=sorted.filter(x=>{
+    if(!x['Event Date']) return true;
+    const d=new Date(x['Event Date']); d.setHours(0,0,0,0);
+    return d<now;
+  });
+
+  renderPublicContentList('public-upcoming-'+committeeId,upcoming);
+  renderPublicContentList('public-recent-'+committeeId,recent);
+}
+
+function renderPublicEntryList(id,entries,section){
+  const root=document.getElementById(id);
+  if(!root) return;
+  const title=root.querySelector('h3')?.outerHTML || '';
+  const rows=entries.filter(x=>String(x.Section).toUpperCase()===section);
+  root.innerHTML=title+(rows.length
+    ? '<div class="live-list">'+rows.map(x=>`
+        <div class="live-item">
+          <h4>${publicEsc(x.Title||'')}</h4>
+          ${x.Description?`<p>${publicEsc(x.Description)}</p>`:''}
+          ${x['Link URL']?`<p><a href="${publicEsc(x['Link URL'])}" target="_blank" rel="noopener">Open ${section==='REPORT'?'document':'link'} →</a></p>`:''}
+        </div>`).join('')+'</div>'
+    : '<div class="live-empty">Coming Soon</div>');
+}
+
+function renderPublicContentList(id,rows){
+  const root=document.getElementById(id);
+  if(!root) return;
+  const title=root.querySelector('h3')?.outerHTML || '';
+  root.innerHTML=title+(rows.length
+    ? '<div class="live-list">'+rows.map(x=>`
+        <div class="live-item">
+          <h4>${publicEsc(x.Title||'')}</h4>
+          <p>
+            ${x['Event Date']?publicDate(x['Event Date']):''}
+            ${x.Time?' · '+publicTime(x.Time):''}
+            ${x.Venue?' · '+publicEsc(x.Venue):''}
+          </p>
+          ${x.Description?`<p>${publicEsc(x.Description)}</p>`:''}
+        </div>`).join('')+'</div>'
+    : '<div class="live-empty">Coming Soon</div>');
+}
+
+function applyPublicData(data){
+  if(!data || !data.success) return;
+  renderCommitteePublic(data,'COM-001');
+  renderCommitteePublic(data,'COM-003');
+}
+
+async function loadPublicData(){
+  const cached=publicCacheGet();
+  if(cached) applyPublicData(cached);
+
+  try{
+    const res=await fetch(BTO_PUBLIC_API,{cache:'no-store'});
+    const data=await res.json();
+    if(data && data.success){
+      publicCacheSet(data);
+      applyPublicData(data);
+    }
+  }catch(err){
+    console.warn('Public data refresh failed:',err);
+  }
+}
+
+
 document.getElementById('year').textContent=new Date().getFullYear();
 
 window.addEventListener('load',()=>{
   const hash=location.hash.replace('#','');
   if(hash && document.getElementById('view-'+hash)) showView(hash);
+  loadPublicData();
 });
 </script>
 </body>
