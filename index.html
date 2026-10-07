@@ -774,9 +774,6 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
 }
 
 
-/* Dedicated pages stay hidden unless selected */
-.page-view{display:none}
-.page-view.active{display:block}
 
 
 /* ===== Revised homepage hero: officials photo emphasized ===== */
@@ -1190,6 +1187,74 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
   }
 }
 
+
+/* ===== Adaptive Highlights Activity Gallery ===== */
+.highlights-gallery-grid.one-photo{
+  grid-template-columns:1fr;
+}
+.highlights-gallery-grid.one-photo img{
+  height:220px;
+  object-fit:contain;
+  background:#fff;
+}
+
+.highlights-gallery-grid.two-photos{
+  grid-template-columns:repeat(2,1fr);
+}
+.highlights-gallery-grid.two-photos img{
+  height:150px;
+  object-fit:cover;
+}
+
+.highlights-gallery-grid.multi-photos{
+  grid-template-columns:repeat(2,1fr);
+}
+.highlights-gallery-grid.multi-photos img{
+  height:105px;
+  object-fit:cover;
+}
+
+@media(max-width:760px){
+  .highlights-gallery-grid.one-photo img{
+    height:190px;
+  }
+  .highlights-gallery-grid.two-photos img{
+    height:120px;
+  }
+  .highlights-gallery-grid.multi-photos{
+    grid-template-columns:repeat(3,1fr);
+  }
+  .highlights-gallery-grid.multi-photos img{
+    height:82px;
+  }
+}
+
+@media(max-width:520px){
+  .highlights-gallery-grid.two-photos,
+  .highlights-gallery-grid.multi-photos{
+    grid-template-columns:repeat(2,1fr);
+  }
+}
+
+
+/* ===== Page-view visibility fix ===== */
+main > .view{
+  display:none !important;
+}
+main > .view.active{
+  display:block !important;
+}
+
+#view-home:not(.active){
+  display:none !important;
+}
+
+@media(max-width:760px){
+  .governance-grid{
+    grid-template-columns:1fr !important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1236,11 +1301,9 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
 <div class="view active home-view" id="view-home">
   <section class="hero">
     <div class="container hero-grid">
-      
-      </div>
       <div class="hero-visual-grid">
+
         <div class="hero-visual-card" id="hero-officials-card">
-          
           <img
             id="hero-officials-photo"
             src=""
@@ -1248,6 +1311,7 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
             loading="eager"
             style="display:none"
             onerror="this.style.display='none';document.getElementById('hero-officials-placeholder').style.display='grid'">
+
           <div class="hero-officials-placeholder" id="hero-officials-placeholder" style="display:none">
             <div>
               <img src="barangay-logo.png" alt="">
@@ -1255,29 +1319,28 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
               <span>The group photo can be updated anytime from the Encoder Portal.</span>
             </div>
           </div>
-          <div class="hero-visual-overlay">
-            <small>Governance</small>
-            <strong>Barangay Officials</strong>
-            <span>Serving Barangay Tupol Oeste</span>
-          </div>
         </div>
 
         <div class="hero-visual-card" id="hero-activity-carousel">
           <span class="hero-panel-label" id="hero-slide-label">Updates</span>
+
           <div class="hero-carousel-track" id="hero-carousel-track">
             <div class="hero-activity-placeholder">
               <div>
-                <strong>Current Barangay Activities</strong>
-                <span>Uploaded activity photos will automatically play here.</span>
+                <strong>Barangay Updates</strong>
+                <span>Uploaded event and activity photos will automatically play here.</span>
               </div>
             </div>
           </div>
+
           <div class="hero-carousel-controls" id="hero-carousel-controls" style="display:none">
             <button type="button" onclick="heroCarouselPrev(event)" aria-label="Previous photo">‹</button>
             <button type="button" onclick="heroCarouselNext(event)" aria-label="Next photo">›</button>
           </div>
+
           <div class="hero-carousel-dots" id="hero-carousel-dots"></div>
         </div>
+
       </div>
     </div>
   </section>
@@ -1310,14 +1373,6 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
       </div>
     </div>
   </section>
-
-  
-
-  
-
-  
-
-  
 </div>
 
 <!-- BARANGAY CATEGORY -->
@@ -1353,7 +1408,7 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
     </div>
   </div>
   <div class="page-content"><div class="container">
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:17px">
+    <div class="governance-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:17px">
       <button class="module-card" onclick="showView('officials')">
         <div class="icon">🏛</div><h3>Officials & Personnel</h3>
         <p>Barangay Officials, Sangguniang Kabataan, Barangay Tanods, and current committee assignments.</p>
@@ -1367,6 +1422,11 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
       <button class="module-card" onclick="showView('full-disclosure')">
         <div class="icon">📊</div><h3>Barangay Full Disclosure</h3>
         <p>Public budget, financial, procurement, project, and transparency documents.</p>
+        <span class="module-link">Open</span>
+      </button>
+      <button class="module-card" onclick="showView('organizational-chart')">
+        <div class="icon">🧩</div><h3>Organizational Chart</h3>
+        <p>Official organizational structure and hierarchy of Barangay Tupol Oeste.</p>
         <span class="module-link">Open</span>
       </button>
     </div>
@@ -2179,7 +2239,7 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
 </main>
 
 
-<section class="page-view" id="view-organizational-chart">
+<div class="view" id="view-organizational-chart">
   <div class="page-hero">
     <div class="container">
       <div>
@@ -2210,10 +2270,26 @@ const navLinks=document.getElementById('navLinks');
 menuBtn.addEventListener('click',()=>navLinks.classList.toggle('show'));
 
 function showView(name){
-  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('main > .view').forEach(v=>{
+    v.classList.remove('active');
+    v.setAttribute('aria-hidden','true');
+  });
+
   const target=document.getElementById('view-'+name);
-  if(target) target.classList.add('active');
-  navLinks.classList.remove('show');
+
+  if(target){
+    target.classList.add('active');
+    target.setAttribute('aria-hidden','false');
+  }else{
+    const home=document.getElementById('view-home');
+    if(home){
+      home.classList.add('active');
+      home.setAttribute('aria-hidden','false');
+      name='home';
+    }
+  }
+
+  if(navLinks) navLinks.classList.remove('show');
   window.scrollTo({top:0,behavior:'instant'});
   history.replaceState(null,'','#'+name);
 }
@@ -2551,12 +2627,21 @@ function renderHighlightsActivityGallery(data){
   });
 
   if(!urls.length){
+    root.className='highlights-gallery-grid';
     root.innerHTML='<div class="highlights-gallery-empty">No activity photos yet.</div>';
     if(more) more.textContent='';
     return;
   }
 
   const visible=urls.slice(0,6);
+
+  if(visible.length===1){
+    root.className='highlights-gallery-grid one-photo';
+  }else if(visible.length===2){
+    root.className='highlights-gallery-grid two-photos';
+  }else{
+    root.className='highlights-gallery-grid multi-photos';
+  }
 
   root.innerHTML=visible.map((item,i)=>`
     <img src="${publicEsc(item.url)}"
@@ -2567,9 +2652,11 @@ function renderHighlightsActivityGallery(data){
       onerror="this.style.display='none'">`).join('');
 
   if(more){
-    more.textContent=urls.length>6
-      ? `Showing 6 of ${urls.length} activity photos`
-      : `${urls.length} activity photo${urls.length>1?'s':''}`;
+    if(urls.length>6){
+      more.textContent=`Showing 6 of ${urls.length} activity photos`;
+    }else{
+      more.textContent=`${urls.length} activity photo${urls.length>1?'s':''}`;
+    }
   }
 }
 
@@ -2952,7 +3039,8 @@ document.getElementById('year').textContent=new Date().getFullYear();
 
 window.addEventListener('load',()=>{
   const hash=location.hash.replace('#','');
-  if(hash && document.getElementById('view-'+hash)) showView(hash);
+  const requested=(hash && document.getElementById('view-'+hash)) ? hash : 'home';
+  showView(requested);
   loadPublicData();
 });
 </script>
