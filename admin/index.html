@@ -292,6 +292,71 @@ button.is-saving{
   color:#6b7280;
 }
 
+
+/* ===== Global Encoder Portal action feedback ===== */
+button.is-busy,
+button:disabled{
+  cursor:not-allowed !important;
+  opacity:.78;
+}
+
+.btn-spinner,
+.save-mini-spinner{
+  width:14px;
+  height:14px;
+  border:2px solid rgba(255,255,255,.45);
+  border-top-color:#fff;
+  border-radius:50%;
+  display:inline-block;
+  vertical-align:-2px;
+  margin-right:7px;
+  animation:btoBtnSpin .75s linear infinite;
+}
+
+.secondary .btn-spinner,
+button.secondary .btn-spinner{
+  border-color:rgba(0,0,0,.25);
+  border-top-color:#111;
+}
+
+@keyframes btoBtnSpin{
+  to{transform:rotate(360deg)}
+}
+
+.global-action-status{
+  position:fixed;
+  right:18px;
+  bottom:18px;
+  z-index:9999;
+  max-width:min(420px,calc(100vw - 36px));
+  padding:11px 14px;
+  border-radius:10px;
+  background:#222;
+  color:#fff;
+  font-size:13px;
+  font-weight:700;
+  box-shadow:0 12px 30px rgba(0,0,0,.18);
+  opacity:0;
+  transform:translateY(10px);
+  pointer-events:none;
+  transition:opacity .18s ease,transform .18s ease;
+}
+
+.global-action-status.show{
+  opacity:1;
+  transform:translateY(0);
+}
+
+.global-action-status.ok{background:#166534}
+.global-action-status.err{background:#b42318}
+
+
+/* Officials group/position dropdown consistency */
+#oGroup,
+#oPosition{
+  width:100%;
+}
+
 </style>
 </head>
 <body>
@@ -355,6 +420,76 @@ button.is-saving{
 </div>
 
 <script>
+
+function ensureGlobalActionStatus(){
+  let el=document.getElementById('globalActionStatus');
+  if(!el){
+    el=document.createElement('div');
+    el.id='globalActionStatus';
+    el.className='global-action-status';
+    document.body.appendChild(el);
+  }
+  return el;
+}
+
+function showGlobalActionStatus(message,type=''){
+  const el=ensureGlobalActionStatus();
+  el.textContent=message||'';
+  el.className='global-action-status show'+(type?' '+type:'');
+  clearTimeout(showGlobalActionStatus._t);
+  showGlobalActionStatus._t=setTimeout(()=>{
+    el.classList.remove('show');
+  },2600);
+}
+
+function setBusyButton(btn,busy,label){
+  if(!btn) return;
+
+  if(busy){
+    if(!btn.dataset.originalHtml) btn.dataset.originalHtml=btn.innerHTML;
+    btn.disabled=true;
+    btn.classList.add('is-busy');
+    btn.innerHTML=`<span class="btn-spinner"></span>${label||'Saving...'}`;
+  }else{
+    btn.disabled=false;
+    btn.classList.remove('is-busy');
+    if(btn.dataset.originalHtml){
+      btn.innerHTML=btn.dataset.originalHtml;
+      delete btn.dataset.originalHtml;
+    }
+  }
+}
+
+async function withButtonSpinner(btnOrEvent,label,fn,successMessage){
+  const btn = btnOrEvent instanceof HTMLElement
+    ? btnOrEvent
+    : (btnOrEvent?.currentTarget || null);
+
+  if(btn?.classList?.contains('is-busy')) return;
+
+  setBusyButton(btn,true,label||'Saving...');
+
+  try{
+    const result=await fn();
+
+    if(result && result.success===false){
+      throw new Error(result.message || 'Action failed.');
+    }
+
+    if(successMessage){
+      showGlobalActionStatus(successMessage,'ok');
+    }
+
+    return result;
+  }catch(err){
+    showGlobalActionStatus(err?.message || 'Action failed.','err');
+    throw err;
+  }finally{
+    setBusyButton(btn,false);
+  }
+}
+
+
 /* ============================================================
    CONFIGURATION
    Paste the deployed Apps Script Web App /exec URL below.
@@ -519,7 +654,7 @@ function renderApp(){
 
   if(['SUPER_ADMIN','ADMIN'].includes(me.role)){
     items.push(['Users','users']);
-    items.push(['Homepage Media','siteMedia']);
+    items.push(['Site Media','siteMedia']);
   }
 
   const committees=window.BTO_COMMITTEES_CACHE||[];
@@ -675,7 +810,7 @@ async function contentForm(){
       </select>
       <label>Description</label><textarea id="cDesc"></textarea>
       <label>Featured Photo</label><input id="cPhoto" type="file" accept="image/*">
-      <button onclick="saveContent()">Save & Publish</button>
+      <button onclick="saveContent(this)">Save & Publish</button>
     </div>`;
 }
 
@@ -710,17 +845,84 @@ function officialsForm(){
       <h2>Add / Update Official</h2>
       <label>Official ID (leave blank for new)</label><input id="oId">
       <label>Full Name</label><input id="oName">
-      <label>Position</label><input id="oPosition">
+      <label>Position</label>
+      <select id="oPosition">
+        <option value="">Select position</option>
+      </select>
       <label>Group</label>
-      <select id="oGroup"><option>BARANGAY</option><option>SK</option><option>TANOD</option><option>STAFF</option></select>
+      <select id="oGroup" onchange="updateOfficialPositionOptions()"><option>BARANGAY</option><option>SK</option><option>TANOD</option><option>STAFF</option></select>
       <label>Contact Number (optional)</label><input id="oContact">
       <label>Status</label><select id="oStatus"><option>ACTIVE</option><option>INACTIVE</option></select>
       <label>Photo</label><input id="oPhoto" type="file" accept="image/*">
-      <button onclick="saveOfficial()">Save Official</button>
+      <button onclick="saveOfficial(this)">Save Official</button>
     </div>`;
+
+  setTimeout(()=>updateOfficialPositionOptions(),0);
 }
 
-async function saveOfficial(){
+
+const BTO_OFFICIAL_POSITION_OPTIONS = {
+  BARANGAY: [
+    'Punong Barangay',
+    'Sangguniang Barangay Member',
+    'Barangay Secretary',
+    'Barangay Treasurer'
+  ],
+  SK: [
+    'SK Chairperson',
+    'Sangguniang Kabataan Member'
+  ],
+  TANOD: [
+    'Chief Tanod',
+    'Barangay Tanod Member'
+  ]
+};
+
+function normalizedOfficialGroup(group){
+  const g=String(group||'').trim().toUpperCase();
+
+  if(g==='SANGGUNIANG KABATAAN' || g==='SK') return 'SK';
+  if(g==='BARANGAY TANOD' || g==='TANOD') return 'TANOD';
+  return 'BARANGAY';
+}
+
+function updateOfficialPositionOptions(selectedValue){
+  const groupEl=document.getElementById('oGroup');
+  const posEl=document.getElementById('oPosition');
+  if(!groupEl || !posEl) return;
+
+  const group=normalizedOfficialGroup(groupEl.value);
+  const options=BTO_OFFICIAL_POSITION_OPTIONS[group] || [];
+
+  const current=String(
+    selectedValue !== undefined ? selectedValue : posEl.value
+  ).trim();
+
+  posEl.innerHTML=
+    '<option value="">Select position</option>'+
+    options.map(position=>
+      `<option value="${esc(position)}">${esc(position)}</option>`
+    ).join('');
+
+  if(current){
+    const exact=options.find(x=>x.toUpperCase()===current.toUpperCase());
+    if(exact){
+      posEl.value=exact;
+    }else{
+      // Preserve an existing legacy position without losing data.
+      const legacy=document.createElement('option');
+      legacy.value=current;
+      legacy.textContent=current;
+      legacy.dataset.legacy='1';
+      posEl.appendChild(legacy);
+      posEl.value=current;
+    }
+  }
+}
+
+async function saveOfficial(btn){
+  setBusyButton(btn,true,'Saving official...');
+  try{
   let photoUrl='';
   const file=document.getElementById('oPhoto').files[0];
 
@@ -742,6 +944,14 @@ async function saveOfficial(){
   });
 
   alert(r.success?'Saved: '+r.officialId:r.message);
+
+  showGlobalActionStatus('Official saved successfully.','ok');
+  }catch(err){
+    showGlobalActionStatus(err?.message || 'Action failed.','err');
+    throw err;
+  }finally{
+    setBusyButton(btn,false);
+  }
 }
 
 async function assignmentForm(){
@@ -785,11 +995,13 @@ function renderAssignmentBundle(bundle){
       <label>Status</label>
       <select id="aStatus"><option>ACTIVE</option><option>INACTIVE</option></select>
 
-      <button onclick="saveAssignment()">Save Assignment</button>
+      <button onclick="saveAssignment(this)">Save Assignment</button>
     </div>`;
 }
 
-async function saveAssignment(){
+async function saveAssignment(btn){
+  setBusyButton(btn,true,'Saving assignment...');
+  try{
   const r=await api('saveCommitteeAssignment',{
     officialId:document.getElementById('aOfficial').value,
     committeeId:document.getElementById('aCommittee').value,
@@ -798,6 +1010,14 @@ async function saveAssignment(){
   });
   if(r.success) cacheRemove('assignmentBundle');
   alert(r.success?'Saved: '+r.assignmentId:r.message);
+
+  showGlobalActionStatus('Assignment saved successfully.','ok');
+  }catch(err){
+    showGlobalActionStatus(err?.message || 'Action failed.','err');
+    throw err;
+  }finally{
+    setBusyButton(btn,false);
+  }
 }
 
 async function usersForm(){
@@ -881,7 +1101,7 @@ function renderUsersBundle(bundle){
       </div>
 
       <div class="row">
-        <button onclick="saveUser()">Save User</button>
+        <button onclick="saveUser(this)">Save User</button>
         <button class="secondary" onclick="clearUserForm()">Clear</button>
       </div>
     </div>
@@ -953,7 +1173,9 @@ function editUser(u){
   window.scrollTo({top:document.getElementById('moduleArea').offsetTop,behavior:'smooth'});
 }
 
-async function saveUser(){
+async function saveUser(btn){
+  setBusyButton(btn,true,'Saving user...');
+  try{
   const role=document.getElementById('uRole').value;
   const access=selectedAccess();
 
@@ -982,6 +1204,14 @@ async function saveUser(){
   cacheRemove('usersBundle');
   alert('User saved successfully.');
   usersForm();
+
+  showGlobalActionStatus('User saved successfully.','ok');
+  }catch(err){
+    showGlobalActionStatus(err?.message || 'Action failed.','err');
+    throw err;
+  }finally{
+    setBusyButton(btn,false);
+  }
 }
 
 
@@ -1341,7 +1571,7 @@ function openCommitteeQuickActivity(){
     <div id="qaGalleryPreview" class="gallery-upload-preview"></div>
 
     <div class="row">
-      <button id="qaSaveBtn" onclick="saveCommitteeQuickActivity()">Save & Publish</button>
+      <button id="qaSaveBtn" onclick="saveCommitteeQuickActivity(this)">Save & Publish</button>
       <span id="qaSaveStatus" class="save-status"></span>
       <button class="secondary" onclick="setCommitteeSection('ACTIVITY')">Cancel</button>
     </div>`;
@@ -1360,7 +1590,7 @@ function openCommitteeQuickActivity(){
   }
 }
 
-async function saveCommitteeQuickActivity(){
+async function saveCommitteeQuickActivity(btn){
   if(quickActivitySaveInProgress) return;
 
   const btn=document.getElementById('qaSaveBtn');
@@ -1528,38 +1758,74 @@ function backToModules(){
 
 async function siteMediaForm(){
   document.getElementById('moduleArea').innerHTML=
-    '<div class="bto-loading"><span class="bto-spinner"></span><span>Loading homepage media...</span></div>';
+    '<div class="bto-loading"><span class="bto-spinner"></span><span>Loading site media...</span></div>';
 
   const r=await api('getSiteMedia');
   if(!r.success){showModuleError(r.message);return}
 
-  const item=(r.data||[]).find(x=>x.mediaKey==='OFFICIALS_GROUP_PHOTO') || {
+  const items=r.data||[];
+
+  const officials=items.find(x=>x.mediaKey==='OFFICIALS_GROUP_PHOTO') || {
     mediaKey:'OFFICIALS_GROUP_PHOTO',
     label:'Barangay Officials Group Photo',
     url:'',
     status:'ACTIVE'
   };
 
-  document.getElementById('moduleArea').innerHTML=`
-    <div class="card">
-      <h2>Homepage Media</h2>
-      <p class="help">Update the Barangay Officials group photo shown on the public homepage.</p>
+  const orgChart=items.find(x=>x.mediaKey==='ORG_CHART_PHOTO') || {
+    mediaKey:'ORG_CHART_PHOTO',
+    label:'Barangay Organizational Chart',
+    url:'',
+    status:'ACTIVE'
+  };
 
-      <div id="siteMediaPreview" style="margin:12px 0">
+  const mediaCard=(item,inputId,buttonId,statusId,title,help)=>`
+    <div class="card" style="margin-bottom:16px">
+      <h3>${esc(title)}</h3>
+      <p class="help">${esc(help)}</p>
+
+      <div style="margin:12px 0">
         ${item.url
-          ? `<img src="${esc(normalizePortalImageUrl(item.url))}" alt="Barangay Officials"
-              style="width:100%;max-width:560px;aspect-ratio:16/9;object-fit:cover;border-radius:12px;border:1px solid #e5e7eb">`
-          : '<div class="live-empty">No officials group photo uploaded yet.</div>'}
+          ? `<img src="${esc(normalizePortalImageUrl(item.url))}"
+              alt="${esc(title)}"
+              style="width:100%;max-width:720px;max-height:520px;object-fit:contain;border-radius:12px;border:1px solid #e5e7eb;background:#fff">`
+          : '<div class="live-empty">No photo uploaded yet.</div>'}
       </div>
 
-      <label>Barangay Officials Group Photo</label>
-      <input id="siteMediaFile" type="file" accept="image/*">
+      <input id="${inputId}" type="file" accept="image/*">
 
-      <div class="row">
-        <button id="siteMediaSaveBtn" onclick="saveSiteMediaPhoto()">Upload & Save</button>
-        <span id="siteMediaSaveStatus" class="save-status"></span>
+      <div class="row" style="margin-top:10px">
+        <button id="${buttonId}" onclick="saveSiteMediaPhoto(this,'${item.mediaKey}','${inputId}','${buttonId}','${statusId}','${esc(title)}')">
+          Upload & Save
+        </button>
+        <span id="${statusId}" class="save-status"></span>
       </div>
     </div>`;
+
+  document.getElementById('moduleArea').innerHTML=`
+    <div class="card">
+      <h2>Site Media</h2>
+      <p class="help">Update public website photos without editing GitHub files.</p>
+    </div>
+
+    ${mediaCard(
+      officials,
+      'siteMediaOfficialsFile',
+      'siteMediaOfficialsBtn',
+      'siteMediaOfficialsStatus',
+      'Barangay Officials Group Photo',
+      'Shown on the public homepage.'
+    )}
+
+    ${mediaCard(
+      orgChart,
+      'siteMediaOrgChartFile',
+      'siteMediaOrgChartBtn',
+      'siteMediaOrgChartStatus',
+      'Barangay Organizational Chart',
+      'Upload the finalized organizational chart image shown under Governance.'
+    )}
+  `;
 }
 
 function normalizePortalImageUrl(url){
@@ -1578,31 +1844,36 @@ function normalizePortalImageUrl(url){
   return url;
 }
 
-async function saveSiteMediaPhoto(){
-  const file=document.getElementById('siteMediaFile').files[0];
-  const btn=document.getElementById('siteMediaSaveBtn');
-  const status=document.getElementById('siteMediaSaveStatus');
+async function saveSiteMediaPhoto(triggerBtn,mediaKey,inputId,buttonId,statusId,label){
+  const file=document.getElementById(inputId)?.files?.[0];
+  const btn=document.getElementById(buttonId);
+  const status=document.getElementById(statusId);
 
-  if(!file){alert('Please select a photo first.');return}
+  if(!file){
+    alert('Please select a photo first.');
+    return;
+  }
 
   btn.disabled=true;
   btn.innerHTML='<span class="save-mini-spinner"></span> Uploading...';
+  status.className='save-status';
   status.textContent='Uploading photo...';
 
   try{
     const base64=await fileToBase64(file);
+
     const up=await api('uploadBase64',{
       fileName:file.name,
-      mimeType:file.type,
+      mimeType:file.type||'image/jpeg',
       base64
     });
     if(!up.success) throw new Error(up.message);
 
-    status.textContent='Saving homepage photo...';
+    status.textContent='Saving...';
 
     const r=await api('saveSiteMedia',{
-      mediaKey:'OFFICIALS_GROUP_PHOTO',
-      label:'Barangay Officials Group Photo',
+      mediaKey,
+      label,
       url:up.url,
       status:'ACTIVE'
     });
@@ -1610,7 +1881,7 @@ async function saveSiteMediaPhoto(){
 
     status.className='save-status ok';
     status.textContent='Saved successfully.';
-    setTimeout(siteMediaForm,600);
+    setTimeout(siteMediaForm,650);
 
   }catch(err){
     status.className='save-status err';
@@ -1642,6 +1913,39 @@ function esc(v){
 }
 
 restore();
+
+document.addEventListener('click',event=>{
+  const btn=event.target.closest('button');
+  if(!btn || btn.disabled) return;
+
+  const onclick=btn.getAttribute('onclick')||'';
+  const text=(btn.textContent||'').trim().toLowerCase();
+
+  const isAction =
+    /save|upload|publish|update|delete|reject|approve/i.test(onclick) ||
+    /^(save|upload|publish|update|delete|approve|reject)\b/i.test(text);
+
+  if(!isAction) return;
+
+  // Functions with their own spinner will immediately replace this state.
+  if(!btn.classList.contains('is-busy')){
+    setBusyButton(
+      btn,
+      true,
+      text.includes('upload') ? 'Uploading...' :
+      text.includes('publish') ? 'Publishing...' :
+      text.includes('delete') ? 'Deleting...' :
+      'Saving...'
+    );
+
+    // Safety release in case a legacy handler returns synchronously or fails before cleanup.
+    clearTimeout(btn._btoSafety);
+    btn._btoSafety=setTimeout(()=>{
+      if(btn.classList.contains('is-busy')) setBusyButton(btn,false);
+    },30000);
+  }
+},true);
+
 </script>
 </body>
 </html>
