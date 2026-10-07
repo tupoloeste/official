@@ -1613,6 +1613,69 @@ main > .view.active{
 
 
 .view{display:none}.view.active{display:block}
+
+.official-live-card.placeholder{
+  border-style:dashed;
+  background:#fcfcfc;
+}
+.official-live-card.placeholder .official-live-avatar{
+  background:#f3f4f6;
+  color:#8a8f98;
+}
+
+
+/* ===== Uniform Back Buttons ===== */
+.back-btn,
+button.back-btn,
+a.back-btn,
+.page-head .back-btn,
+.page-hero .back-btn,
+.page-head-row .back-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  min-height:42px;
+  padding:10px 16px !important;
+  border:0 !important;
+  border-radius:10px !important;
+  background:#2f2f2f !important;
+  color:#ffffff !important;
+  font-size:13px !important;
+  font-weight:800 !important;
+  line-height:1.1;
+  text-decoration:none !important;
+  box-shadow:none !important;
+  opacity:1 !important;
+  cursor:pointer;
+  transition:transform .15s ease, background .15s ease;
+}
+
+.back-btn:hover,
+button.back-btn:hover,
+a.back-btn:hover{
+  background:#111111 !important;
+  color:#ffffff !important;
+  transform:translateY(-1px);
+}
+
+.back-btn:focus,
+button.back-btn:focus,
+a.back-btn:focus{
+  outline:2px solid rgba(248,50,75,.28);
+  outline-offset:2px;
+}
+
+@media(max-width:600px){
+  .back-btn,
+  button.back-btn,
+  a.back-btn{
+    min-height:40px;
+    padding:9px 13px !important;
+    font-size:12px !important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -3509,7 +3572,7 @@ function renderOrgPerson(o,isPrimary=false){
   const name=o['Full Name']||o.fullName||'';
   const position=o['Position']||o.position||'';
   const photo=publicOfficialPhotoUrl(o);
-  const initial=(name.trim().charAt(0)||'B').toUpperCase();
+  const initial=(name==='Coming Soon' ? position.trim().charAt(0) : name.trim().charAt(0) || 'B').toUpperCase();
 
   return `<div class="org-person ${isPrimary?'primary':''}">
     ${photo
@@ -3553,7 +3616,9 @@ const BTO_FALLBACK_BARANGAY = [
   {name:'JONEL G. ROSANO', position:'Sangguniang Barangay Member'},
   {name:'CUSTODIO T. MARCON JR.', position:'Sangguniang Barangay Member'},
   {name:'JOLYN P. LAGUTANG', position:'Sangguniang Barangay Member'},
-  {name:'IAN PAUL B. MOSCARDON', position:'Sangguniang Barangay Member'}
+  {name:'IAN PAUL B. MOSCARDON', position:'Sangguniang Barangay Member'},
+  {name:'', position:'Barangay Secretary', placeholder:true},
+  {name:'', position:'Barangay Treasurer', placeholder:true}
 ];
 
 function officialGroup(o){
@@ -3570,7 +3635,11 @@ function isBarangayOfficial(o){
   return g==='BARANGAY' ||
     p.includes('PUNONG BARANGAY') ||
     p.includes('KAGAWAD') ||
-    p.includes('SANGGUNIANG BARANGAY');
+    p.includes('SANGGUNIANG BARANGAY') ||
+    p.includes('BARANGAY SECRETARY') ||
+    p.includes('SECRETARY') ||
+    p.includes('BARANGAY TREASURER') ||
+    p.includes('TREASURER');
 }
 
 function isSKOfficial(o){
@@ -3622,7 +3691,7 @@ function renderOfficialCard(o,primary=false){
       }</div>`
     : '';
 
-  return `<div class="official-live-card ${primary?'primary':''}">
+  return `<div class="official-live-card ${primary?'primary':''} ${o._placeholder?'placeholder':''}">
     ${photo
       ? `<img class="official-live-photo"
           src="${publicEsc(photo)}"
@@ -3692,12 +3761,34 @@ function mergeLiveWithFallback(liveRows,fallbackRows){
   const live=deDuplicateOfficials(liveRows);
   const liveMap=new Map(live.map(o=>[normalizedOfficialName(o),o]));
 
-  return fallbackRows.map(f=>{
-    const key=String(f.name||'').trim().toUpperCase().replace(/\s+/g,' ');
-    const found=liveMap.get(key);
+  const usedLive=new Set();
+
+  const result=fallbackRows.map(f=>{
+    const fallbackName=String(f.name||'').trim();
+    const key=fallbackName.toUpperCase().replace(/\s+/g,' ');
+
+    let found=null;
+
+    // Named master-list entries match by name.
+    if(key){
+      found=liveMap.get(key) || null;
+    }
+
+    // Secretary/Treasurer placeholders match by position.
+    if(!found && f.placeholder){
+      const wanted=String(f.position||'').toUpperCase();
+      found=live.find(o=>{
+        if(usedLive.has(o)) return false;
+        const p=String(o['Position']||o.position||'').toUpperCase();
+        if(wanted.includes('SECRETARY')) return p.includes('SECRETARY');
+        if(wanted.includes('TREASURER')) return p.includes('TREASURER');
+        return false;
+      }) || null;
+    }
 
     if(found){
-      // Keep the official master-list position label if live record only says "KAGAWAD".
+      usedLive.add(found);
+
       const livePos=String(found['Position']||found.position||'').trim();
       const resolvedPos=(livePos && livePos.toUpperCase()!=='KAGAWAD')
         ? livePos
@@ -3705,18 +3796,21 @@ function mergeLiveWithFallback(liveRows,fallbackRows){
 
       return {
         ...found,
-        'Full Name':found['Full Name']||f.name,
+        'Full Name':found['Full Name']||fallbackName,
         'Position':resolvedPos
       };
     }
 
     return {
-      'Full Name':f.name,
+      'Full Name':fallbackName || 'Coming Soon',
       'Position':f.position,
       'Photo URL':'',
-      committees:[]
+      committees:[],
+      _placeholder:!!f.placeholder
     };
   });
+
+  return result;
 }
 
 function renderOfficialsPersonnel(data){
