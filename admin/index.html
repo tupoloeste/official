@@ -136,6 +136,40 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbwM6bagjlHKao-NCB3d_nDw
 let token = localStorage.getItem('btoToken') || '';
 let me = null;
 
+
+const BTO_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
+function cacheSet(key,value){
+  try{
+    localStorage.setItem('bto_cache_'+key,JSON.stringify({
+      savedAt:Date.now(),
+      value:value
+    }));
+  }catch(e){}
+}
+
+function cacheGet(key,maxAge=BTO_CACHE_TTL){
+  try{
+    const raw=localStorage.getItem('bto_cache_'+key);
+    if(!raw) return null;
+    const obj=JSON.parse(raw);
+    if(!obj || !obj.savedAt) return null;
+    if(Date.now()-obj.savedAt > maxAge) return null;
+    return obj.value;
+  }catch(e){
+    return null;
+  }
+}
+
+function cacheRemove(key){
+  try{localStorage.removeItem('bto_cache_'+key)}catch(e){}
+}
+
+function setStatus(text){
+  const el=document.getElementById('statusbar');
+  if(el) el.textContent=text;
+}
+
 function apiConfigured(){
   return /^https:\/\/script\.google\.com\/macros\/s\/.+\/exec/.test(API_URL);
 }
@@ -192,12 +226,26 @@ async function login(){
   token=r.token;
   me=r.user;
   localStorage.setItem('btoToken',token);
+  cacheSet('me',me);
+
+  // Render immediately after successful login.
   renderApp();
+  setStatus('Connected to Barangay backend');
+
+  // Load committees in the background instead of blocking the login screen.
+  api('getCommittees').then(c=>{
+    if(c && c.success){
+      window.BTO_COMMITTEES_CACHE=c.data||[];
+      cacheSet('committees',window.BTO_COMMITTEES_CACHE);
+      renderApp();
+    }
+  });
 }
 
 async function logout(){
   await api('logout');
   localStorage.removeItem('btoToken');
+  cacheRemove('me');
   token=''; me=null;
   document.getElementById('app').classList.add('hidden');
   document.getElementById('loginCard').classList.remove('hidden');
@@ -260,14 +308,35 @@ async function restore(){
   }
   if(!token) return;
 
+  const cachedMe=cacheGet('me');
+  const cachedCommittees=cacheGet('committees');
+
+  if(cachedCommittees) window.BTO_COMMITTEES_CACHE=cachedCommittees;
+
+  // Instant UI from last successful session.
+  if(cachedMe){
+    me=cachedMe;
+    renderApp();
+    setStatus('Opening cached data… refreshing in background');
+  }
+
+  // Verify session and refresh without blocking the screen.
   const r=await api('bootstrap');
+
   if(r.success){
     me=r.user;
-    window.BTO_COMMITTEES_CACHE=r.committees||[];
+    window.BTO_COMMITTEES_CACHE=r.committees||window.BTO_COMMITTEES_CACHE||[];
+    cacheSet('me',me);
+    cacheSet('committees',window.BTO_COMMITTEES_CACHE);
     renderApp();
+    setStatus('Connected to Barangay backend');
   }else{
     localStorage.removeItem('btoToken');
+    cacheRemove('me');
     token='';
+    me=null;
+    document.getElementById('app').classList.add('hidden');
+    document.getElementById('loginCard').classList.remove('hidden');
   }
 }
 
@@ -423,10 +492,23 @@ async function saveOfficial(){
 }
 
 async function assignmentForm(){
+  const cached=cacheGet('assignmentBundle',2*60*1000);
+  if(cached){
+    renderAssignmentBundle(cached);
+  }
+
   const bundle=await api('getAssignmentBundle');
 
-  if(!bundle.success){showModuleError(bundle.message);return}
+  if(!bundle.success){
+    if(!cached) showModuleError(bundle.message);
+    return;
+  }
 
+  cacheSet('assignmentBundle',bundle);
+  renderAssignmentBundle(bundle);
+}
+
+function renderAssignmentBundle(bundle){
   const officials=bundle.officials||[];
   const committees=bundle.committees||[];
 
@@ -461,16 +543,31 @@ async function saveAssignment(){
     role:document.getElementById('aRole').value,
     status:document.getElementById('aStatus').value
   });
+  if(r.success) cacheRemove('assignmentBundle');
   alert(r.success?'Saved: '+r.assignmentId:r.message);
 }
 
 async function usersForm(){
   document.getElementById('moduleArea').innerHTML='<div class="card">Loading users...</div>';
 
+  let bundleCached=cacheGet('usersBundle',2*60*1000);
+  if(bundleCached){
+    renderUsersBundle(bundleCached);
+  }
+
   const bundle=await api('getUsersBundle');
 
-  if(!bundle.success){showModuleError(bundle.message);return}
+  if(!bundle.success){
+    if(!bundleCached) showModuleError(bundle.message);
+    return;
+  }
 
+  cacheSet('usersBundle',bundle);
+  renderUsersBundle(bundle);
+  return;
+}
+
+function renderUsersBundle(bundle){
   const committees=bundle.committees||[];
   const users=bundle.users||[];
 
@@ -629,6 +726,7 @@ async function saveUser(){
   const r=await api('saveUser',payload);
   if(!r.success){alert(r.message);return}
 
+  cacheRemove('usersBundle');
   alert('User saved successfully.');
   usersForm();
 }
@@ -652,14 +750,28 @@ let currentCommitteeSection='STATISTIC';
 
 async function openCommittee(committeeId){
   currentCommitteeId=committeeId;
-  document.getElementById('moduleArea').innerHTML='<div class="card">Loading committee profile...</div>';
+
+  const cached=cacheGet('committee_'+committeeId,5*60*1000);
+  if(cached){
+    currentCommitteeData=cached;
+    currentCommitteeSection='STATISTIC';
+    renderCommitteeWorkspace();
+    setStatus('Showing cached committee data… refreshing');
+  }else{
+    document.getElementById('moduleArea').innerHTML='<div class="card">Loading committee profile...</div>';
+  }
 
   const r=await api('getCommitteeWorkspace',{committeeId});
-  if(!r.success){showModuleError(r.message);return}
+  if(!r.success){
+    if(!cached) showModuleError(r.message);
+    return;
+  }
 
   currentCommitteeData=r;
+  cacheSet('committee_'+committeeId,r);
   currentCommitteeSection='STATISTIC';
   renderCommitteeWorkspace();
+  setStatus('Connected to Barangay backend');
 }
 
 function renderCommitteeWorkspace(){
@@ -889,6 +1001,7 @@ async function refreshCommittee(){
   const r=await api('getCommitteeWorkspace',{committeeId:currentCommitteeId});
   if(!r.success){showModuleError(r.message);return}
   currentCommitteeData=r;
+  cacheSet('committee_'+currentCommitteeId,r);
   renderCommitteeWorkspace();
 }
 
