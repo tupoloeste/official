@@ -1668,8 +1668,33 @@ function renderPublicContentList(id,rows){
 }
 
 
+
+function normalizePublicImageUrl(url){
+  url=String(url||'').trim();
+  if(!url) return '';
+
+  // Google Drive direct/view/uc links -> thumbnail endpoint
+  if(url.includes('drive.google.com')){
+    let id='';
+
+    let m=url.match(/[?&]id=([^&]+)/);
+    if(m) id=m[1];
+
+    if(!id){
+      m=url.match(/\/d\/([^/]+)/);
+      if(m) id=m[1];
+    }
+
+    if(id){
+      return `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w1600`;
+    }
+  }
+
+  return url;
+}
+
 function contentPhotoUrl(row){
-  return String(row['Featured Photo URL'] || '').trim();
+  return normalizePublicImageUrl(row['Featured Photo URL'] || '');
 }
 
 function photoHtml(row,placeholder='📣'){
@@ -1680,6 +1705,7 @@ function photoHtml(row,placeholder='📣'){
   return `<div class="live-photo-wrap">
     <img class="live-photo" src="${publicEsc(url)}" alt="${publicEsc(row.Title||'Barangay update')}"
       loading="lazy"
+      referrerpolicy="no-referrer"
       onerror="this.parentElement.innerHTML='<div class=&quot;live-photo-placeholder&quot;>📷</div>'">
   </div>`;
 }
