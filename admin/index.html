@@ -412,8 +412,8 @@ button.secondary .btn-spinner{
     <input id="username" autocomplete="username">
     <label>Password</label>
     <input id="password" type="password" autocomplete="current-password"
-           onkeydown="if(event.key==='Enter') login()">
-    <button id="loginBtn" id="loginBtn" onclick="login(this)">Sign In</button>
+           onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('loginBtn').click()}">
+    <button id="loginBtn" onclick="login(this)">Sign In</button>
     <div id="loginMsg"></div>
   </div>
 
@@ -609,47 +609,44 @@ async function api(action,data={}){
   }
 }
 
-async function login(btn){
-  if(btn?.classList?.contains('is-busy')) return;
-  setBusyButton(btn,true,'Signing in...');
-  try{
-  const btn=document.getElementById('loginBtn');
+async function login(triggerBtn){
+  const btn=triggerBtn || document.getElementById('loginBtn');
   const msg=document.getElementById('loginMsg');
-  btn.disabled=true; btn.textContent='Signing in...'; msg.innerHTML='';
 
-  const r=await api('login',{
-    username:document.getElementById('username').value.trim(),
-    password:document.getElementById('password').value
-  });
+  if(btn?.classList?.contains('is-busy')) return;
 
-  btn.disabled=false; btn.textContent='Sign In';
+  setBusyButton(btn,true,'Signing in...');
+  if(msg) msg.innerHTML='';
 
-  if(!r.success){
-    msg.innerHTML='<div class="msg err">'+esc(r.message)+'</div>';
-    return;
-  }
+  try{
+    const r=await api('login',{
+      username:document.getElementById('username').value.trim(),
+      password:document.getElementById('password').value
+    });
 
-  token=r.token;
-  me=r.user;
-  localStorage.setItem('btoToken',token);
-  cacheSet('me',me);
-
-  // Render immediately after successful login.
-  renderApp();
-  setStatus('Connected to Barangay backend');
-
-  // Load committees in the background instead of blocking the login screen.
-  api('getCommittees').then(c=>{
-    if(c && c.success){
-      window.BTO_COMMITTEES_CACHE=c.data||[];
-      cacheSet('committees',window.BTO_COMMITTEES_CACHE);
-      renderApp();
+    if(!r.success){
+      if(msg) msg.innerHTML='<div class="msg err">'+esc(r.message)+'</div>';
+      return;
     }
-  });
+
+    token=r.token;
+    me=r.user;
+    localStorage.setItem('btoToken',token);
+    cacheSet('me',me);
+
+    renderApp();
+
+    api('getCommittees').then(c=>{
+      if(c && c.success){
+        window.BTO_COMMITTEES_CACHE=c.data||[];
+        cacheSet('committees',window.BTO_COMMITTEES_CACHE);
+        renderApp();
+      }
+    }).catch(()=>{});
 
   }catch(err){
+    if(msg) msg.innerHTML='<div class="msg err">'+esc(err?.message || 'Login failed.')+'</div>';
     showGlobalActionStatus(err?.message || 'Login failed.','err');
-    throw err;
   }finally{
     setBusyButton(btn,false);
   }
@@ -757,8 +754,7 @@ async function restore(){
     cacheSet('me',me);
     cacheSet('committees',window.BTO_COMMITTEES_CACHE);
     renderApp();
-    setStatus('Connected to Barangay backend');
-  }else{
+    }else{
     localStorage.removeItem('btoToken');
     cacheRemove('me');
     token='';
@@ -1307,7 +1303,6 @@ async function openCommittee(committeeId){
   cacheSet('committee_'+committeeId,r);
   currentCommitteeSection='STATISTIC';
   renderCommitteeWorkspace();
-  setStatus('Connected to Barangay backend');
 }
 
 function renderCommitteeWorkspace(){
@@ -1641,10 +1636,10 @@ function openCommitteeQuickActivity(){
   }
 }
 
-async function saveCommitteeQuickActivity(btn){
+async function saveCommitteeQuickActivity(triggerBtn){
   if(quickActivitySaveInProgress) return;
 
-  const btn=document.getElementById('qaSaveBtn');
+  const btn=triggerBtn || document.getElementById('qaSaveBtn');
   const status=document.getElementById('qaSaveStatus');
   quickActivitySaveInProgress=true;
 
@@ -1705,7 +1700,7 @@ async function saveCommitteeQuickActivity(btn){
       committeeId:currentCommitteeId,
       description:document.getElementById('qaDesc').value.trim(),
       featuredPhotoUrl,
-      galleryUrls:galleryUrls.join('\n'),
+      galleryUrls:galleryUrls.join('\\n'),
       status:'PUBLISHED'
     });
 
@@ -1716,6 +1711,7 @@ async function saveCommitteeQuickActivity(btn){
       status.textContent='Published successfully.';
     }
 
+    showGlobalActionStatus('Published successfully.','ok');
     await new Promise(resolve=>setTimeout(resolve,650));
     await refreshCommittee();
     currentCommitteeSection='ACTIVITY';
@@ -1726,14 +1722,13 @@ async function saveCommitteeQuickActivity(btn){
       status.className='save-status err';
       status.textContent=err.message || 'Publish failed.';
     }
-    alert(err.message || 'Publish failed.');
+    showGlobalActionStatus(err.message || 'Publish failed.','err');
   }finally{
     quickActivitySaveInProgress=false;
-    const currentBtn=document.getElementById('qaSaveBtn');
-    if(currentBtn){
-      currentBtn.disabled=false;
-      currentBtn.classList.remove('is-saving');
-      currentBtn.textContent='Save & Publish';
+    if(btn){
+      btn.disabled=false;
+      btn.classList.remove('is-saving');
+      btn.textContent='Save & Publish';
     }
   }
 }
