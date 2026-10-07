@@ -199,12 +199,26 @@ button:active{
   box-shadow:0 6px 18px rgba(0,0,0,.12);
 }
 
-.brand-logo{
-  animation:btoScaleIn .35s ease both;
-  transition:transform .22s ease;
+
+@keyframes btoLogoFloat{
+  0%{transform:translateY(0) rotate(0deg) scale(1)}
+  25%{transform:translateY(-2px) rotate(-1deg) scale(1.015)}
+  50%{transform:translateY(-4px) rotate(0deg) scale(1.025)}
+  75%{transform:translateY(-2px) rotate(1deg) scale(1.015)}
+  100%{transform:translateY(0) rotate(0deg) scale(1)}
 }
+
+.brand-logo{
+  animation:
+    btoScaleIn .35s ease both,
+    btoLogoFloat 4.8s ease-in-out .45s infinite;
+  transform-origin:center;
+  will-change:transform;
+}
+
 .brand-logo:hover{
-  transform:scale(1.04);
+  animation-play-state:paused;
+  transform:scale(1.06);
 }
 
 input,select,textarea{
