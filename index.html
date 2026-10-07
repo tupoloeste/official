@@ -992,7 +992,7 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
 }
 
 
-/* ===== Compact Incoming Announcements / Recent Activities cards ===== */
+/* ===== Compact Incoming Events / Recent Activities cards ===== */
 #all-upcoming-announcements .activity-live-card,
 #all-recent-activities .activity-live-card{
   max-width:860px;
@@ -1318,10 +1318,10 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
 
 <!-- ANNOUNCEMENTS -->
 <div class="view" id="view-announcements">
-  <div class="page-head"><div class="container page-head-row"><div><h1>Announcements & Activities</h1><p>Incoming announcements and recent barangay activities.</p></div><button class="back-btn" onclick="showView('updates')">← Back to Updates</button></div></div>
+  <div class="page-head"><div class="container page-head-row"><div><h1>Announcements & Activities</h1><p>Incoming barangay events and recent activities.</p></div><button class="back-btn" onclick="showView('updates')">← Back to Updates</button></div></div>
   <div class="page-content"><div class="container">
     <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('announcements','ann-upcoming',this)">Incoming Announcements</button>
+      <button class="tab-btn active" onclick="switchTab('announcements','ann-upcoming',this)">Incoming Events</button>
       <button class="tab-btn" onclick="switchTab('announcements','ann-recent',this)">Recent Activities</button>
     </div>
     <div class="tab-panel active" id="ann-upcoming">
@@ -2426,33 +2426,49 @@ function renderAllAnnouncements(data){
   const recentRoot=document.getElementById('all-recent-activities');
   if(!upcomingRoot && !recentRoot) return;
 
-  const now=new Date(); now.setHours(0,0,0,0);
+  const now=new Date();
+  now.setHours(0,0,0,0);
+
   const all=(data.content||[]).slice();
 
+  // UPCOMING:
+  // Any published record with an Event Date today or in the future.
+  // This includes ANNOUNCEMENT or ACTIVITY records.
   const upcoming=all.filter(x=>{
-    if(String(x.Type||'').toUpperCase()!=='ANNOUNCEMENT') return false;
-    if(!x['Event Date']) return true;
-    const d=new Date(x['Event Date']); d.setHours(0,0,0,0);
-    return d>=now;
-  }).sort((a,b)=>String(a['Event Date']||'9999').localeCompare(String(b['Event Date']||'9999')));
-
-  const recent=all.filter(x=>{
-    if(String(x.Type||'').toUpperCase()==='ACTIVITY') return true;
     if(!x['Event Date']) return false;
-    const d=new Date(x['Event Date']); d.setHours(0,0,0,0);
+    const d=new Date(x['Event Date']);
+    if(isNaN(d)) return false;
+    d.setHours(0,0,0,0);
+    return d>=now;
+  }).sort((a,b)=>
+    String(a['Event Date']||'9999').localeCompare(String(b['Event Date']||'9999'))
+  );
+
+  // RECENT:
+  // Once the Event Date is already past, the record automatically moves here.
+  // No manual transfer and no need to change Type.
+  const recent=all.filter(x=>{
+    if(!x['Event Date']) return String(x.Type||'').toUpperCase()==='ACTIVITY';
+    const d=new Date(x['Event Date']);
+    if(isNaN(d)) return false;
+    d.setHours(0,0,0,0);
     return d<now;
-  }).sort((a,b)=>String(b['Event Date']||b['Created At']||'').localeCompare(String(a['Event Date']||a['Created At']||'')));
+  }).sort((a,b)=>
+    String(b['Event Date']||b['Created At']||'').localeCompare(
+      String(a['Event Date']||a['Created At']||'')
+    )
+  );
 
   if(upcomingRoot){
     upcomingRoot.innerHTML=upcoming.length ? upcoming.map(x=>`
       <div class="activity-live-card">
-        ${photoHtml(x,'📣')}
+        ${photoHtml(x,'📅')}
         <div class="activity-live-meta">${contentMeta(x)}</div>
         <h3>${publicEsc(x.Title||'')}</h3>
         ${x.Description?`<p>${publicEsc(x.Description)}</p>`:''}
         ${committeeName(data,x['Committee ID'])?`<span class="tag">${publicEsc(committeeName(data,x['Committee ID']))}</span>`:''}
       </div>`).join('')
-      : '<div class="live-empty">No incoming announcements.</div>';
+      : '<div class="live-empty">No incoming events.</div>';
   }
 
   if(recentRoot){
