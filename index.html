@@ -778,6 +778,62 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
 .page-view{display:none}
 .page-view.active{display:block}
 
+
+/* ===== Compact public announcement/activity images ===== */
+.activity-live-card .live-photo-wrap{
+  max-width:720px;
+  margin:0 auto 12px;
+  background:#fff;
+  border:1px solid #ececec;
+  border-radius:12px;
+  overflow:hidden;
+}
+
+.activity-live-card .live-photo{
+  width:100%;
+  height:320px;
+  aspect-ratio:auto;
+  object-fit:contain;
+  object-position:center;
+  background:#fff;
+}
+
+.activity-live-card .live-photo-placeholder{
+  height:220px;
+  aspect-ratio:auto;
+}
+
+.live-item .live-photo-wrap{
+  max-width:680px;
+  margin:0 auto 10px;
+}
+
+.live-item .live-photo{
+  width:100%;
+  height:300px;
+  aspect-ratio:auto;
+  object-fit:contain;
+  object-position:center;
+  background:#fff;
+}
+
+.news-card .live-photo{
+  height:220px;
+  aspect-ratio:auto;
+  object-fit:cover;
+}
+
+@media(max-width:700px){
+  .activity-live-card .live-photo,
+  .live-item .live-photo{
+    height:220px;
+  }
+
+  .news-card .live-photo{
+    height:180px;
+  }
+}
+
 </style>
 </head>
 <body>
