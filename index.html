@@ -773,67 +773,6 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
   margin-bottom:-6px;
 }
 
-
-/* Dedicated pages stay hidden unless selected */
-.page-view{display:none}
-.page-view.active{display:block}
-
-
-/* ===== Compact public announcement/activity images ===== */
-.activity-live-card .live-photo-wrap{
-  max-width:720px;
-  margin:0 auto 12px;
-  background:#fff;
-  border:1px solid #ececec;
-  border-radius:12px;
-  overflow:hidden;
-}
-
-.activity-live-card .live-photo{
-  width:100%;
-  height:320px;
-  aspect-ratio:auto;
-  object-fit:contain;
-  object-position:center;
-  background:#fff;
-}
-
-.activity-live-card .live-photo-placeholder{
-  height:220px;
-  aspect-ratio:auto;
-}
-
-.live-item .live-photo-wrap{
-  max-width:680px;
-  margin:0 auto 10px;
-}
-
-.live-item .live-photo{
-  width:100%;
-  height:300px;
-  aspect-ratio:auto;
-  object-fit:contain;
-  object-position:center;
-  background:#fff;
-}
-
-.news-card .live-photo{
-  height:220px;
-  aspect-ratio:auto;
-  object-fit:cover;
-}
-
-@media(max-width:700px){
-  .activity-live-card .live-photo,
-  .live-item .live-photo{
-    height:220px;
-  }
-
-  .news-card .live-photo{
-    height:180px;
-  }
-}
-
 </style>
 </head>
 <body>
@@ -978,7 +917,26 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
 
   
 
-  
+  <section class="portal-home-section">
+    <div class="container">
+      <div class="portal-section-title">
+        <h2>Contact Information</h2>
+        <button onclick="showView('contact')">View Contact Page →</button>
+      </div>
+
+      <div class="home-contact">
+        <div class="left">
+          <h3>Barangay Tupol Oeste</h3>
+          <p>Municipality of Cabatuan, Province of Iloilo</p>
+        </div>
+        <div class="right">
+          <p><strong>Office Hours:</strong> Coming Soon</p>
+          <p><strong>Contact Number:</strong> Coming Soon</p>
+          <p><strong>Emergency Contacts:</strong> Coming Soon</p>
+        </div>
+      </div>
+    </div>
+  </section>
 </div>
 
 <!-- BARANGAY CATEGORY -->
@@ -1123,7 +1081,9 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
     </div>
     <div class="tab-panel active" id="off-brgy">
       <div class="flex-preview">
-        
+        <strong>Flexible Committee Assignment Preview</strong><br>
+        Committee names are linked to their committee profiles. If an assignment changes later, only the assignment data needs to be updated.
+      </div>
 
       <div class="person-grid">
         <div class="person">
