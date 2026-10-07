@@ -225,9 +225,10 @@ async function restore(){
   }
   if(!token) return;
 
-  const r=await api('getMe');
+  const r=await api('bootstrap');
   if(r.success){
     me=r.user;
+    window.BTO_COMMITTEES_CACHE=r.committees||[];
     renderApp();
   }else{
     localStorage.removeItem('btoToken');
@@ -290,8 +291,12 @@ async function saveLivestock(key){
 }
 
 async function contentForm(){
-  const committees=await api('getCommittees');
-  const list=committees.success ? committees.data : [];
+  let list=window.BTO_COMMITTEES_CACHE||[];
+  if(!list.length){
+    const committees=await api('getCommittees');
+    list=committees.success ? committees.data : [];
+    if(committees.success) window.BTO_COMMITTEES_CACHE=list;
+  }
 
   document.getElementById('moduleArea').innerHTML=`
     <div class="card">
@@ -381,13 +386,12 @@ async function saveOfficial(){
 }
 
 async function assignmentForm(){
-  const [officialsRes, committeesRes]=await Promise.all([
-    api('getOfficials'),
-    api('getCommittees')
-  ]);
+  const bundle=await api('getAssignmentBundle');
 
-  if(!officialsRes.success){showModuleError(officialsRes.message);return}
-  if(!committeesRes.success){showModuleError(committeesRes.message);return}
+  if(!bundle.success){showModuleError(bundle.message);return}
+
+  const officials=bundle.officials||[];
+  const committees=bundle.committees||[];
 
   document.getElementById('moduleArea').innerHTML=`
     <div class="card">
@@ -395,12 +399,12 @@ async function assignmentForm(){
 
       <label>Official</label>
       <select id="aOfficial">
-        ${officialsRes.data.map(o=>`<option value="${esc(o['Official ID'])}">${esc(o['Full Name'])}</option>`).join('')}
+        ${officials.map(o=>`<option value="${esc(o['Official ID'])}">${esc(o['Full Name'])}</option>`).join('')}
       </select>
 
       <label>Committee</label>
       <select id="aCommittee">
-        ${committeesRes.data.map(c=>`<option value="${esc(c.committeeId)}">${esc(c.committeeName)}</option>`).join('')}
+        ${committees.map(c=>`<option value="${esc(c.committeeId)}">${esc(c.committeeName)}</option>`).join('')}
       </select>
 
       <label>Role</label>
@@ -426,16 +430,12 @@ async function saveAssignment(){
 async function usersForm(){
   document.getElementById('moduleArea').innerHTML='<div class="card">Loading users...</div>';
 
-  const [committeesRes,usersRes]=await Promise.all([
-    api('getCommittees'),
-    api('listUsers')
-  ]);
+  const bundle=await api('getUsersBundle');
 
-  if(!committeesRes.success){showModuleError(committeesRes.message);return}
-  if(!usersRes.success){showModuleError(usersRes.message);return}
+  if(!bundle.success){showModuleError(bundle.message);return}
 
-  const committees=committeesRes.data||[];
-  const users=usersRes.data||[];
+  const committees=bundle.committees||[];
+  const users=bundle.users||[];
 
   const systemModules=[
     ['OFFICIALS','Officials Management'],
