@@ -357,6 +357,45 @@ button.secondary .btn-spinner{
   width:100%;
 }
 
+
+.committee-admin-list{
+  display:grid;
+  gap:10px;
+  margin-top:14px;
+}
+.committee-admin-item{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  padding:12px 14px;
+  background:#fff;
+}
+.committee-admin-item .meta{
+  min-width:0;
+}
+.committee-admin-item strong{
+  display:block;
+  font-size:14px;
+}
+.committee-admin-item span{
+  display:block;
+  font-size:12px;
+  color:#6b7280;
+  margin-top:3px;
+}
+
+
+.committee-admin-item button[onclick^="deleteCommitteeAdmin"]{
+  background:#b42318;
+  color:#fff;
+}
+.committee-admin-item button[onclick^="deleteCommitteeAdmin"]:hover{
+  background:#8f1d14;
+}
+
 </style>
 </head>
 <body>
@@ -374,7 +413,7 @@ button.secondary .btn-spinner{
     <label>Password</label>
     <input id="password" type="password" autocomplete="current-password"
            onkeydown="if(event.key==='Enter') login()">
-    <button id="loginBtn" onclick="login()">Sign In</button>
+    <button id="loginBtn" id="loginBtn" onclick="login(this)">Sign In</button>
     <div id="loginMsg"></div>
   </div>
 
@@ -570,7 +609,10 @@ async function api(action,data={}){
   }
 }
 
-async function login(){
+async function login(btn){
+  if(btn?.classList?.contains('is-busy')) return;
+  setBusyButton(btn,true,'Signing in...');
+  try{
   const btn=document.getElementById('loginBtn');
   const msg=document.getElementById('loginMsg');
   btn.disabled=true; btn.textContent='Signing in...'; msg.innerHTML='';
@@ -604,6 +646,13 @@ async function login(){
       renderApp();
     }
   });
+
+  }catch(err){
+    showGlobalActionStatus(err?.message || 'Login failed.','err');
+    throw err;
+  }finally{
+    setBusyButton(btn,false);
+  }
 }
 
 async function logout(){
@@ -655,6 +704,7 @@ function renderApp(){
   if(['SUPER_ADMIN','ADMIN'].includes(me.role)){
     items.push(['Users','users']);
     items.push(['Site Media','siteMedia']);
+    items.push(['Committees Management','committees']);
   }
 
   const committees=window.BTO_COMMITTEES_CACHE||[];
@@ -736,6 +786,7 @@ async function openModule(name,title='Module'){
   if(name==='assignments') return assignmentForm();
   if(name==='users') return usersForm();
   if(name==='siteMedia') return siteMediaForm();
+  if(name==='committees') return committeesForm();
   if(name==='committeeProfiles') return committeeProfilesPicker();
   if(name.startsWith('committee:')) return openCommittee(name.split(':')[1]);
 }
@@ -1892,6 +1943,164 @@ async function saveSiteMediaPhoto(triggerBtn,mediaKey,inputId,buttonId,statusId,
   }
 }
 
+
+let committeeAdminRows=[];
+
+async function committeesForm(){
+  document.getElementById('moduleArea').innerHTML=
+    '<div class="bto-loading"><span class="bto-spinner"></span><span>Loading committees...</span></div>';
+
+  const r=await api('listCommittees');
+  if(!r.success){showModuleError(r.message);return}
+
+  committeeAdminRows=r.data||[];
+
+  document.getElementById('moduleArea').innerHTML=`
+    <div class="card">
+      <h2>Committees Management</h2>
+      <p class="help">Add, edit, activate, or deactivate Barangay committees.</p>
+
+      <label>Committee ID</label>
+      <input id="cmId" placeholder="Auto-generated for new committee" readonly>
+
+      <label>Committee Name</label>
+      <input id="cmName" placeholder="Example: Committee on Education">
+
+      <label>Status</label>
+      <select id="cmStatus">
+        <option value="ACTIVE">ACTIVE</option>
+        <option value="INACTIVE">INACTIVE</option>
+      </select>
+
+      <div class="row" style="margin-top:12px">
+        <button id="cmSaveBtn" onclick="saveCommitteeAdmin(this)">Save Committee</button>
+        <button class="secondary" onclick="clearCommitteeAdminForm()">Clear</button>
+        <span id="cmStatusMsg" class="save-status"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Existing Committees</h2>
+      <div class="committee-admin-list" id="committeeAdminList"></div>
+    </div>
+  `;
+
+  renderCommitteeAdminList();
+}
+
+function renderCommitteeAdminList(){
+  const root=document.getElementById('committeeAdminList');
+  if(!root) return;
+
+  if(!committeeAdminRows.length){
+    root.innerHTML='<div class="live-empty">No committees found.</div>';
+    return;
+  }
+
+  root.innerHTML=committeeAdminRows.map(c=>`
+    <div class="committee-admin-item">
+      <div class="meta">
+        <strong>${esc(c.committeeName||'')}</strong>
+        <span>${esc(c.committeeId||'')} · ${esc(c.status||'ACTIVE')}</span>
+      </div>
+      <div class="row" style="margin:0;gap:8px">
+        <button type="button" class="secondary" onclick="editCommitteeAdmin('${esc(c.committeeId||'')}')">Edit</button>
+        <button type="button" onclick="deleteCommitteeAdmin(this,'${esc(c.committeeId||'')}','${esc(c.committeeName||'')}')">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function editCommitteeAdmin(id){
+  const c=committeeAdminRows.find(x=>String(x.committeeId)===String(id));
+  if(!c) return;
+
+  document.getElementById('cmId').value=c.committeeId||'';
+  document.getElementById('cmName').value=c.committeeName||'';
+  document.getElementById('cmStatus').value=c.status||'ACTIVE';
+
+  const saveBtn=document.getElementById('cmSaveBtn');
+  if(saveBtn) saveBtn.textContent='Save Changes';
+
+  document.getElementById('cmName').focus();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function clearCommitteeAdminForm(){
+  document.getElementById('cmId').value='';
+  document.getElementById('cmName').value='';
+  document.getElementById('cmStatus').value='ACTIVE';
+  document.getElementById('cmStatusMsg').textContent='';
+
+  const saveBtn=document.getElementById('cmSaveBtn');
+  if(saveBtn) saveBtn.textContent='Save Committee';
+}
+
+
+async function deleteCommitteeAdmin(btn,id,name){
+  if(btn?.classList?.contains('is-busy')) return;
+
+  const ok=confirm(
+    `Delete "${name}"?\n\n`+
+    'This is permanent. If the committee is still used in assignments, activities, or committee profile data, deletion will be blocked.'
+  );
+
+  if(!ok) return;
+
+  setBusyButton(btn,true,'Deleting...');
+
+  try{
+    const r=await api('deleteCommittee',{committeeId:id});
+    if(!r.success) throw new Error(r.message);
+
+    showGlobalActionStatus(r.message || 'Committee deleted successfully.','ok');
+    await committeesForm();
+
+  }catch(err){
+    showGlobalActionStatus(err.message || 'Delete failed.','err');
+    alert(err.message || 'Delete failed.');
+  }finally{
+    setBusyButton(btn,false);
+  }
+}
+
+async function saveCommitteeAdmin(btn){
+  if(btn?.classList?.contains('is-busy')) return;
+
+  const name=document.getElementById('cmName').value.trim();
+  const msg=document.getElementById('cmStatusMsg');
+
+  if(!name){
+    alert('Committee Name is required.');
+    return;
+  }
+
+  setBusyButton(btn,true,'Saving...');
+
+  try{
+    const r=await api('saveCommittee',{
+      committeeId:document.getElementById('cmId').value.trim(),
+      committeeName:name,
+      status:document.getElementById('cmStatus').value
+    });
+
+    if(!r.success) throw new Error(r.message);
+
+    msg.className='save-status ok';
+    msg.textContent=r.message || 'Committee saved successfully.';
+    showGlobalActionStatus(r.message || 'Committee saved successfully.','ok');
+
+    await committeesForm();
+
+  }catch(err){
+    msg.className='save-status err';
+    msg.textContent=err.message || 'Save failed.';
+    showGlobalActionStatus(err.message || 'Save failed.','err');
+  }finally{
+    setBusyButton(btn,false);
+  }
+}
+
 function showModuleError(message){
   document.getElementById('moduleArea').innerHTML=
     '<div class="card"><div class="msg err">'+esc(message)+'</div></div>';
@@ -1914,37 +2123,20 @@ function esc(v){
 
 restore();
 
-document.addEventListener('click',event=>{
-  const btn=event.target.closest('button');
-  if(!btn || btn.disabled) return;
 
-  const onclick=btn.getAttribute('onclick')||'';
-  const text=(btn.textContent||'').trim().toLowerCase();
 
-  const isAction =
-    /save|upload|publish|update|delete|reject|approve/i.test(onclick) ||
-    /^(save|upload|publish|update|delete|approve|reject)\b/i.test(text);
 
-  if(!isAction) return;
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter') return;
+  const loginCard=document.getElementById('loginCard') || document.querySelector('.login-card');
+  if(!loginCard || loginCard.style.display==='none') return;
 
-  // Functions with their own spinner will immediately replace this state.
-  if(!btn.classList.contains('is-busy')){
-    setBusyButton(
-      btn,
-      true,
-      text.includes('upload') ? 'Uploading...' :
-      text.includes('publish') ? 'Publishing...' :
-      text.includes('delete') ? 'Deleting...' :
-      'Saving...'
-    );
-
-    // Safety release in case a legacy handler returns synchronously or fails before cleanup.
-    clearTimeout(btn._btoSafety);
-    btn._btoSafety=setTimeout(()=>{
-      if(btn.classList.contains('is-busy')) setBusyButton(btn,false);
-    },30000);
+  const btn=document.getElementById('loginBtn');
+  if(btn && !btn.disabled){
+    e.preventDefault();
+    btn.click();
   }
-},true);
+});
 
 </script>
 </body>
