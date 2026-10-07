@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!-- BTO ADMIN BUILD: 2026-10-07 LOGIN-HARD-FIX-3 -->
+<!-- BTO ADMIN BUILD: 2026-10-07 LOGIN-TIMEOUT-FIX-4 -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#f8324b">
@@ -460,7 +460,7 @@ button.secondary .btn-spinner{
 </div>
 
 <script>
-console.info('BTO ADMIN BUILD: 2026-10-07 LOGIN-HARD-FIX-3');
+console.info('BTO ADMIN BUILD: 2026-10-07 LOGIN-TIMEOUT-FIX-4');
 
 function ensureGlobalActionStatus(){
   let el=document.getElementById('globalActionStatus');
@@ -580,6 +580,66 @@ function apiConfigured(){
 }
 
 async function api(action,data={}){
+  if(!apiConfigured()){
+    return {success:false,message:'Apps Script API URL is not configured.'};
+  }
+
+  const payload={action,token,data};
+
+  if(action==='login'){
+    payload.username=data.username || '';
+    payload.password=data.password || '';
+  }
+
+  const controller=new AbortController();
+  const timeoutMs=15000;
+  const timeout=setTimeout(()=>controller.abort(),timeoutMs);
+
+  const started=Date.now();
+  console.log('[BTO API] START',action);
+
+  try{
+    const response=await fetch(API_URL,{
+      method:'POST',
+      redirect:'follow',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify(payload),
+      signal:controller.signal,
+      cache:'no-store'
+    });
+
+    const text=await response.text();
+    console.log('[BTO API] RESPONSE',action,response.status,(Date.now()-started)+'ms');
+
+    try{
+      return JSON.parse(text);
+    }catch(e){
+      console.error('[BTO API] NON-JSON',action,text.slice(0,300));
+      return {
+        success:false,
+        message:'Backend returned a non-JSON response. Check the Apps Script deployment and access settings.'
+      };
+    }
+
+  }catch(err){
+    if(err && err.name==='AbortError'){
+      console.error('[BTO API] TIMEOUT',action,timeoutMs+'ms');
+      return {
+        success:false,
+        message:'Barangay backend did not respond within 15 seconds. Check the Apps Script Web App deployment, then try again.'
+      };
+    }
+
+    console.error('[BTO API] ERROR',action,err);
+    return {
+      success:false,
+      message:err?.message || String(err)
+    };
+
+  }finally{
+    clearTimeout(timeout);
+  }
+}){
   if(!apiConfigured()){
     return {success:false,message:'Apps Script API URL is not configured.'};
   }
