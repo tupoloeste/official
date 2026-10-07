@@ -462,6 +462,317 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
   margin-bottom:7px;
 }
 
+
+/* ===== Homepage officials + current activities visual panels ===== */
+.hero-grid{
+  grid-template-columns:minmax(300px,.82fr) minmax(560px,1.18fr);
+  gap:28px;
+}
+.hero-visual-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  min-width:0;
+}
+.hero-visual-card{
+  position:relative;
+  min-height:330px;
+  border-radius:20px;
+  overflow:hidden;
+  background:#fff;
+  box-shadow:0 20px 50px rgba(72,0,14,.20);
+}
+.hero-visual-card img{
+  width:100%;
+  height:100%;
+  min-height:330px;
+  object-fit:cover;
+  display:block;
+}
+.hero-visual-overlay{
+  position:absolute;
+  left:0;right:0;bottom:0;
+  padding:48px 16px 16px;
+  color:#fff;
+  background:linear-gradient(transparent,rgba(0,0,0,.78));
+}
+.hero-visual-overlay small{
+  display:block;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  font-size:10px;
+  font-weight:900;
+  opacity:.9;
+  margin-bottom:4px;
+}
+.hero-visual-overlay strong{
+  display:block;
+  font-size:18px;
+  line-height:1.2;
+}
+.hero-visual-overlay span{
+  display:block;
+  font-size:12px;
+  opacity:.92;
+  margin-top:4px;
+}
+.hero-officials-placeholder,
+.hero-activity-placeholder{
+  position:absolute;
+  inset:0;
+  display:grid;
+  place-items:center;
+  padding:22px;
+  text-align:center;
+  background:linear-gradient(145deg,#fff,#fff2f4);
+  color:var(--red-dark);
+}
+.hero-officials-placeholder img{
+  width:90px;
+  height:90px;
+  min-height:0;
+  object-fit:contain;
+  margin:0 auto 12px;
+}
+.hero-officials-placeholder strong,
+.hero-activity-placeholder strong{
+  display:block;
+  font-size:16px;
+}
+.hero-officials-placeholder span,
+.hero-activity-placeholder span{
+  display:block;
+  margin-top:5px;
+  font-size:12px;
+  color:var(--muted);
+}
+.hero-carousel-track{
+  position:absolute;
+  inset:0;
+}
+.hero-carousel-slide{
+  position:absolute;
+  inset:0;
+  opacity:0;
+  visibility:hidden;
+  transition:opacity .65s ease, visibility .65s ease;
+  cursor:pointer;
+}
+.hero-carousel-slide.active{
+  opacity:1;
+  visibility:visible;
+}
+.hero-carousel-controls{
+  position:absolute;
+  right:10px;
+  top:10px;
+  z-index:6;
+  display:flex;
+  gap:6px;
+}
+.hero-carousel-controls button{
+  width:32px;height:32px;
+  padding:0;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.55);
+  background:rgba(0,0,0,.35);
+  color:#fff;
+  backdrop-filter:blur(5px);
+}
+.hero-carousel-dots{
+  position:absolute;
+  left:14px;
+  bottom:12px;
+  z-index:7;
+  display:flex;
+  gap:5px;
+  max-width:55%;
+}
+.hero-carousel-dot{
+  width:7px;height:7px;
+  padding:0;
+  border:0;
+  border-radius:50%;
+  background:rgba(255,255,255,.55);
+}
+.hero-carousel-dot.active{
+  width:18px;
+  border-radius:999px;
+  background:#fff;
+}
+.hero-panel-label{
+  position:absolute;
+  top:12px;left:12px;
+  z-index:5;
+  border:1px solid rgba(255,255,255,.5);
+  background:rgba(0,0,0,.34);
+  backdrop-filter:blur(5px);
+  color:#fff;
+  border-radius:999px;
+  padding:6px 9px;
+  font-size:10px;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+}
+@media(max-width:1050px){
+  .hero-grid{grid-template-columns:1fr}
+  .hero-visual-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:700px){
+  .hero-visual-grid{grid-template-columns:1fr}
+  .hero-visual-card,
+  .hero-visual-card img{min-height:290px}
+}
+
+
+/* ===== Live announcement ticker ===== */
+.announcement-ticker{
+  width:100%;
+  background:#fff7f8;
+  border-top:1px solid #ffd7de;
+  border-bottom:1px solid #ffd7de;
+  overflow:hidden;
+}
+.announcement-ticker-inner{
+  max-width:1140px;
+  margin:0 auto;
+  display:flex;
+  align-items:center;
+  min-height:42px;
+}
+.announcement-ticker-label{
+  flex:0 0 auto;
+  background:var(--red);
+  color:#fff;
+  font-size:12px;
+  font-weight:900;
+  padding:13px 16px;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  z-index:3;
+}
+.announcement-ticker-window{
+  overflow:hidden;
+  flex:1;
+  position:relative;
+  min-width:0;
+}
+.announcement-ticker-track{
+  display:flex;
+  align-items:center;
+  width:max-content;
+  white-space:nowrap;
+  animation:btoTicker 28s linear infinite;
+}
+.announcement-ticker-window:hover .announcement-ticker-track{
+  animation-play-state:paused;
+}
+.announcement-ticker-item{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:0 24px;
+  min-height:42px;
+  cursor:pointer;
+  font-size:13px;
+  color:#333;
+}
+.announcement-ticker-item strong{
+  color:var(--red-dark);
+}
+.announcement-ticker-item:after{
+  content:"•";
+  margin-left:16px;
+  color:#f3a5b0;
+}
+@keyframes btoTicker{
+  from{transform:translateX(0)}
+  to{transform:translateX(-50%)}
+}
+@media(max-width:700px){
+  .announcement-ticker-inner{min-height:38px}
+  .announcement-ticker-label{padding:11px 10px;font-size:10px}
+  .announcement-ticker-item{font-size:12px;padding:0 16px;min-height:38px}
+}
+@media(prefers-reduced-motion:reduce){
+  .announcement-ticker-track{
+    animation:none;
+    overflow-x:auto;
+  }
+}
+
+
+/* ===== Dynamic Barangay Organizational Chart ===== */
+.org-chart{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:28px;
+  padding:16px 0 30px;
+}
+.org-level{
+  width:100%;
+  display:flex;
+  justify-content:center;
+  gap:16px;
+  flex-wrap:wrap;
+  position:relative;
+}
+.org-level + .org-level:before{
+  content:"";
+  position:absolute;
+  top:-28px;
+  left:50%;
+  width:2px;
+  height:28px;
+  background:#d7d9dd;
+}
+.org-person{
+  width:min(210px,100%);
+  background:#fff;
+  border:1px solid #e3e5e8;
+  border-radius:16px;
+  padding:14px;
+  text-align:center;
+  box-shadow:0 8px 22px rgba(0,0,0,.05);
+}
+.org-person.primary{
+  border:2px solid var(--red);
+  width:min(250px,100%);
+}
+.org-person img{
+  width:84px;
+  height:84px;
+  object-fit:cover;
+  border-radius:50%;
+  border:3px solid #fff;
+  box-shadow:0 0 0 2px #f0b4bd;
+  margin-bottom:8px;
+}
+.org-person .org-avatar{
+  width:84px;height:84px;
+  border-radius:50%;
+  margin:0 auto 8px;
+  display:grid;place-items:center;
+  background:#fff0f3;
+  color:var(--red-dark);
+  font-size:28px;
+  font-weight:900;
+}
+.org-person strong{display:block;font-size:14px}
+.org-person span{display:block;color:#68707b;font-size:12px;margin-top:3px}
+.org-level-title{
+  width:100%;
+  text-align:center;
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:#7b818b;
+  font-weight:900;
+  margin-bottom:-6px;
+}
+
 </style>
 </head>
 <body>
@@ -490,6 +801,17 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
     </nav>
   </div>
 </header>
+<div class="announcement-ticker" id="announcement-ticker">
+  <div class="announcement-ticker-inner">
+    <div class="announcement-ticker-label">Announcements</div>
+    <div class="announcement-ticker-window">
+      <div class="announcement-ticker-track" id="announcement-ticker-track">
+        <div class="announcement-ticker-item"><span>Loading latest barangay announcements...</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 <main>
 
@@ -505,10 +827,46 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
           <button class="btn btn-white" onclick="showView('updates')">📢 View Barangay Updates</button>
         </div>
       </div>
-      <div class="seal-card">
-        <img src="barangay-logo.png" alt="Official Seal">
-        <h3>Municipality of Cabatuan</h3>
-        <p>Province of Iloilo · Republic of the Philippines</p>
+      <div class="hero-visual-grid">
+        <div class="hero-visual-card" id="hero-officials-card">
+          <span class="hero-panel-label">Barangay Officials</span>
+          <img
+            id="hero-officials-photo"
+            src=""
+            alt="Barangay Tupol Oeste Officials"
+            loading="eager"
+            style="display:none"
+            onerror="this.style.display='none';document.getElementById('hero-officials-placeholder').style.display='grid'">
+          <div class="hero-officials-placeholder" id="hero-officials-placeholder" style="display:none">
+            <div>
+              <img src="barangay-logo.png" alt="">
+              <strong>Barangay Officials Group Photo</strong>
+              <span>The group photo can be updated anytime from the Encoder Portal.</span>
+            </div>
+          </div>
+          <div class="hero-visual-overlay">
+            <small>Governance</small>
+            <strong>Barangay Officials</strong>
+            <span>Serving Barangay Tupol Oeste</span>
+          </div>
+        </div>
+
+        <div class="hero-visual-card" id="hero-activity-carousel">
+          <span class="hero-panel-label">Current Activities</span>
+          <div class="hero-carousel-track" id="hero-carousel-track">
+            <div class="hero-activity-placeholder">
+              <div>
+                <strong>Current Barangay Activities</strong>
+                <span>Uploaded activity photos will automatically play here.</span>
+              </div>
+            </div>
+          </div>
+          <div class="hero-carousel-controls" id="hero-carousel-controls" style="display:none">
+            <button type="button" onclick="heroCarouselPrev(event)" aria-label="Previous photo">‹</button>
+            <button type="button" onclick="heroCarouselNext(event)" aria-label="Next photo">›</button>
+          </div>
+          <div class="hero-carousel-dots" id="hero-carousel-dots"></div>
+        </div>
       </div>
     </div>
   </section>
@@ -553,49 +911,11 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
     </div>
   </section>
 
-  <section class="portal-home-section alt">
-    <div class="container">
-      <div class="portal-section-title">
-        <h2>Public Announcements</h2>
-        <button onclick="showView('announcements')">View All →</button>
-      </div>
+  
 
-      
-      <div class="news-grid" id="home-public-announcements">
-        <div class="live-empty">Loading announcements...</div>
-      </div>
-    </div>
-  </section>
+  
 
-  <section class="portal-home-section">
-    <div class="container">
-      <div class="portal-section-title">
-        <h2>Recent Activities</h2>
-        <button onclick="showView('announcements')">View Activities →</button>
-      </div>
-
-      
-      <div class="news-grid" id="home-recent-activities">
-        <div class="live-empty">Loading recent activities...</div>
-      </div>
-    </div>
-  </section>
-
-  <section class="portal-home-section alt">
-    <div class="container">
-      <div class="portal-section-title">
-        <h2>Barangay at a Glance</h2>
-        <button onclick="showView('statistics')">Full Statistics →</button>
-      </div>
-
-      <div class="glance-grid">
-        <div class="glance"><strong>—</strong><span>Total Population</span></div>
-        <div class="glance"><strong>—</strong><span>Households</span></div>
-        <div class="glance"><strong>—</strong><span>Farmers</span></div>
-        <div class="glance" style="cursor:pointer" onclick="showView('livestock-statistics')"><strong>—</strong><span>Livestock Population</span></div>
-      </div>
-    </div>
-  </section>
+  
 
   <section class="portal-home-section">
     <div class="container">
@@ -1479,6 +1799,25 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
 
 </main>
 
+
+<section class="page-view" id="view-organizational-chart">
+  <div class="page-hero">
+    <div class="container">
+      <div>
+        <h1>Barangay Organizational Chart</h1>
+        <p>Official organizational structure of Barangay Tupol Oeste.</p>
+      </div>
+      <button class="back-btn" onclick="showView('officials')">← Back to Officials</button>
+    </div>
+  </div>
+
+  <div class="container page-body">
+    <div id="public-org-chart">
+      <div class="live-empty">Loading organizational chart...</div>
+    </div>
+  </div>
+</section>
+
 <footer id="siteFooter">
   <div class="container">
     <div class="footer-brand"><img src="barangay-logo.png" alt="Logo"><div><strong>Barangay Tupol Oeste</strong><br>Municipality of Cabatuan, Province of Iloilo</div></div>
@@ -1723,6 +2062,35 @@ function committeeName(data,committeeId){
   return c ? (c['Committee Name']||c.committeeName||'') : '';
 }
 
+
+function renderAnnouncementTicker(data){
+  const track=document.getElementById('announcement-ticker-track');
+  if(!track) return;
+
+  const rows=(data.content||[])
+    .filter(x=>String(x.Type||'').toUpperCase()==='ANNOUNCEMENT')
+    .sort((a,b)=>String(b['Event Date']||b['Created At']||'').localeCompare(String(a['Event Date']||a['Created At']||'')))
+    .slice(0,8);
+
+  if(!rows.length){
+    track.innerHTML=`
+      <div class="announcement-ticker-item">
+        <span>No current public announcements.</span>
+      </div>`;
+    track.style.animation='none';
+    return;
+  }
+
+  const makeItems=()=>rows.map(x=>`
+    <div class="announcement-ticker-item" onclick="showView('announcements')">
+      <strong>${publicEsc(x.Title||'Announcement')}</strong>
+      <span>${contentMeta(x)}</span>
+    </div>`).join('');
+
+  // Duplicate once for seamless continuous marquee.
+  track.innerHTML=makeItems()+makeItems();
+}
+
 function renderHomeAnnouncements(data){
   const root=document.getElementById('home-public-announcements');
   if(!root) return;
@@ -1823,8 +2191,209 @@ function renderAllAnnouncements(data){
   }
 }
 
+
+
+function renderHomepageSiteMedia(data){
+  const photo=(data.siteMedia||[]).find(x=>
+    String(x.mediaKey||'').toUpperCase()==='OFFICIALS_GROUP_PHOTO' &&
+    String(x.status||'').toUpperCase()==='ACTIVE'
+  );
+
+  const img=document.getElementById('hero-officials-photo');
+  const placeholder=document.getElementById('hero-officials-placeholder');
+  if(!img || !placeholder) return;
+
+  if(photo && photo.url){
+    img.src=normalizePublicImageUrl(photo.url);
+    img.style.display='block';
+    placeholder.style.display='none';
+  }else{
+    img.removeAttribute('src');
+    img.style.display='none';
+    placeholder.style.display='grid';
+  }
+}
+
+let heroCarouselRows=[];
+let heroCarouselIndex=0;
+let heroCarouselTimer=null;
+
+function heroActivityRows(data){
+  return (data.content||[])
+    .filter(x=>contentPhotoUrl(x))
+    .sort((a,b)=>{
+      const ad=String(a['Event Date']||a['Created At']||'');
+      const bd=String(b['Event Date']||b['Created At']||'');
+      const at=String(a.Type||'').toUpperCase()==='ACTIVITY' ? 1 : 0;
+      const bt=String(b.Type||'').toUpperCase()==='ACTIVITY' ? 1 : 0;
+      if(at!==bt) return bt-at;
+      return bd.localeCompare(ad);
+    })
+    .slice(0,8);
+}
+
+function renderHeroActivityCarousel(data){
+  const track=document.getElementById('hero-carousel-track');
+  const controls=document.getElementById('hero-carousel-controls');
+  const dots=document.getElementById('hero-carousel-dots');
+  if(!track || !controls || !dots) return;
+
+  heroCarouselRows=heroActivityRows(data);
+  heroCarouselIndex=0;
+
+  if(heroCarouselTimer){
+    clearInterval(heroCarouselTimer);
+    heroCarouselTimer=null;
+  }
+
+  if(!heroCarouselRows.length){
+    track.innerHTML=`
+      <div class="hero-activity-placeholder">
+        <div>
+          <strong>Current Barangay Activities</strong>
+          <span>Uploaded activity photos will automatically play here.</span>
+        </div>
+      </div>`;
+    controls.style.display='none';
+    dots.innerHTML='';
+    return;
+  }
+
+  track.innerHTML=heroCarouselRows.map((x,i)=>`
+    <div class="hero-carousel-slide ${i===0?'active':''}" data-index="${i}" onclick="showView('announcements')">
+      <img src="${publicEsc(contentPhotoUrl(x))}"
+        alt="${publicEsc(x.Title||'Barangay activity')}"
+        loading="${i===0?'eager':'lazy'}"
+        referrerpolicy="no-referrer"
+        onerror="this.style.display='none'">
+      <div class="hero-visual-overlay">
+        <small>${publicEsc(String(x.Type||'Activity'))}</small>
+        <strong>${publicEsc(x.Title||'Barangay Activity')}</strong>
+        <span>${contentMeta(x)}</span>
+      </div>
+    </div>`).join('');
+
+  dots.innerHTML=heroCarouselRows.map((x,i)=>`
+    <button type="button"
+      class="hero-carousel-dot ${i===0?'active':''}"
+      onclick="heroCarouselGo(${i},event)"
+      aria-label="Show activity ${i+1}"></button>`).join('');
+
+  controls.style.display=heroCarouselRows.length>1?'flex':'none';
+
+  if(heroCarouselRows.length>1){
+    heroCarouselTimer=setInterval(()=>heroCarouselGo((heroCarouselIndex+1)%heroCarouselRows.length),4500);
+  }
+}
+
+function heroCarouselGo(index,event){
+  if(event) event.stopPropagation();
+  if(!heroCarouselRows.length) return;
+
+  heroCarouselIndex=(index+heroCarouselRows.length)%heroCarouselRows.length;
+
+  document.querySelectorAll('.hero-carousel-slide').forEach((el,i)=>{
+    el.classList.toggle('active',i===heroCarouselIndex);
+  });
+  document.querySelectorAll('.hero-carousel-dot').forEach((el,i)=>{
+    el.classList.toggle('active',i===heroCarouselIndex);
+  });
+
+  if(heroCarouselTimer){
+    clearInterval(heroCarouselTimer);
+    heroCarouselTimer=setInterval(()=>heroCarouselGo((heroCarouselIndex+1)%heroCarouselRows.length),4500);
+  }
+}
+
+function heroCarouselNext(event){
+  heroCarouselGo(heroCarouselIndex+1,event);
+}
+
+function heroCarouselPrev(event){
+  heroCarouselGo(heroCarouselIndex-1,event);
+}
+
+
+function publicOfficialPhotoUrl(row){
+  return normalizePublicImageUrl(row['Photo URL'] || row.photoUrl || '');
+}
+
+function renderOrgPerson(o,isPrimary=false){
+  const name=o['Full Name']||o.fullName||'';
+  const position=o['Position']||o.position||'';
+  const photo=publicOfficialPhotoUrl(o);
+  const initial=(name.trim().charAt(0)||'B').toUpperCase();
+
+  return `<div class="org-person ${isPrimary?'primary':''}">
+    ${photo
+      ? `<img src="${publicEsc(photo)}" alt="${publicEsc(name)}" loading="lazy"
+          onerror="this.outerHTML='<div class=&quot;org-avatar&quot;>${publicEsc(initial)}</div>'">`
+      : `<div class="org-avatar">${publicEsc(initial)}</div>`}
+    <strong>${publicEsc(name)}</strong>
+    <span>${publicEsc(position)}</span>
+  </div>`;
+}
+
+function renderOrganizationalChart(data){
+  const root=document.getElementById('public-org-chart');
+  if(!root) return;
+
+  const officials=(data.officials||[]).filter(o=>
+    String(o.Status||o.status||'ACTIVE').toUpperCase()!=='INACTIVE'
+  );
+
+  const findPos=(needle)=>officials.filter(o=>
+    String(o['Position']||o.position||'').toUpperCase().includes(needle)
+  );
+
+  const punong=findPos('PUNONG BARANGAY');
+  const kagawads=officials.filter(o=>{
+    const p=String(o['Position']||o.position||'').toUpperCase();
+    return p.includes('KAGAWAD') || p.includes('SANGGUNIANG BARANGAY MEMBER');
+  });
+  const sk=officials.filter(o=>{
+    const p=String(o['Position']||o.position||'').toUpperCase();
+    return p.includes('SK CHAIR') || p.includes('SANGGUNIANG KABATAAN CHAIR');
+  });
+  const staff=officials.filter(o=>{
+    const p=String(o['Position']||o.position||'').toUpperCase();
+    return p.includes('SECRETARY') || p.includes('TREASURER') || p.includes('CLERK');
+  });
+  const support=officials.filter(o=>{
+    const p=String(o['Position']||o.position||'').toUpperCase();
+    return p.includes('TANOD') || p.includes('BHW') || p.includes('BNS');
+  });
+
+  const used=new Set([...punong,...kagawads,...sk,...staff,...support]);
+  const others=officials.filter(o=>!used.has(o));
+
+  if(!officials.length){
+    root.innerHTML='<div class="live-empty">Organizational chart will appear once officials are encoded.</div>';
+    return;
+  }
+
+  const level=(title,rows,primary=false)=>rows.length?`
+    <div class="org-level">
+      <div class="org-level-title">${publicEsc(title)}</div>
+      ${rows.map(o=>renderOrgPerson(o,primary)).join('')}
+    </div>`:'';
+
+  root.innerHTML=`<div class="org-chart">
+    ${level('Punong Barangay',punong,true)}
+    ${level('Sangguniang Barangay',kagawads)}
+    ${level('Sangguniang Kabataan',sk)}
+    ${level('Barangay Secretary / Treasurer / Staff',staff)}
+    ${level('Barangay Support Personnel',support)}
+    ${level('Other Barangay Personnel',others)}
+  </div>`;
+}
+
 function applyPublicData(data){
   if(!data || !data.success) return;
+  renderAnnouncementTicker(data);
+  renderHomepageSiteMedia(data);
+  renderOrganizationalChart(data);
+  renderHeroActivityCarousel(data);
   renderHomeAnnouncements(data);
   renderHomeRecentActivities(data);
   renderAllAnnouncements(data);
