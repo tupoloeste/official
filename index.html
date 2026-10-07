@@ -1255,6 +1255,237 @@ main > .view.active{
   }
 }
 
+
+/* ===== Incoming Events / Recent Activities photo slideshow ===== */
+.event-photo-carousel{
+  position:relative;
+  max-width:640px;
+  height:300px;
+  margin:0 auto 14px;
+  border:1px solid #ececec;
+  border-radius:14px;
+  overflow:hidden;
+  background:#fff;
+}
+.event-photo-slide{
+  position:absolute;
+  inset:0;
+  opacity:0;
+  visibility:hidden;
+  transition:opacity .5s ease, visibility .5s ease;
+}
+.event-photo-slide.active{
+  opacity:1;
+  visibility:visible;
+}
+.event-photo-slide img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  object-position:center;
+  background:#fff;
+  display:block;
+}
+.event-photo-controls{
+  position:absolute;
+  top:50%;
+  left:10px;
+  right:10px;
+  transform:translateY(-50%);
+  display:flex;
+  justify-content:space-between;
+  pointer-events:none;
+  z-index:4;
+}
+.event-photo-controls button{
+  pointer-events:auto;
+  width:36px;
+  height:36px;
+  border:0;
+  border-radius:50%;
+  background:rgba(0,0,0,.48);
+  color:#fff;
+  font-size:22px;
+  font-weight:900;
+  padding:0;
+  display:grid;
+  place-items:center;
+  backdrop-filter:blur(4px);
+}
+.event-photo-dots{
+  position:absolute;
+  left:50%;
+  bottom:10px;
+  transform:translateX(-50%);
+  display:flex;
+  gap:5px;
+  z-index:5;
+}
+.event-photo-dots button{
+  width:7px;
+  height:7px;
+  border:0;
+  border-radius:50%;
+  background:rgba(0,0,0,.28);
+  padding:0;
+}
+.event-photo-dots button.active{
+  width:18px;
+  border-radius:999px;
+  background:var(--red);
+}
+.event-photo-count{
+  position:absolute;
+  right:10px;
+  top:10px;
+  z-index:5;
+  padding:5px 8px;
+  border-radius:999px;
+  background:rgba(0,0,0,.48);
+  color:#fff;
+  font-size:11px;
+  font-weight:800;
+}
+.event-photo-carousel:hover .event-photo-slide{
+  /* auto rotation is paused in JS on hover */
+}
+@media(max-width:700px){
+  .event-photo-carousel{
+    height:210px;
+  }
+}
+
+
+/* ===== Uploaded Organizational Chart image ===== */
+.org-chart-photo-card{
+  max-width:1100px;
+  margin:0 auto;
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:16px;
+  padding:16px;
+}
+.org-chart-photo-card img{
+  width:100%;
+  height:auto;
+  object-fit:contain;
+  display:block;
+  border-radius:10px;
+  background:#fff;
+}
+
+
+/* Dedicated Organizational Chart page visibility */
+#view-organizational-chart{display:none}
+#view-organizational-chart.active{display:block}
+
+
+/* ===== Dynamic Officials / SK / Tanod Cards ===== */
+.officials-live-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:16px;
+  margin-top:16px;
+}
+
+.official-live-card{
+  background:#fff;
+  border:1px solid #e4e6ea;
+  border-radius:16px;
+  padding:16px;
+  display:flex;
+  gap:14px;
+  align-items:center;
+  min-height:124px;
+  box-shadow:0 6px 18px rgba(0,0,0,.04);
+}
+
+.official-live-card.primary{
+  border:2px solid var(--red);
+}
+
+.official-live-photo,
+.official-live-avatar{
+  width:86px;
+  height:86px;
+  border-radius:50%;
+  flex:0 0 86px;
+}
+
+.official-live-photo{
+  object-fit:cover;
+  object-position:center;
+  border:3px solid #fff;
+  box-shadow:0 0 0 2px #f3aab5;
+  background:#f5f5f5;
+}
+
+.official-live-avatar{
+  display:grid;
+  place-items:center;
+  background:#fff0f3;
+  color:var(--red-dark);
+  font-size:25px;
+  font-weight:900;
+}
+
+.official-live-info{
+  min-width:0;
+}
+
+.official-live-info strong{
+  display:block;
+  font-size:16px;
+  line-height:1.25;
+  margin-bottom:4px;
+}
+
+.official-live-info .position{
+  display:block;
+  color:#5f6670;
+  font-size:13px;
+  margin-bottom:7px;
+}
+
+.official-live-committees{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  margin-top:7px;
+}
+
+.official-live-committees button{
+  border:1px solid #f4b6bf;
+  background:#fff5f6;
+  color:var(--red-dark);
+  border-radius:999px;
+  padding:5px 8px;
+  font-size:11px;
+  font-weight:800;
+}
+
+@media(max-width:600px){
+  .officials-live-grid{
+    grid-template-columns:1fr;
+  }
+
+  .official-live-card{
+    min-height:110px;
+  }
+
+  .official-live-photo,
+  .official-live-avatar{
+    width:72px;
+    height:72px;
+    flex-basis:72px;
+  }
+}
+
+
+/* One public page at a time */
+.view{display:none}
+.view.active{display:block}
+
 </style>
 </head>
 <body>
@@ -1512,134 +1743,45 @@ main > .view.active{
 </div>
 
 <!-- OFFICIALS -->
+
 <div class="view" id="view-officials">
-  <div class="page-head"><div class="container page-head-row"><div><h1>Officials & Personnel</h1><p>Barangay Officials, Sangguniang Kabataan, and Barangay Tanods.</p></div><button class="back-btn" onclick="showView('governance')">← Back to Governance</button></div></div>
-  <div class="page-content"><div class="container">
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('officials','off-brgy',this)">Barangay Officials</button>
-      <button class="tab-btn" onclick="switchTab('officials','off-sk',this)">Sangguniang Kabataan</button>
-      <button class="tab-btn" onclick="switchTab('officials','off-tanod',this)">Barangay Tanods</button>
+  <div class="page-head">
+    <div class="container page-head-row">
+      <div>
+        <h1>Officials & Personnel</h1>
+        <p>Barangay Officials, Sangguniang Kabataan, and Barangay Tanods.</p>
+      </div>
+      <button class="back-btn" onclick="showView('governance')">← Back to Governance</button>
     </div>
-    <div class="tab-panel active" id="off-brgy">
-      <div class="flex-preview">
-        
+  </div>
 
-      <div class="person-grid">
-        <div class="person">
-          <div class="badge">PB</div>
-          <div>
-            <strong>Joselito M. Tormon</strong>
-            <span>Punong Barangay</span>
-            <div class="assignment-note">Committee assignments: Coming Soon</div>
-          </div>
+  <div class="page-content">
+    <div class="container">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('officials','off-brgy',this)">Barangay Officials</button>
+        <button class="tab-btn" onclick="switchTab('officials','off-sk',this)">Sangguniang Kabataan</button>
+        <button class="tab-btn" onclick="switchTab('officials','off-tanod',this)">Barangay Tanods</button>
+      </div>
+
+      <div class="tab-panel active" id="off-brgy">
+        <div id="public-officials-barangay" class="officials-live-grid">
+          <div class="live-empty">Loading Barangay Officials...</div>
         </div>
+      </div>
 
-        <div class="person">
-          <div class="badge">KG</div>
-          <div>
-            <strong>Ardito F. Huyo</strong>
-            <span>Sangguniang Barangay Member</span>
-            <div class="assignment-note">Current Committees</div>
-            <div class="committee-links">
-              <span class="coming">Coming Soon</span>
-            </div>
-          </div>
+      <div class="tab-panel" id="off-sk">
+        <div id="public-officials-sk" class="officials-live-grid">
+          <div class="live-empty">Loading Sangguniang Kabataan...</div>
         </div>
+      </div>
 
-        <div class="person">
-          <div class="badge">KG</div>
-          <div>
-            <strong>Eusebia A. Cuarte</strong>
-            <span>Sangguniang Barangay Member</span>
-            <div class="assignment-note">Current Committees</div>
-            <div class="committee-links">
-              <span class="coming">Coming Soon</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="person">
-          <div class="badge">KG</div>
-          <div>
-            <strong>Victoria T. Sapra</strong>
-            <span>Sangguniang Barangay Member</span>
-            <div class="assignment-note">Current Committees</div>
-            <div class="committee-links">
-              <span class="coming">Coming Soon</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="person">
-          <div class="badge">KG</div>
-          <div>
-            <strong>Jonel G. Rosano</strong>
-            <span>Sangguniang Barangay Member</span>
-            <div class="assignment-note">Current Committees</div>
-            <div class="committee-links">
-              <button class="committee-chip" onclick="showView('committee-agriculture')">Agriculture</button>
-              <button class="committee-chip" onclick="showView('committee-environment')">Environmental Protection</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="person">
-          <div class="badge">KG</div>
-          <div>
-            <strong>Custodio T. Marcon Jr.</strong>
-            <span>Sangguniang Barangay Member</span>
-            <div class="assignment-note">Current Committees</div>
-            <div class="committee-links">
-              <span class="coming">Coming Soon</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="person">
-          <div class="badge">KG</div>
-          <div>
-            <strong>Jolyn P. Lagutang</strong>
-            <span>Sangguniang Barangay Member</span>
-            <div class="assignment-note">Current Committees</div>
-            <div class="committee-links">
-              <span class="coming">Coming Soon</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="person">
-          <div class="badge">KG</div>
-          <div>
-            <strong>Ian Paul B. Moscardon</strong>
-            <span>Sangguniang Barangay Member</span>
-            <div class="assignment-note">Current Committees</div>
-            <div class="committee-links">
-              <span class="coming">Coming Soon</span>
-            </div>
-          </div>
+      <div class="tab-panel" id="off-tanod">
+        <div id="public-officials-tanod" class="officials-live-grid">
+          <div class="live-empty">Loading Barangay Tanods...</div>
         </div>
       </div>
     </div>
-    <div class="tab-panel" id="off-sk"><div class="person-grid">
-      <div class="person"><div class="badge">SK</div><div><strong>Erika Mae M. Alviar</strong><span>SK Chairperson</span></div></div>
-      <div class="person"><div class="badge">SK</div><div><strong>Wennard M. Reyes</strong><span>SK Member</span></div></div>
-      <div class="person"><div class="badge">SK</div><div><strong>Donar H. Angelada</strong><span>SK Member</span></div></div>
-      <div class="person"><div class="badge">SK</div><div><strong>Hanelyn G. Robles</strong><span>SK Member</span></div></div>
-      <div class="person"><div class="badge">SK</div><div><strong>Jamil S. Moneva</strong><span>SK Member</span></div></div>
-      <div class="person"><div class="badge">SK</div><div><strong>Muktadir A. Hambangan</strong><span>SK Member</span></div></div>
-      <div class="person"><div class="badge">SK</div><div><strong>April Rose P. Tormon</strong><span>SK Member</span></div></div>
-    </div></div>
-    <div class="tab-panel" id="off-tanod"><div class="person-grid">
-      <div class="person"><div class="badge">BT</div><div><strong>Rio M. Tormon</strong><span>Barangay Tanod</span></div></div>
-      <div class="person"><div class="badge">BT</div><div><strong>Arsenia H. Angelada</strong><span>Barangay Tanod</span></div></div>
-      <div class="person"><div class="badge">BT</div><div><strong>Johnjie S. Moneva</strong><span>Barangay Tanod</span></div></div>
-      <div class="person"><div class="badge">BT</div><div><strong>Elmar A. Eurolfan</strong><span>Barangay Tanod</span></div></div>
-      <div class="person"><div class="badge">BT</div><div><strong>Mheljun T. Casquete</strong><span>Barangay Tanod</span></div></div>
-      <div class="person"><div class="badge">BT</div><div><strong>Remywviel E. Robles</strong><span>Barangay Tanod</span></div></div>
-      <div class="person"><div class="badge">BT</div><div><strong>Lemuel B. Rosano</strong><span>Barangay Tanod</span></div></div>
-      <div class="person"><div class="badge">BT</div><div><strong>Marcos J. Alinday</strong><span>Barangay Tanod</span></div></div>
-    </div></div>
-  </div></div>
+  </div>
 </div>
 
 <!-- COMMITTEE PROFILE TEMPLATE SECTIONS -->
@@ -2246,16 +2388,21 @@ main > .view.active{
         <h1>Barangay Organizational Chart</h1>
         <p>Official organizational structure of Barangay Tupol Oeste.</p>
       </div>
-      <button class="back-btn" onclick="showView('officials')">← Back to Officials</button>
+      <button class="back-btn" onclick="showView('governance')">← Back to Governance</button>
     </div>
   </div>
 
   <div class="container page-body">
-    <div id="public-org-chart">
-      <div class="live-empty">Loading organizational chart...</div>
+    <div class="org-chart-photo-card">
+      <img id="public-org-chart-photo"
+           alt="Barangay Tupol Oeste Organizational Chart"
+           style="display:none">
+      <div id="public-org-chart-empty" class="live-empty">
+        Organizational chart photo has not been uploaded yet.
+      </div>
     </div>
   </div>
-</section>
+</div>
 
 <footer id="siteFooter">
   <div class="container">
@@ -2270,7 +2417,7 @@ const navLinks=document.getElementById('navLinks');
 menuBtn.addEventListener('click',()=>navLinks.classList.toggle('show'));
 
 function showView(name){
-  document.querySelectorAll('main > .view').forEach(v=>{
+  document.querySelectorAll('.view').forEach(v=>{
     v.classList.remove('active');
     v.setAttribute('aria-hidden','true');
   });
@@ -2534,6 +2681,160 @@ function closePublicGallery(event){
   document.body.style.overflow='';
 }
 
+
+const eventCarouselTimers=new Map();
+
+function eventPhotoUrls(row){
+  const urls=[];
+  const seen=new Set();
+
+  const featured=contentPhotoUrl(row);
+  if(featured && !seen.has(featured)){
+    seen.add(featured);
+    urls.push(featured);
+  }
+
+  contentGalleryUrls(row).forEach(url=>{
+    if(url && !seen.has(url)){
+      seen.add(url);
+      urls.push(url);
+    }
+  });
+
+  return urls;
+}
+
+function eventSlideshowHtml(row,key){
+  const urls=eventPhotoUrls(row);
+
+  if(!urls.length){
+    return `<div class="live-photo-wrap">
+      <div class="live-photo-placeholder">📷</div>
+    </div>`;
+  }
+
+  if(urls.length===1){
+    return `<div class="event-photo-carousel" data-carousel="${publicEsc(key)}">
+      <div class="event-photo-slide active">
+        <img src="${publicEsc(urls[0])}"
+          alt="${publicEsc(row.Title||'Activity photo')}"
+          loading="lazy"
+          referrerpolicy="no-referrer"
+          onclick="openPublicGallery('${publicEsc(urls[0])}',event)"
+          onerror="this.style.display='none'">
+      </div>
+    </div>`;
+  }
+
+  return `<div class="event-photo-carousel" data-carousel="${publicEsc(key)}"
+      onmouseenter="pauseEventCarousel('${publicEsc(key)}')"
+      onmouseleave="resumeEventCarousel('${publicEsc(key)}')">
+    ${urls.map((url,i)=>`
+      <div class="event-photo-slide ${i===0?'active':''}" data-index="${i}">
+        <img src="${publicEsc(url)}"
+          alt="${publicEsc(row.Title||'Activity')} photo ${i+1}"
+          loading="lazy"
+          referrerpolicy="no-referrer"
+          onclick="openPublicGallery('${publicEsc(url)}',event)"
+          onerror="this.style.display='none'">
+      </div>`).join('')}
+
+    <div class="event-photo-count">${urls.length} photos</div>
+
+    <div class="event-photo-controls">
+      <button type="button" onclick="eventCarouselPrev('${publicEsc(key)}',event)" aria-label="Previous photo">‹</button>
+      <button type="button" onclick="eventCarouselNext('${publicEsc(key)}',event)" aria-label="Next photo">›</button>
+    </div>
+
+    <div class="event-photo-dots">
+      ${urls.map((u,i)=>`
+        <button type="button"
+          class="${i===0?'active':''}"
+          onclick="eventCarouselGo('${publicEsc(key)}',${i},event)"
+          aria-label="Show photo ${i+1}"></button>`).join('')}
+    </div>
+  </div>`;
+}
+
+function eventCarouselState(key){
+  const root=document.querySelector(`[data-carousel="${CSS.escape(key)}"]`);
+  if(!root) return null;
+
+  const slides=Array.from(root.querySelectorAll('.event-photo-slide'));
+  const dots=Array.from(root.querySelectorAll('.event-photo-dots button'));
+  let index=slides.findIndex(s=>s.classList.contains('active'));
+  if(index<0) index=0;
+
+  return {root,slides,dots,index};
+}
+
+function eventCarouselGo(key,index,event){
+  if(event) event.stopPropagation();
+
+  const state=eventCarouselState(key);
+  if(!state || state.slides.length<2) return;
+
+  const next=(index+state.slides.length)%state.slides.length;
+
+  state.slides.forEach((s,i)=>s.classList.toggle('active',i===next));
+  state.dots.forEach((d,i)=>d.classList.toggle('active',i===next));
+}
+
+function eventCarouselNext(key,event){
+  const state=eventCarouselState(key);
+  if(!state) return;
+  eventCarouselGo(key,state.index+1,event);
+  restartEventCarousel(key);
+}
+
+function eventCarouselPrev(key,event){
+  const state=eventCarouselState(key);
+  if(!state) return;
+  eventCarouselGo(key,state.index-1,event);
+  restartEventCarousel(key);
+}
+
+function startEventCarousel(key){
+  const state=eventCarouselState(key);
+  if(!state || state.slides.length<2) return;
+
+  stopEventCarousel(key);
+
+  const timer=setInterval(()=>{
+    const current=eventCarouselState(key);
+    if(current) eventCarouselGo(key,current.index+1);
+  },4000);
+
+  eventCarouselTimers.set(key,timer);
+}
+
+function stopEventCarousel(key){
+  const timer=eventCarouselTimers.get(key);
+  if(timer){
+    clearInterval(timer);
+    eventCarouselTimers.delete(key);
+  }
+}
+
+function pauseEventCarousel(key){
+  stopEventCarousel(key);
+}
+
+function resumeEventCarousel(key){
+  startEventCarousel(key);
+}
+
+function restartEventCarousel(key){
+  startEventCarousel(key);
+}
+
+function initEventCarousels(){
+  document.querySelectorAll('.event-photo-carousel').forEach(root=>{
+    const key=root.getAttribute('data-carousel');
+    if(key) startEventCarousel(key);
+  });
+}
+
 function contentPhotoUrl(row){
   return normalizePublicImageUrl(row['Featured Photo URL'] || '');
 }
@@ -2723,9 +3024,6 @@ function renderAllAnnouncements(data){
 
   const all=(data.content||[]).slice();
 
-  // UPCOMING:
-  // Any published record with an Event Date today or in the future.
-  // This includes ANNOUNCEMENT or ACTIVITY records.
   const upcoming=all.filter(x=>{
     if(!x['Event Date']) return false;
     const d=new Date(x['Event Date']);
@@ -2736,9 +3034,6 @@ function renderAllAnnouncements(data){
     String(a['Event Date']||'9999').localeCompare(String(b['Event Date']||'9999'))
   );
 
-  // RECENT:
-  // Once the Event Date is already past, the record automatically moves here.
-  // No manual transfer and no need to change Type.
   const recent=all.filter(x=>{
     if(!x['Event Date']) return String(x.Type||'').toUpperCase()==='ACTIVITY';
     const d=new Date(x['Event Date']);
@@ -2752,33 +3047,55 @@ function renderAllAnnouncements(data){
   );
 
   if(upcomingRoot){
-    upcomingRoot.innerHTML=upcoming.length ? upcoming.map(x=>`
+    upcomingRoot.innerHTML=upcoming.length ? upcoming.map((x,i)=>`
       <div class="activity-live-card">
-        ${photoHtml(x,'📅')}
+        ${eventSlideshowHtml(x,'incoming-'+(x['Content ID']||i))}
         <div class="activity-live-meta">${contentMeta(x)}</div>
         <h3>${publicEsc(x.Title||'')}</h3>
         ${x.Description?`<p>${publicEsc(x.Description)}</p>`:''}
         ${committeeName(data,x['Committee ID'])?`<span class="tag">${publicEsc(committeeName(data,x['Committee ID']))}</span>`:''}
-        ${galleryHtml(x)}
       </div>`).join('')
       : '<div class="live-empty">No incoming events.</div>';
   }
 
   if(recentRoot){
-    recentRoot.innerHTML=recent.length ? recent.map(x=>`
+    recentRoot.innerHTML=recent.length ? recent.map((x,i)=>`
       <div class="activity-live-card">
-        ${photoHtml(x,'📷')}
+        ${eventSlideshowHtml(x,'recent-'+(x['Content ID']||i))}
         <div class="activity-live-meta">${contentMeta(x)}</div>
         <h3>${publicEsc(x.Title||'')}</h3>
         ${x.Description?`<p>${publicEsc(x.Description)}</p>`:''}
         ${committeeName(data,x['Committee ID'])?`<span class="tag">${publicEsc(committeeName(data,x['Committee ID']))}</span>`:''}
-        ${galleryHtml(x)}
       </div>`).join('')
       : '<div class="live-empty">No recent activities yet.</div>';
   }
+
+  setTimeout(initEventCarousels,0);
 }
 
 
+
+
+function renderOrganizationalChartPhoto(data){
+  const item=(data.siteMedia||[]).find(x=>
+    String(x.mediaKey||'').toUpperCase()==='ORG_CHART_PHOTO' &&
+    String(x.status||'').toUpperCase()==='ACTIVE'
+  );
+
+  const img=document.getElementById('public-org-chart-photo');
+  const empty=document.getElementById('public-org-chart-empty');
+  if(!img || !empty) return;
+
+  if(item && item.url){
+    img.src=normalizePublicImageUrl(item.url);
+    img.style.display='block';
+    empty.style.display='none';
+  }else{
+    img.removeAttribute('src');
+    img.style.display='none';
+    empty.style.display='block';
+  }
+}
 
 function renderHomepageSiteMedia(data){
   const photo=(data.siteMedia||[]).find(x=>
@@ -2950,66 +3267,187 @@ function renderOrgPerson(o,isPrimary=false){
   </div>`;
 }
 
-function renderOrganizationalChart(data){
-  const root=document.getElementById('public-org-chart');
-  if(!root) return;
 
-  const officials=(data.officials||[]).filter(o=>
-    String(o.Status||o.status||'ACTIVE').toUpperCase()!=='INACTIVE'
+
+
+const BTO_FALLBACK_SK = [
+  {name:'ERIKA MAE M. ALVIAR', position:'SK Chairperson'},
+  {name:'WENNARD M. REYES', position:'SK Member'},
+  {name:'DONAR H. ANGELADA', position:'SK Member'},
+  {name:'HANELYN G. ROBLES', position:'SK Member'},
+  {name:'JAMIL S. MONEVA', position:'SK Member'},
+  {name:'MUKTADIR A. HAMBANGAN', position:'SK Member'},
+  {name:'APRIL ROSE P. TORMON', position:'SK Member'}
+];
+
+const BTO_FALLBACK_TANODS = [
+  {name:'RIO M. TORMON', position:'Barangay Tanod'},
+  {name:'ARSENIA H. ANGELADA', position:'Barangay Tanod'},
+  {name:'JOHNJIE S. MONEVA', position:'Barangay Tanod'},
+  {name:'ELMAR A. EUROLFAN', position:'Barangay Tanod'},
+  {name:'MHELJUN T. CASQUETE', position:'Barangay Tanod'},
+  {name:'REMYWVIEL E. ROBLES', position:'Barangay Tanod'},
+  {name:'LEMUEL B. ROSANO', position:'Barangay Tanod'},
+  {name:'MARCOS J. ALINDAY', position:'Barangay Tanod'}
+];
+
+const BTO_FALLBACK_BARANGAY = [
+  {name:'JOSELITO M. TORMON', position:'Punong Barangay'},
+  {name:'ARDITO F. HUYO', position:'Sangguniang Barangay Member'},
+  {name:'EUSEBIA A. CUARTE', position:'Sangguniang Barangay Member'},
+  {name:'VICTORIA T. SAPRA', position:'Sangguniang Barangay Member'},
+  {name:'JONEL G. ROSANO', position:'Sangguniang Barangay Member'},
+  {name:'CUSTODIO T. MARCON JR.', position:'Sangguniang Barangay Member'},
+  {name:'JOLYN P. LAGUTANG', position:'Sangguniang Barangay Member'},
+  {name:'IAN PAUL B. MOSCARDON', position:'Sangguniang Barangay Member'}
+];
+
+function officialGroup(o){
+  return String(o.Group||o.group||'').trim().toUpperCase();
+}
+
+function officialPosition(o){
+  return String(o['Position']||o.position||'').trim();
+}
+
+function isBarangayOfficial(o){
+  const g=officialGroup(o);
+  const p=officialPosition(o).toUpperCase();
+  return g==='BARANGAY' ||
+    p.includes('PUNONG BARANGAY') ||
+    p.includes('KAGAWAD') ||
+    p.includes('SANGGUNIANG BARANGAY');
+}
+
+function isSKOfficial(o){
+  const g=officialGroup(o);
+  const p=officialPosition(o).toUpperCase();
+  return g==='SK' ||
+    g==='SANGGUNIANG KABATAAN' ||
+    p.includes('SK ') ||
+    p.includes('SANGGUNIANG KABATAAN');
+}
+
+function isTanodOfficial(o){
+  const g=officialGroup(o);
+  const p=officialPosition(o).toUpperCase();
+  return g==='TANOD' ||
+    g==='BARANGAY TANOD' ||
+    p.includes('TANOD');
+}
+
+function committeeViewName(id){
+  if(String(id)==='COM-001') return 'committee-agriculture';
+  if(String(id)==='COM-003') return 'committee-environment';
+  return '';
+}
+
+function renderOfficialCard(o,primary=false){
+  const name=o['Full Name']||o.fullName||o.name||'';
+  const position=o['Position']||o.position||'';
+  const photo=normalizePublicImageUrl(o['Photo URL']||o.photoUrl||'');
+  const initial=(name.trim().charAt(0)||'B').toUpperCase();
+  const committees=Array.isArray(o.committees)?o.committees:[];
+
+  const committeeHtml=committees.length
+    ? `<div class="official-live-committees">${
+        committees.map(c=>{
+          const view=committeeViewName(c.committeeId);
+          const label=String(c.committeeName||'').replace(/^Committee on\s+/i,'');
+          return view
+            ? `<button type="button" onclick="showView('${view}')">${publicEsc(label)}</button>`
+            : `<span class="tag">${publicEsc(label)}</span>`;
+        }).join('')
+      }</div>`
+    : '';
+
+  return `<div class="official-live-card ${primary?'primary':''}">
+    ${photo
+      ? `<img class="official-live-photo"
+          src="${publicEsc(photo)}"
+          alt="${publicEsc(name)}"
+          loading="lazy"
+          referrerpolicy="no-referrer"
+          onerror="this.outerHTML='<div class=&quot;official-live-avatar&quot;>${publicEsc(initial)}</div>'">`
+      : `<div class="official-live-avatar">${publicEsc(initial)}</div>`}
+
+    <div class="official-live-info">
+      <strong>${publicEsc(name)}</strong>
+      <span class="position">${publicEsc(position)}</span>
+      ${committeeHtml}
+    </div>
+  </div>`;
+}
+
+function fallbackToOfficialRows(rows){
+  return rows.map(x=>({
+    'Full Name':x.name,
+    'Position':x.position,
+    'Photo URL':'',
+    committees:[]
+  }));
+}
+
+function deDuplicateOfficials(rows){
+  const seen=new Set();
+  return rows.filter(o=>{
+    const name=String(o['Full Name']||o.fullName||'').trim().toUpperCase();
+    const position=String(o['Position']||o.position||'').trim().toUpperCase();
+    const key=name+'|'+position;
+    if(!name || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function renderOfficialsPersonnel(data){
+  const active=deDuplicateOfficials(
+    (data.officials||[]).filter(o=>
+      String(o.Status||o.status||'ACTIVE').toUpperCase()!=='INACTIVE'
+    )
   );
 
-  const findPos=(needle)=>officials.filter(o=>
-    String(o['Position']||o.position||'').toUpperCase().includes(needle)
-  );
+  let barangay=active.filter(isBarangayOfficial);
+  let sk=active.filter(isSKOfficial);
+  let tanod=active.filter(isTanodOfficial);
 
-  const punong=findPos('PUNONG BARANGAY');
-  const kagawads=officials.filter(o=>{
-    const p=String(o['Position']||o.position||'').toUpperCase();
-    return p.includes('KAGAWAD') || p.includes('SANGGUNIANG BARANGAY MEMBER');
-  });
-  const sk=officials.filter(o=>{
-    const p=String(o['Position']||o.position||'').toUpperCase();
-    return p.includes('SK CHAIR') || p.includes('SANGGUNIANG KABATAAN CHAIR');
-  });
-  const staff=officials.filter(o=>{
-    const p=String(o['Position']||o.position||'').toUpperCase();
-    return p.includes('SECRETARY') || p.includes('TREASURER') || p.includes('CLERK');
-  });
-  const support=officials.filter(o=>{
-    const p=String(o['Position']||o.position||'').toUpperCase();
-    return p.includes('TANOD') || p.includes('BHW') || p.includes('BNS');
-  });
+  // Preserve the known personnel list until each group is encoded in Officials Management.
+  if(!barangay.length) barangay=fallbackToOfficialRows(BTO_FALLBACK_BARANGAY);
+  if(!sk.length) sk=fallbackToOfficialRows(BTO_FALLBACK_SK);
+  if(!tanod.length) tanod=fallbackToOfficialRows(BTO_FALLBACK_TANODS);
 
-  const used=new Set([...punong,...kagawads,...sk,...staff,...support]);
-  const others=officials.filter(o=>!used.has(o));
+  const brgyRoot=document.getElementById('public-officials-barangay');
+  const skRoot=document.getElementById('public-officials-sk');
+  const tanodRoot=document.getElementById('public-officials-tanod');
 
-  if(!officials.length){
-    root.innerHTML='<div class="live-empty">Organizational chart will appear once officials are encoded.</div>';
-    return;
+  if(brgyRoot){
+    brgyRoot.innerHTML=barangay.map(o=>{
+      const p=officialPosition(o).toUpperCase();
+      const primary=p.includes('PUNONG BARANGAY');
+      return renderOfficialCard(o,primary);
+    }).join('');
   }
 
-  const level=(title,rows,primary=false)=>rows.length?`
-    <div class="org-level">
-      <div class="org-level-title">${publicEsc(title)}</div>
-      ${rows.map(o=>renderOrgPerson(o,primary)).join('')}
-    </div>`:'';
+  if(skRoot){
+    skRoot.innerHTML=sk.map(o=>{
+      const p=officialPosition(o).toUpperCase();
+      const primary=p.includes('CHAIR');
+      return renderOfficialCard(o,primary);
+    }).join('');
+  }
 
-  root.innerHTML=`<div class="org-chart">
-    ${level('Punong Barangay',punong,true)}
-    ${level('Sangguniang Barangay',kagawads)}
-    ${level('Sangguniang Kabataan',sk)}
-    ${level('Barangay Secretary / Treasurer / Staff',staff)}
-    ${level('Barangay Support Personnel',support)}
-    ${level('Other Barangay Personnel',others)}
-  </div>`;
+  if(tanodRoot){
+    tanodRoot.innerHTML=tanod.map(o=>renderOfficialCard(o,false)).join('');
+  }
 }
 
 function applyPublicData(data){
   if(!data || !data.success) return;
+  renderOfficialsPersonnel(data);
   renderHighlightsActivityGallery(data);
   renderAnnouncementTicker(data);
   renderHomepageSiteMedia(data);
-  renderOrganizationalChart(data);
+  renderOrganizationalChartPhoto(data);
   renderHeroActivityCarousel(data);
   renderHomeAnnouncements(data);
   renderHomeRecentActivities(data);
