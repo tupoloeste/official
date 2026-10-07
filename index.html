@@ -934,6 +934,63 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
   }
 }
 
+
+/* ===== Final visual card cleanup ===== */
+.hero-visual-grid{
+  grid-template-columns:minmax(0,1.5fr) minmax(300px,.7fr);
+  gap:22px;
+  padding:0 18px;
+}
+
+#hero-officials-card{
+  max-width:920px;
+  justify-self:center;
+  width:100%;
+}
+
+#hero-officials-card img{
+  width:100%;
+  height:360px;
+  min-height:360px;
+  object-fit:contain;
+  object-position:center;
+  background:#fff;
+}
+
+#hero-activity-carousel{
+  max-width:420px;
+  width:100%;
+  justify-self:center;
+}
+
+#hero-activity-carousel img{
+  height:300px;
+}
+
+.hero-officials-clean{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+}
+
+@media(max-width:900px){
+  .hero-visual-grid{
+    grid-template-columns:1fr;
+    padding:0 12px;
+  }
+  #hero-officials-card,
+  #hero-activity-carousel{
+    max-width:none;
+  }
+  #hero-officials-card img{
+    height:310px;
+    min-height:310px;
+  }
+  #hero-activity-carousel img{
+    height:240px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -984,7 +1041,7 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
       </div>
       <div class="hero-visual-grid">
         <div class="hero-visual-card" id="hero-officials-card">
-          <span class="hero-panel-label">Barangay Officials</span>
+          
           <img
             id="hero-officials-photo"
             src=""
@@ -2221,8 +2278,15 @@ function renderAnnouncementTicker(data){
       <span>${contentMeta(x)}</span>
     </div>`).join('');
 
-  // Duplicate once for seamless continuous marquee.
-  track.innerHTML=makeItems()+makeItems();
+  if(rows.length===1){
+    track.innerHTML=makeItems();
+    track.style.animation='none';
+    track.style.width='100%';
+  }else{
+    track.innerHTML=makeItems()+makeItems();
+    track.style.animation='';
+    track.style.width='max-content';
+  }
 }
 
 function renderHomeAnnouncements(data){
@@ -2432,7 +2496,6 @@ function renderHeroActivityCarousel(data){
         referrerpolicy="no-referrer"
         onerror="this.style.display='none'">
       <div class="hero-visual-overlay">
-        <small>${publicEsc(heroSlideLabel(x))}</small>
         <strong>${publicEsc(x.Title||'Barangay Activity')}</strong>
         <span>${contentMeta(x)}</span>
       </div>
