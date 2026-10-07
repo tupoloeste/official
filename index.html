@@ -1041,6 +1041,39 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
   }
 }
 
+
+/* ===== Announcement ticker readability update ===== */
+.announcement-ticker-label{
+  font-size:13px;
+  padding:13px 17px;
+}
+
+.announcement-ticker-item{
+  font-size:14px;
+  padding:0 26px;
+  min-height:44px;
+}
+
+.announcement-ticker-item strong{
+  font-size:14px;
+  font-weight:800;
+}
+
+.announcement-ticker-track{
+  animation-duration:30s;
+}
+
+@media(max-width:700px){
+  .announcement-ticker-label{
+    font-size:11px;
+    padding:11px 11px;
+  }
+  .announcement-ticker-item,
+  .announcement-ticker-item strong{
+    font-size:13px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -2328,15 +2361,11 @@ function renderAnnouncementTicker(data){
       <span>${contentMeta(x)}</span>
     </div>`).join('');
 
-  if(rows.length===1){
-    track.innerHTML=makeItems();
-    track.style.animation='none';
-    track.style.width='100%';
-  }else{
-    track.innerHTML=makeItems()+makeItems();
-    track.style.animation='';
-    track.style.width='max-content';
-  }
+  // Duplicate the feed for a continuous walking ticker.
+  // Hovering the ticker pauses the animation so it can be read easily.
+  track.innerHTML=makeItems()+makeItems();
+  track.style.animation='';
+  track.style.width='max-content';
 }
 
 function renderHomeAnnouncements(data){
@@ -2491,15 +2520,11 @@ function heroSlideLabel(row){
     if(!isNaN(eventDate)) eventDate.setHours(0,0,0,0);
   }
 
-  if(type==='ANNOUNCEMENT'){
-    if(eventDate && eventDate>=today) return 'Upcoming Announcement';
-    return 'Announcement';
-  }
+  // Anything with a future/current date is presented as an upcoming event.
+  if(eventDate && eventDate>=today) return 'Upcoming Event';
 
-  if(type==='ACTIVITY'){
-    if(eventDate && eventDate<today) return 'Recent Activity';
-    return 'Activity';
-  }
+  if(type==='ACTIVITY') return 'Recent Activity';
+  if(type==='ANNOUNCEMENT') return 'Announcement';
 
   return 'Barangay Update';
 }
