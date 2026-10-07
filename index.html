@@ -773,6 +773,82 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
   margin-bottom:-6px;
 }
 
+
+/* Dedicated pages stay hidden unless selected */
+.page-view{display:none}
+.page-view.active{display:block}
+
+
+/* ===== Revised homepage hero: officials photo emphasized ===== */
+.hero-grid{
+  grid-template-columns:1fr;
+  gap:18px;
+}
+
+.hero-copy{
+  display:none;
+}
+
+.hero-visual-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1.45fr) minmax(300px,.85fr);
+  gap:16px;
+  width:100%;
+}
+
+.hero-visual-card{
+  min-height:380px;
+  border-radius:20px;
+}
+
+#hero-officials-card{
+  min-height:420px;
+}
+
+#hero-officials-card img{
+  min-height:420px;
+  object-fit:contain;
+  object-position:center;
+  background:#fff;
+}
+
+#hero-activity-carousel{
+  min-height:420px;
+}
+
+#hero-activity-carousel img{
+  min-height:420px;
+  object-fit:contain;
+  object-position:center;
+  background:#fff;
+}
+
+.hero-visual-overlay{
+  padding:58px 18px 18px;
+}
+
+@media(max-width:900px){
+  .hero-visual-grid{
+    grid-template-columns:1fr;
+  }
+
+  #hero-officials-card,
+  #hero-activity-carousel,
+  #hero-officials-card img,
+  #hero-activity-carousel img{
+    min-height:320px;
+  }
+}
+
+@media(max-width:600px){
+  #hero-officials-card,
+  #hero-activity-carousel,
+  #hero-officials-card img,
+  #hero-activity-carousel img{
+    min-height:260px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -819,13 +895,7 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
 <div class="view active home-view" id="view-home">
   <section class="hero">
     <div class="container hero-grid">
-      <div>
-        <span class="eyebrow">Official Barangay Information Portal</span>
-        <h1>Barangay Tupol Oeste</h1>
-        <p>Official community information, announcements, programs, services, governance, and public resources.</p>
-        <div class="hero-actions">
-          <button class="btn btn-white" onclick="showView('updates')">📢 View Barangay Updates</button>
-        </div>
+      
       </div>
       <div class="hero-visual-grid">
         <div class="hero-visual-card" id="hero-officials-card">
@@ -917,26 +987,7 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
 
   
 
-  <section class="portal-home-section">
-    <div class="container">
-      <div class="portal-section-title">
-        <h2>Contact Information</h2>
-        <button onclick="showView('contact')">View Contact Page →</button>
-      </div>
-
-      <div class="home-contact">
-        <div class="left">
-          <h3>Barangay Tupol Oeste</h3>
-          <p>Municipality of Cabatuan, Province of Iloilo</p>
-        </div>
-        <div class="right">
-          <p><strong>Office Hours:</strong> Coming Soon</p>
-          <p><strong>Contact Number:</strong> Coming Soon</p>
-          <p><strong>Emergency Contacts:</strong> Coming Soon</p>
-        </div>
-      </div>
-    </div>
-  </section>
+  
 </div>
 
 <!-- BARANGAY CATEGORY -->
@@ -1081,9 +1132,7 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
     </div>
     <div class="tab-panel active" id="off-brgy">
       <div class="flex-preview">
-        <strong>Flexible Committee Assignment Preview</strong><br>
-        Committee names are linked to their committee profiles. If an assignment changes later, only the assignment data needs to be updated.
-      </div>
+        
 
       <div class="person-grid">
         <div class="person">
