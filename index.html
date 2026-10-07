@@ -849,6 +849,91 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
   }
 }
 
+
+/* ===== Refined hero proportions ===== */
+.hero-visual-grid{
+  grid-template-columns:minmax(0,1.65fr) minmax(280px,.65fr);
+  gap:16px;
+  align-items:stretch;
+}
+
+#hero-officials-card{
+  min-height:380px;
+}
+
+#hero-officials-card img{
+  min-height:380px;
+  height:380px;
+  object-fit:contain;
+  object-position:center;
+  background:#fff;
+}
+
+#hero-activity-carousel{
+  min-height:320px;
+  align-self:center;
+}
+
+#hero-activity-carousel .hero-carousel-slide,
+#hero-activity-carousel .hero-carousel-track{
+  min-height:320px;
+}
+
+#hero-activity-carousel img{
+  min-height:0;
+  height:320px;
+  object-fit:contain;
+  object-position:center;
+  background:#fff;
+}
+
+#hero-activity-carousel .hero-visual-overlay{
+  padding:48px 14px 14px;
+}
+
+#hero-activity-carousel .hero-visual-overlay strong{
+  font-size:16px;
+}
+
+#hero-activity-carousel .hero-visual-overlay span{
+  font-size:11px;
+}
+
+@media(max-width:900px){
+  .hero-visual-grid{
+    grid-template-columns:1fr;
+  }
+
+  #hero-officials-card,
+  #hero-officials-card img{
+    min-height:320px;
+    height:320px;
+  }
+
+  #hero-activity-carousel,
+  #hero-activity-carousel .hero-carousel-slide,
+  #hero-activity-carousel .hero-carousel-track,
+  #hero-activity-carousel img{
+    min-height:0;
+    height:260px;
+  }
+}
+
+@media(max-width:600px){
+  #hero-officials-card,
+  #hero-officials-card img{
+    min-height:260px;
+    height:260px;
+  }
+
+  #hero-activity-carousel,
+  #hero-activity-carousel .hero-carousel-slide,
+  #hero-activity-carousel .hero-carousel-track,
+  #hero-activity-carousel img{
+    height:220px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -922,7 +1007,7 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
         </div>
 
         <div class="hero-visual-card" id="hero-activity-carousel">
-          <span class="hero-panel-label">Current Activities</span>
+          <span class="hero-panel-label" id="hero-slide-label">Updates</span>
           <div class="hero-carousel-track" id="hero-carousel-track">
             <div class="hero-activity-placeholder">
               <div>
@@ -2281,6 +2366,36 @@ function heroActivityRows(data){
     .slice(0,8);
 }
 
+
+function heroSlideLabel(row){
+  const type=String(row.Type||'').toUpperCase();
+  const today=new Date(); today.setHours(0,0,0,0);
+
+  let eventDate=null;
+  if(row['Event Date']){
+    eventDate=new Date(row['Event Date']);
+    if(!isNaN(eventDate)) eventDate.setHours(0,0,0,0);
+  }
+
+  if(type==='ANNOUNCEMENT'){
+    if(eventDate && eventDate>=today) return 'Upcoming Announcement';
+    return 'Announcement';
+  }
+
+  if(type==='ACTIVITY'){
+    if(eventDate && eventDate<today) return 'Recent Activity';
+    return 'Activity';
+  }
+
+  return 'Barangay Update';
+}
+
+function updateHeroSlideLabel(){
+  const label=document.getElementById('hero-slide-label');
+  if(!label || !heroCarouselRows.length) return;
+  label.textContent=heroSlideLabel(heroCarouselRows[heroCarouselIndex]);
+}
+
 function renderHeroActivityCarousel(data){
   const track=document.getElementById('hero-carousel-track');
   const controls=document.getElementById('hero-carousel-controls');
@@ -2289,6 +2404,7 @@ function renderHeroActivityCarousel(data){
 
   heroCarouselRows=heroActivityRows(data);
   heroCarouselIndex=0;
+  updateHeroSlideLabel();
 
   if(heroCarouselTimer){
     clearInterval(heroCarouselTimer);
@@ -2316,7 +2432,7 @@ function renderHeroActivityCarousel(data){
         referrerpolicy="no-referrer"
         onerror="this.style.display='none'">
       <div class="hero-visual-overlay">
-        <small>${publicEsc(String(x.Type||'Activity'))}</small>
+        <small>${publicEsc(heroSlideLabel(x))}</small>
         <strong>${publicEsc(x.Title||'Barangay Activity')}</strong>
         <span>${contentMeta(x)}</span>
       </div>
@@ -2329,6 +2445,7 @@ function renderHeroActivityCarousel(data){
       aria-label="Show activity ${i+1}"></button>`).join('');
 
   controls.style.display=heroCarouselRows.length>1?'flex':'none';
+  updateHeroSlideLabel();
 
   if(heroCarouselRows.length>1){
     heroCarouselTimer=setInterval(()=>heroCarouselGo((heroCarouselIndex+1)%heroCarouselRows.length),4500);
@@ -2347,6 +2464,8 @@ function heroCarouselGo(index,event){
   document.querySelectorAll('.hero-carousel-dot').forEach((el,i)=>{
     el.classList.toggle('active',i===heroCarouselIndex);
   });
+
+  updateHeroSlideLabel();
 
   if(heroCarouselTimer){
     clearInterval(heroCarouselTimer);
