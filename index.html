@@ -1486,6 +1486,133 @@ main > .view.active{
 .view{display:none}
 .view.active{display:block}
 
+
+/* ===== Live Highlights slideshow ===== */
+.highlights-live-wrap{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 320px;
+  gap:16px;
+}
+.highlights-slideshow{
+  position:relative;
+  height:390px;
+  border-radius:16px;
+  overflow:hidden;
+  background:#fff;
+  border:1px solid #e5e7eb;
+}
+.highlights-slide{
+  position:absolute;
+  inset:0;
+  opacity:0;
+  visibility:hidden;
+  transition:opacity .55s ease, visibility .55s ease;
+}
+.highlights-slide.active{
+  opacity:1;
+  visibility:visible;
+}
+.highlights-slide img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  background:#fff;
+  display:block;
+}
+.highlights-slide-caption{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  padding:56px 18px 16px;
+  color:#fff;
+  background:linear-gradient(transparent,rgba(0,0,0,.82));
+}
+.highlights-slide-caption strong{
+  display:block;
+  font-size:22px;
+  margin-bottom:4px;
+}
+.highlights-slide-caption span{
+  font-size:13px;
+}
+.highlights-slide-controls{
+  position:absolute;
+  top:50%;
+  left:12px;
+  right:12px;
+  transform:translateY(-50%);
+  display:flex;
+  justify-content:space-between;
+  z-index:5;
+  pointer-events:none;
+}
+.highlights-slide-controls button{
+  pointer-events:auto;
+  width:38px;
+  height:38px;
+  border-radius:50%;
+  border:0;
+  background:rgba(0,0,0,.45);
+  color:#fff;
+  font-size:22px;
+  padding:0;
+}
+.highlights-slide-dots{
+  position:absolute;
+  bottom:12px;
+  right:16px;
+  z-index:6;
+  display:flex;
+  gap:5px;
+}
+.highlights-slide-dots button{
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  border:0;
+  padding:0;
+  background:rgba(255,255,255,.55);
+}
+.highlights-slide-dots button.active{
+  width:20px;
+  border-radius:999px;
+  background:#fff;
+}
+.highlights-side-gallery{
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:16px;
+  padding:14px;
+}
+.highlights-side-gallery h3{
+  margin:0 0 10px;
+  font-size:17px;
+}
+.highlights-side-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:7px;
+}
+.highlights-side-grid img{
+  width:100%;
+  height:105px;
+  object-fit:cover;
+  border-radius:9px;
+  cursor:pointer;
+}
+@media(max-width:850px){
+  .highlights-live-wrap{grid-template-columns:1fr}
+  .highlights-slideshow{height:310px}
+}
+@media(max-width:600px){
+  .highlights-slideshow{height:240px}
+  .highlights-side-grid{grid-template-columns:repeat(3,1fr)}
+  .highlights-side-grid img{height:80px}
+}
+
+
+.view{display:none}.view.active{display:block}
 </style>
 </head>
 <body>
@@ -1583,23 +1710,20 @@ main > .view.active{
         <button onclick="showView('updates')">View All →</button>
       </div>
 
-      <div class="feature-grid">
-        <div class="feature-main">
-          <div class="cover">
-            <div>
-              <h3>Limpyo Iloilo</h3>
-              <p>Community clean-up activity · October 11, 2026 · 8:30 AM</p>
-            </div>
-          </div>
-          <div class="meta">Featured Barangay Activity</div>
+      <div class="highlights-live-wrap">
+        <div class="highlights-slideshow"
+             id="highlights-live-slideshow"
+             onmouseenter="pauseHighlightsSlideshow()"
+             onmouseleave="resumeHighlightsSlideshow()">
+          <div class="highlights-gallery-empty">Loading latest activity photos...</div>
         </div>
 
-        <div class="highlights-gallery-card">
+        <div class="highlights-side-gallery">
           <h3>Barangay Activity Gallery</h3>
-          <div class="highlights-gallery-grid" id="highlights-activity-gallery">
-            <div class="highlights-gallery-empty">Loading activity photos...</div>
+          <div class="highlights-side-grid" id="highlights-side-grid">
+            <div class="highlights-gallery-empty">Loading photos...</div>
           </div>
-          <div class="highlights-gallery-more" id="highlights-gallery-more"></div>
+          <div class="highlights-gallery-more" id="highlights-side-more"></div>
         </div>
       </div>
     </div>
@@ -2898,6 +3022,136 @@ function renderAnnouncementTicker(data){
 }
 
 
+
+let highlightsRows=[];
+let highlightsIndex=0;
+let highlightsTimer=null;
+
+function allActivityPhotoRows(data){
+  const out=[];
+  const seen=new Set();
+
+  const sorted=(data.content||[]).slice().sort((a,b)=>
+    String(b['Event Date']||b['Created At']||'').localeCompare(
+      String(a['Event Date']||a['Created At']||'')
+    )
+  );
+
+  sorted.forEach(row=>{
+    eventPhotoUrls(row).forEach(url=>{
+      if(!url || seen.has(url)) return;
+      seen.add(url);
+      out.push({
+        url,
+        title:row.Title||'Barangay Activity',
+        meta:contentMeta(row)
+      });
+    });
+  });
+
+  return out;
+}
+
+function renderHighlightsLive(data){
+  const root=document.getElementById('highlights-live-slideshow');
+  const side=document.getElementById('highlights-side-grid');
+  const more=document.getElementById('highlights-side-more');
+  if(!root || !side) return;
+
+  highlightsRows=allActivityPhotoRows(data);
+  highlightsIndex=0;
+
+  if(highlightsTimer){
+    clearInterval(highlightsTimer);
+    highlightsTimer=null;
+  }
+
+  if(!highlightsRows.length){
+    root.innerHTML='<div class="highlights-gallery-empty">No activity photos yet.</div>';
+    side.innerHTML='<div class="highlights-gallery-empty">No activity photos yet.</div>';
+    if(more) more.textContent='';
+    return;
+  }
+
+  root.innerHTML=highlightsRows.map((x,i)=>`
+    <div class="highlights-slide ${i===0?'active':''}">
+      <img src="${publicEsc(x.url)}"
+        alt="${publicEsc(x.title)}"
+        loading="${i===0?'eager':'lazy'}"
+        referrerpolicy="no-referrer"
+        onclick="openPublicGallery('${publicEsc(x.url)}',event)"
+        onerror="this.style.display='none'">
+      <div class="highlights-slide-caption">
+        <strong>${publicEsc(x.title)}</strong>
+        <span>${x.meta}</span>
+      </div>
+    </div>`).join('')+
+    (highlightsRows.length>1 ? `
+      <div class="highlights-slide-controls">
+        <button type="button" onclick="highlightsPrev(event)">‹</button>
+        <button type="button" onclick="highlightsNext(event)">›</button>
+      </div>
+      <div class="highlights-slide-dots">
+        ${highlightsRows.slice(0,12).map((x,i)=>`
+          <button class="${i===0?'active':''}" onclick="highlightsGo(${i},event)"></button>
+        `).join('')}
+      </div>` : '');
+
+  const thumbs=highlightsRows.slice(0,6);
+  side.innerHTML=thumbs.map((x,i)=>`
+    <img src="${publicEsc(x.url)}"
+      alt="${publicEsc(x.title)}"
+      loading="lazy"
+      referrerpolicy="no-referrer"
+      onclick="highlightsGo(${i},event)"
+      onerror="this.style.display='none'">`).join('');
+
+  if(more){
+    more.textContent=highlightsRows.length>6
+      ? `Showing 6 of ${highlightsRows.length} activity photos`
+      : `${highlightsRows.length} activity photo${highlightsRows.length>1?'s':''}`;
+  }
+
+  if(highlightsRows.length>1) resumeHighlightsSlideshow();
+}
+
+function highlightsGo(index,event){
+  if(event) event.stopPropagation();
+  if(!highlightsRows.length) return;
+
+  highlightsIndex=(index+highlightsRows.length)%highlightsRows.length;
+
+  document.querySelectorAll('#highlights-live-slideshow .highlights-slide').forEach((el,i)=>{
+    el.classList.toggle('active',i===highlightsIndex);
+  });
+
+  document.querySelectorAll('#highlights-live-slideshow .highlights-slide-dots button').forEach((el,i)=>{
+    el.classList.toggle('active',i===highlightsIndex);
+  });
+}
+
+function highlightsNext(event){
+  highlightsGo(highlightsIndex+1,event);
+}
+
+function highlightsPrev(event){
+  highlightsGo(highlightsIndex-1,event);
+}
+
+function pauseHighlightsSlideshow(){
+  if(highlightsTimer){
+    clearInterval(highlightsTimer);
+    highlightsTimer=null;
+  }
+}
+
+function resumeHighlightsSlideshow(){
+  pauseHighlightsSlideshow();
+  if(highlightsRows.length>1){
+    highlightsTimer=setInterval(()=>highlightsGo(highlightsIndex+1),4000);
+  }
+}
+
 function renderHighlightsActivityGallery(data){
   const root=document.getElementById('highlights-activity-gallery');
   const more=document.getElementById('highlights-gallery-more');
@@ -3347,7 +3601,14 @@ function renderOfficialCard(o,primary=false){
   const position=o['Position']||o.position||'';
   const photo=normalizePublicImageUrl(o['Photo URL']||o.photoUrl||'');
   const initial=(name.trim().charAt(0)||'B').toUpperCase();
-  const committees=Array.isArray(o.committees)?o.committees:[];
+  const rawCommittees=Array.isArray(o.committees)?o.committees:[];
+  const committeeSeen=new Set();
+  const committees=rawCommittees.filter(c=>{
+    const key=String(c.committeeId||c.committeeName||'').trim().toUpperCase();
+    if(!key || committeeSeen.has(key)) return false;
+    committeeSeen.add(key);
+    return true;
+  });
 
   const committeeHtml=committees.length
     ? `<div class="official-live-committees">${
@@ -3388,15 +3649,73 @@ function fallbackToOfficialRows(rows){
   }));
 }
 
+function normalizedOfficialName(o){
+  return String(o['Full Name']||o.fullName||o.name||'')
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g,' ');
+}
+
 function deDuplicateOfficials(rows){
-  const seen=new Set();
-  return rows.filter(o=>{
-    const name=String(o['Full Name']||o.fullName||'').trim().toUpperCase();
-    const position=String(o['Position']||o.position||'').trim().toUpperCase();
-    const key=name+'|'+position;
-    if(!name || seen.has(key)) return false;
-    seen.add(key);
-    return true;
+  const byName=new Map();
+
+  rows.forEach(o=>{
+    const name=normalizedOfficialName(o);
+    if(!name) return;
+
+    // Prefer a richer/live record if the same person appears more than once.
+    const current=byName.get(name);
+    if(!current){
+      byName.set(name,o);
+      return;
+    }
+
+    const currentScore=
+      (current['Photo URL']?4:0)+
+      ((current.committees||[]).length?3:0)+
+      (current['Official ID']?2:0)+
+      (current['Contact Number']?1:0);
+
+    const nextScore=
+      (o['Photo URL']?4:0)+
+      ((o.committees||[]).length?3:0)+
+      (o['Official ID']?2:0)+
+      (o['Contact Number']?1:0);
+
+    if(nextScore>currentScore) byName.set(name,o);
+  });
+
+  return Array.from(byName.values());
+}
+
+function mergeLiveWithFallback(liveRows,fallbackRows){
+  const live=deDuplicateOfficials(liveRows);
+  const liveMap=new Map(live.map(o=>[normalizedOfficialName(o),o]));
+
+  return fallbackRows.map(f=>{
+    const key=String(f.name||'').trim().toUpperCase().replace(/\s+/g,' ');
+    const found=liveMap.get(key);
+
+    if(found){
+      // Keep the official master-list position label if live record only says "KAGAWAD".
+      const livePos=String(found['Position']||found.position||'').trim();
+      const resolvedPos=(livePos && livePos.toUpperCase()!=='KAGAWAD')
+        ? livePos
+        : f.position;
+
+      return {
+        ...found,
+        'Full Name':found['Full Name']||f.name,
+        'Position':resolvedPos
+      };
+    }
+
+    return {
+      'Full Name':f.name,
+      'Position':f.position,
+      'Photo URL':'',
+      committees:[]
+    };
   });
 }
 
@@ -3407,14 +3726,22 @@ function renderOfficialsPersonnel(data){
     )
   );
 
-  let barangay=active.filter(isBarangayOfficial);
-  let sk=active.filter(isSKOfficial);
-  let tanod=active.filter(isTanodOfficial);
+  // Always preserve the full official master list.
+  // Encoded/live records replace the matching fallback person by name.
+  let barangay=mergeLiveWithFallback(
+    active.filter(isBarangayOfficial),
+    BTO_FALLBACK_BARANGAY
+  );
 
-  // Preserve the known personnel list until each group is encoded in Officials Management.
-  if(!barangay.length) barangay=fallbackToOfficialRows(BTO_FALLBACK_BARANGAY);
-  if(!sk.length) sk=fallbackToOfficialRows(BTO_FALLBACK_SK);
-  if(!tanod.length) tanod=fallbackToOfficialRows(BTO_FALLBACK_TANODS);
+  let sk=mergeLiveWithFallback(
+    active.filter(isSKOfficial),
+    BTO_FALLBACK_SK
+  );
+
+  let tanod=mergeLiveWithFallback(
+    active.filter(isTanodOfficial),
+    BTO_FALLBACK_TANODS
+  );
 
   const brgyRoot=document.getElementById('public-officials-barangay');
   const skRoot=document.getElementById('public-officials-sk');
@@ -3444,6 +3771,7 @@ function renderOfficialsPersonnel(data){
 function applyPublicData(data){
   if(!data || !data.success) return;
   renderOfficialsPersonnel(data);
+  renderHighlightsLive(data);
   renderHighlightsActivityGallery(data);
   renderAnnouncementTicker(data);
   renderHomepageSiteMedia(data);
