@@ -6290,8 +6290,16 @@ async function loadPublicCommittee(){
   renderCommitteePublic(merged,'COM-003');
 }
 
+const BTO_VIEW_DATA_REQUESTED=new Set();
+
 function btoLoadDataForView(viewName){
-  switch(viewName){
+  const key=String(viewName||'home');
+
+  // Avoid repeatedly triggering the same page loader during one visit.
+  if(BTO_VIEW_DATA_REQUESTED.has(key)) return;
+  BTO_VIEW_DATA_REQUESTED.add(key);
+
+  switch(key){
     case 'home':
     case 'updates':
     case 'announcements':
@@ -6317,9 +6325,6 @@ function btoLoadDataForView(viewName){
 
     case 'services-resources':
     case 'services':
-      loadPublicContact();
-      break;
-
     case 'contact':
       loadPublicContact();
       break;
@@ -6330,20 +6335,15 @@ function btoLoadDataForView(viewName){
       break;
 
     default:
-      if(String(viewName||'').startsWith('committee-')){
+      if(key.startsWith('committee-')){
         loadPublicCommittee();
       }
   }
 }
 
 function btoStartBackgroundRefresh(){
-  const run=()=>loadPublicHome();
-
-  if('requestIdleCallback' in window){
-    requestIdleCallback(run,{timeout:600});
-  }else{
-    setTimeout(run,20);
-  }
+  // Retained for compatibility. Startup loading is handled by showView().
+  // This intentionally does not trigger another request.
 }
 
 
@@ -6371,8 +6371,8 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
   }
 
-  btoStartBackgroundRefresh();
-  btoLoadDataForView(requested);
+  // showView(requested) already triggers the correct lazy data request.
+  // Do not fire duplicate Home requests during startup.
 });
 </script>
 
