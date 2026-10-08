@@ -2722,6 +2722,82 @@ a.back-btn:focus{
   .program-detail-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
+
+/* ===== Services / Dog Registration ===== */
+.services-main-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:17px;
+}
+.service-main-card{
+  min-height:290px;
+}
+.dog-service-card{
+  text-align:left;
+}
+.dog-service-actions{
+  display:flex;
+  flex-direction:column;
+  gap:9px;
+  margin-top:18px;
+}
+.dog-service-btn{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  text-decoration:none;
+  border-radius:10px;
+  padding:11px 14px;
+  font-weight:800;
+  border:1px solid #d0d5dd;
+  background:#fff;
+  color:#242424;
+}
+.dog-service-btn.primary{
+  background:#242424;
+  border-color:#242424;
+  color:#fff;
+}
+.service-coming-badge{
+  display:inline-flex;
+  align-items:center;
+  width:max-content;
+  max-width:100%;
+  border-radius:999px;
+  padding:5px 10px;
+  background:#fff1f3;
+  border:1px solid #ffc7d0;
+  color:#c5162e;
+  font-size:11px;
+  font-weight:800;
+}
+.service-placeholder-card{
+  max-width:760px;
+  margin:0 auto;
+  background:#fff;
+  border:1px solid #e4e7ec;
+  border-radius:16px;
+  padding:28px;
+  text-align:center;
+}
+.service-placeholder-icon{
+  font-size:44px;
+  margin-bottom:10px;
+}
+.service-placeholder-card h2{
+  margin:0 0 9px;
+}
+.service-placeholder-card p{
+  color:#667085;
+  line-height:1.65;
+  margin:0 auto 16px;
+  max-width:620px;
+}
+@media(max-width:720px){
+  .services-main-grid{grid-template-columns:1fr}
+}
+
 </style>
 </head>
 <body>
@@ -2745,7 +2821,7 @@ a.back-btn:focus{
       <button onclick="showView('barangay')">Barangay</button>
       <button onclick="showView('governance')">Governance</button>
       <button onclick="showView('updates')">Updates</button>
-      <button onclick="showView('services-resources')">Services & Resources</button>
+      <button onclick="showView('services-resources')">Services</button>
       <button onclick="showView('contact')">Contact</button>
     </nav>
   </div>
@@ -2925,24 +3001,57 @@ a.back-btn:focus{
 <div class="view" id="view-services-resources">
   <div class="page-head">
     <div class="container page-head-row">
-      <div><h1>Services & Resources</h1><p>Barangay services, requirements, forms, and downloadable documents.</p></div>
+      <div>
+        <h1>Services</h1>
+        <p>Access barangay services and the official Dog Registration system.</p>
+      </div>
       <button class="back-btn" onclick="showView('home')">← Back to Home</button>
     </div>
   </div>
-  <div class="page-content"><div class="container">
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:17px">
-      <button class="module-card" onclick="showView('services')">
-        <div class="icon">📄</div><h3>Barangay Services</h3>
-        <p>Clearance, Residency, Indigency, Business Clearance, and other services.</p>
-        <span class="module-link">Open</span>
-      </button>
-      <button class="module-card" onclick="showView('downloads')">
-        <div class="icon">⬇️</div><h3>Forms & Downloads</h3>
-        <p>Downloadable forms, reports, notices, and public documents.</p>
-        <span class="module-link">Open</span>
-      </button>
+
+  <div class="page-content">
+    <div class="container">
+      <div class="services-main-grid">
+        <button class="module-card service-main-card" onclick="showView('services')">
+          <div class="icon">📄</div>
+          <h3>Barangay Services</h3>
+          <p>Barangay clearances, certifications, residency, indigency, and other official services.</p>
+          <span class="service-coming-badge">Online Request — Coming Soon</span>
+          <span class="module-link">View Services</span>
+        </button>
+
+        <div class="module-card service-main-card dog-service-card">
+          <div class="icon">🐕</div>
+          <h3>Dog Registration</h3>
+          <p>Access the existing BRCC-DMS Dog Registration portal or install the Android app.</p>
+
+          <div class="dog-service-actions">
+            <a id="dogPortalPublicBtn"
+               class="dog-service-btn primary"
+               href="#"
+               target="_blank"
+               rel="noopener"
+               style="display:none">
+              Open Dog Registration Portal
+            </a>
+
+            <a id="dogAppPublicBtn"
+               class="dog-service-btn"
+               href="#"
+               target="_blank"
+               rel="noopener"
+               style="display:none">
+              Download Android App
+            </a>
+
+            <div id="dogServiceLinksEmpty" class="service-coming-badge">
+              Links will be available once configured.
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-  </div></div>
+  </div>
 </div>
 
 <!-- ANNOUNCEMENTS -->
@@ -2964,15 +3073,29 @@ a.back-btn:focus{
 
 <!-- SERVICES -->
 <div class="view" id="view-services">
-  <div class="page-head"><div class="container page-head-row"><div><h1>Barangay Services</h1><p>Commonly requested documents and services.</p></div><button class="back-btn" onclick="showView('services-resources')">← Back to Services & Resources</button></div></div>
-  <div class="page-content"><div class="container">
-    <div class="grid grid-4">
-      <div class="card"><div class="icon">📄</div><h3>Barangay Clearance</h3><p>Requirements and procedure will be added soon.</p></div>
-      <div class="card"><div class="icon">🏠</div><h3>Certificate of Residency</h3><p>Requirements and procedure will be added soon.</p></div>
-      <div class="card"><div class="icon">🤝</div><h3>Certificate of Indigency</h3><p>Requirements and procedure will be added soon.</p></div>
-      <div class="card"><div class="icon">🏪</div><h3>Business Clearance</h3><p>Requirements and procedure will be added soon.</p></div>
+  <div class="page-head">
+    <div class="container page-head-row">
+      <div>
+        <h1>Barangay Services</h1>
+        <p>Official barangay clearances, certifications, and related services.</p>
+      </div>
+      <button class="back-btn" onclick="showView('services-resources')">← Back to Services</button>
     </div>
-  </div></div>
+  </div>
+
+  <div class="page-content">
+    <div class="container">
+      <div class="service-placeholder-card">
+        <div class="service-placeholder-icon">📄</div>
+        <h2>Online Barangay Services</h2>
+        <p>
+          Online requests for barangay clearances and certificates are being prepared.
+          Residents may continue to coordinate with the Barangay Office for current service requirements.
+        </p>
+        <span class="service-coming-badge">Coming Soon</span>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- OFFICIALS -->
@@ -3692,17 +3815,6 @@ a.back-btn:focus{
 </div>
 
 <!-- DOWNLOADS -->
-<div class="view" id="view-downloads">
-  <div class="page-head"><div class="container page-head-row"><div><h1>Downloads & Forms</h1><p>Downloadable barangay forms and public documents.</p></div><button class="back-btn" onclick="showView('services-resources')">← Back to Services & Resources</button></div></div>
-  <div class="page-content"><div class="container">
-    <div class="grid grid-3">
-      <div class="card"><div class="icon">📄</div><h3>Forms</h3><p>Downloadable forms will be added soon.</p></div>
-      <div class="card"><div class="icon">📘</div><h3>Reports</h3><p>Public reports will be added soon.</p></div>
-      <div class="card"><div class="icon">📑</div><h3>Notices</h3><p>Public notices and documents will be added soon.</p></div>
-    </div>
-  </div></div>
-</div>
-
 <!-- CONTACT -->
 <div class="view" id="view-contact">
   <div class="page-head"><div class="container page-head-row"><div><h1>Contact Information</h1><p>Official contact details will be published once finalized.</p></div><button class="back-btn" onclick="showView('home')">← Back to Home</button></div></div>
@@ -3795,7 +3907,7 @@ function switchTab(scope,panelId,btn){
 
 
 const BTO_PUBLIC_API = "https://script.google.com/macros/s/AKfycbwM6bagjlHKao-NCB3d_nDwX29zO4EFKcoj50vABCQP7bKJuSI4j7772Zam9LwNiLCqNg/exec?action=publicData";
-const BTO_PUBLIC_CACHE_KEY = 'bto_public_data_v6';
+const BTO_PUBLIC_CACHE_KEY = 'bto_public_data_v7';
 const BTO_PUBLIC_CACHE_MS = 5 * 60 * 1000;
 
 function publicEsc(v){
@@ -5666,12 +5778,50 @@ function closeProgramDetail(event){
 }
 
 
+
+/* ===== PUBLIC SERVICE LINKS ===== */
+function renderPublicServiceLinks(data){
+  const links=data?.serviceLinks||{};
+  const portal=document.getElementById('dogPortalPublicBtn');
+  const app=document.getElementById('dogAppPublicBtn');
+  const empty=document.getElementById('dogServiceLinksEmpty');
+
+  const portalUrl=String(links.dogPortalUrl||'').trim();
+  const appUrl=String(links.dogAppUrl||'').trim();
+
+  if(portal){
+    if(portalUrl){
+      portal.href=portalUrl;
+      portal.style.display='flex';
+    }else{
+      portal.style.display='none';
+      portal.removeAttribute('href');
+    }
+  }
+
+  if(app){
+    if(appUrl){
+      app.href=appUrl;
+      app.style.display='flex';
+    }else{
+      app.style.display='none';
+      app.removeAttribute('href');
+    }
+  }
+
+  if(empty){
+    empty.style.display=(portalUrl||appUrl)?'none':'inline-flex';
+  }
+}
+
+
 function applyPublicData(data){
   if(!data || !data.success) return;
   renderOfficialsPersonnel(data);
   renderPublicLegislative(data);
   renderPublicDisclosure(data);
   renderPublicPrograms(data);
+  renderPublicServiceLinks(data);
   renderAboutBarangay(data);
   renderEnhancedBarangayStats(data);
   renderHighlightsLive(data);
