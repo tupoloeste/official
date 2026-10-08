@@ -3391,6 +3391,60 @@ body.bto-site-loading{overflow:hidden!important}
   .organization-detail-grid{grid-template-columns:1fr}
 }
 
+
+.organization-member-count strong{
+  font-size:28px!important;
+  color:var(--red-dark);
+}
+.organization-officers-section h3{
+  margin:0 0 14px;
+}
+.organization-officers-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+.organization-officer-card{
+  display:flex;
+  align-items:center;
+  gap:11px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:11px;
+  background:#fafbfc;
+}
+.organization-officer-avatar{
+  width:46px;
+  height:46px;
+  border-radius:50%;
+  flex:0 0 46px;
+  display:grid;
+  place-items:center;
+  background:var(--red-soft);
+  color:var(--red-dark);
+  font-weight:900;
+  font-size:18px;
+}
+.organization-officer-card strong{
+  display:block;
+  font-size:14px;
+}
+.organization-officer-card span{
+  display:block;
+  color:var(--red-dark);
+  font-size:12px;
+  font-weight:800;
+  margin-top:2px;
+}
+.organization-officer-card small{
+  display:block;
+  color:var(--muted);
+  margin-top:2px;
+}
+@media(max-width:620px){
+  .organization-officers-grid{grid-template-columns:1fr}
+}
+
 </style>
 </head>
 <body>
@@ -6266,6 +6320,7 @@ function renderPublicLivestock(data){
 }
 
 let BTO_PUBLIC_ORGANIZATIONS=[];
+let BTO_PUBLIC_ORGANIZATION_OFFICERS={};
 
 function renderPublicOrganizations(data){
   const root=document.getElementById('publicOrganizationsGrid');
@@ -6274,6 +6329,11 @@ function renderPublicOrganizations(data){
   BTO_PUBLIC_ORGANIZATIONS=Array.isArray(data.organizations)
     ? data.organizations.slice()
     : [];
+
+  BTO_PUBLIC_ORGANIZATION_OFFICERS=
+    (data.organizationOfficers && typeof data.organizationOfficers==='object')
+      ? data.organizationOfficers
+      : {};
 
   if(!BTO_PUBLIC_ORGANIZATIONS.length){
     root.innerHTML='<div class="live-empty">No barangay organizations have been published yet.</div>';
@@ -6351,6 +6411,12 @@ function openPublicOrganization(id){
         </section>`:''}
 
       <div class="organization-detail-grid">
+        ${Number(x.totalRegisteredMembers||0)>0?`
+          <div class="organization-detail-card organization-member-count">
+            <small>${/farmer/i.test(String(x.category||''))?'Total Registered Farmers':'Total Registered Members'}</small>
+            <strong>${publicEsc(String(x.totalRegisteredMembers||0))}</strong>
+          </div>`:''}
+
         ${x.yearEstablished?`
           <div class="organization-detail-card">
             <small>Year Established</small>
@@ -6381,6 +6447,29 @@ function openPublicOrganization(id){
             <strong>${publicEsc(x.email)}</strong>
           </div>`:''}
       </div>
+
+      ${(()=>{
+        const officers=(BTO_PUBLIC_ORGANIZATION_OFFICERS||{})[String(x.id||'')]||[];
+        if(!officers.length) return '';
+
+        return `
+          <section class="organization-detail-card organization-officers-section">
+            <h3>Officers</h3>
+            <div class="organization-officers-grid">
+              ${officers.map(o=>`
+                <div class="organization-officer-card">
+                  <div class="organization-officer-avatar">
+                    ${publicEsc((o.name||'O').trim().charAt(0).toUpperCase())}
+                  </div>
+                  <div>
+                    <strong>${publicEsc(o.name||'')}</strong>
+                    <span>${publicEsc(o.position||'')}</span>
+                    ${o.contactNumber?`<small>${publicEsc(o.contactNumber)}</small>`:''}
+                  </div>
+                </div>`).join('')}
+            </div>
+          </section>`;
+      })()}
     `;
   }
 
