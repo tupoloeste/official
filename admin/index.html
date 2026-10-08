@@ -1533,6 +1533,138 @@ button.danger,
   .livestock-admin-row{grid-template-columns:1fr}
 }
 
+
+/* ===== Batch Livestock Editor ===== */
+.livestock-batch-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-bottom:12px;
+}
+.livestock-batch-head h2{
+  margin-bottom:6px;
+}
+.livestock-batch-table-wrap{
+  overflow-x:auto;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:#fff;
+}
+.livestock-batch-table{
+  width:100%;
+  border-collapse:collapse;
+  min-width:840px;
+}
+.livestock-batch-table th{
+  text-align:left;
+  padding:10px;
+  background:#f6f7f9;
+  border-bottom:1px solid var(--border);
+  font-size:11px;
+  text-transform:uppercase;
+  color:#667085;
+}
+.livestock-batch-table td{
+  padding:8px 9px;
+  border-bottom:1px solid #edf0f2;
+  vertical-align:middle;
+}
+.livestock-batch-table tr:last-child td{
+  border-bottom:0;
+}
+.livestock-batch-table input,
+.livestock-batch-table select{
+  margin:0;
+  min-width:0;
+  padding:9px 10px;
+}
+.livestock-animal-input-wrap{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:210px;
+}
+.livestock-row-icon{
+  width:34px;
+  height:34px;
+  flex:0 0 34px;
+  display:grid;
+  place-items:center;
+  border-radius:9px;
+  border:1px solid #e4e7eb;
+  background:#fafbfc;
+  font-size:19px;
+}
+.livestock-animal-input-wrap input{
+  flex:1;
+}
+.livestock-row-action{
+  width:82px;
+}
+.livestock-row-action button{
+  min-width:66px!important;
+}
+.livestock-pending-delete{
+  margin-top:10px;
+  padding:9px 11px;
+  border-radius:9px;
+  background:#fff4f5;
+  color:#a61b2b;
+  border:1px solid #f3c6cc;
+  font-size:12px;
+  font-weight:800;
+}
+.livestock-batch-footer{
+  display:flex;
+  justify-content:flex-end;
+  margin-top:14px;
+}
+.livestock-save-all{
+  min-width:220px!important;
+  min-height:44px!important;
+}
+@media(max-width:700px){
+  .livestock-batch-table{
+    min-width:0;
+  }
+  .livestock-batch-table thead{
+    display:none;
+  }
+  .livestock-batch-table,
+  .livestock-batch-table tbody,
+  .livestock-batch-table tr,
+  .livestock-batch-table td{
+    display:block;
+    width:100%;
+  }
+  .livestock-batch-table tr{
+    padding:10px;
+    border-bottom:1px solid var(--border);
+  }
+  .livestock-batch-table td{
+    border:0;
+    padding:5px 0;
+  }
+  .livestock-batch-table td::before{
+    content:attr(data-label);
+    display:block;
+    font-size:10px;
+    font-weight:900;
+    text-transform:uppercase;
+    color:#667085;
+    margin-bottom:4px;
+  }
+  .livestock-row-action{
+    width:100%;
+  }
+  .livestock-row-action button,
+  .livestock-save-all{
+    width:100%;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1873,6 +2005,7 @@ async function api(action,data={}){
     action==='login' ? 60000 :
     (
       action==='saveLivestockStat' ||
+      action==='saveLivestockBatch' ||
       action==='deleteLivestockStat' ||
       action==='getLivestockStats' ||
       action==='saveOrganization' ||
@@ -2581,113 +2714,35 @@ async function saveAllBarangayStats(btn){
 }
 
 
+
 window.BTO_LIVESTOCK_ROWS=[];
-window.BTO_EDIT_LIVESTOCK=null;
+window.BTO_LIVESTOCK_DELETE_KEYS=[];
 
 async function loadLivestock(){
   const r=await api('getLivestockStats');
   if(!r.success){showModuleError(r.message);return}
 
-  window.BTO_LIVESTOCK_ROWS=r.data||[];
-  window.BTO_EDIT_LIVESTOCK=null;
-  renderLivestockAdmin();
+  window.BTO_LIVESTOCK_ROWS=(r.data||[]).map(x=>Object.assign({},x));
+  window.BTO_LIVESTOCK_DELETE_KEYS=[];
+  renderLivestockBatchAdmin();
 }
 
 function livestockDateInput(v){
   const s=String(v||'').trim();
+  if(!s) return '';
+
   if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
 
   const d=new Date(s);
   if(isNaN(d)) return '';
-  return d.toISOString().slice(0,10);
+
+  const yyyy=d.getFullYear();
+  const mm=String(d.getMonth()+1).padStart(2,'0');
+  const dd=String(d.getDate()).padStart(2,'0');
+  return `${yyyy}-${mm}-${dd}`;
 }
 
-function renderLivestockAdmin(){
-  const rows=window.BTO_LIVESTOCK_ROWS||[];
-  const e=window.BTO_EDIT_LIVESTOCK||{};
-
-  document.getElementById('moduleArea').innerHTML=`
-    <div class="card">
-      <h2>${e['Livestock Key']?'Edit':'Add'} Livestock Population</h2>
-      <div class="help">
-        Add any animal type here. There is no fixed animal list. Active records automatically appear on the public Livestock Population page.
-      </div>
-
-      <input id="livestockKey" type="hidden" value="${esc(e['Livestock Key']||'')}">
-
-      <div class="grid">
-        <div>
-          <label>Animal Name</label>
-          <input id="livestockAnimal" value="${esc(e.Animal||'')}"
-            placeholder="Example: Carabao, Cattle, Goat, Chicken">
-        </div>
-        <div>
-          <label>Population / Count</label>
-          <input id="livestockCount" type="number" min="0"
-            value="${esc(e.Count??0)}">
-        </div>
-      </div>
-
-      <div class="grid">
-        <div>
-          <label>As of Date</label>
-          <input id="livestockAsOfDate" type="date"
-            value="${esc(livestockDateInput(e['As of Date'])||new Date().toISOString().slice(0,10))}">
-        </div>
-        <div>
-          <label>Display Order</label>
-          <input id="livestockDisplayOrder" type="number" min="0"
-            value="${esc(e['Display Order']??0)}">
-        </div>
-      </div>
-
-      <label>Status</label>
-      <select id="livestockStatus">
-        <option value="ACTIVE" ${String(e.Status||'ACTIVE').toUpperCase()==='ACTIVE'?'selected':''}>ACTIVE</option>
-        <option value="INACTIVE" ${String(e.Status||'').toUpperCase()==='INACTIVE'?'selected':''}>INACTIVE</option>
-      </select>
-
-      <div class="admin-actions">
-        <button onclick="saveLivestockDynamic(this)">
-          ${e['Livestock Key']?'Update Animal':'Add Animal'}
-        </button>
-        ${e['Livestock Key']?`
-          <button class="secondary"
-            onclick="window.BTO_EDIT_LIVESTOCK=null;renderLivestockAdmin()">
-            Cancel Edit
-          </button>`:''}
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>Livestock Population</h2>
-      <div class="livestock-admin-list">
-        ${rows.length ? rows.map((x,i)=>`
-          <div class="livestock-admin-row">
-            <div class="livestock-admin-main">
-              <div class="livestock-admin-icon">${publicAnimalAdminIcon(x.Animal)}</div>
-              <div>
-                <strong>${esc(x.Animal||'Animal')}</strong>
-                <small>
-                  Population: ${esc(String(x.Count??0))}
-                  ${x['As of Date']?' • As of '+esc(x['As of Date']):''}
-                  • ${esc(x.Status||'ACTIVE')}
-                </small>
-              </div>
-            </div>
-            <div class="admin-actions">
-              <button class="secondary" onclick="editLivestockDynamic(${i})">Edit</button>
-              <button class="danger"
-                onclick="deleteLivestockDynamic('${esc(x['Livestock Key']||'')}','${esc(x.Animal||'animal')}')">
-                Delete
-              </button>
-            </div>
-          </div>`).join('') : '<div class="help">No animals encoded yet. Click Add Animal above.</div>'}
-      </div>
-    </div>`;
-}
-
-function publicAnimalAdminIcon(animal){
+function livestockIcon(animal){
   const s=String(animal||'').toLowerCase();
   if(s.includes('dog')) return '🐕';
   if(s.includes('carabao')) return '🐃';
@@ -2699,49 +2754,186 @@ function publicAnimalAdminIcon(animal){
   return '🐾';
 }
 
-function editLivestockDynamic(index){
-  window.BTO_EDIT_LIVESTOCK=(window.BTO_LIVESTOCK_ROWS||[])[index]||null;
-  renderLivestockAdmin();
-  window.scrollTo({top:0,behavior:'smooth'});
+function addLivestockRow(){
+  window.BTO_LIVESTOCK_ROWS.push({
+    'Livestock Key':'',
+    'Animal':'',
+    'Count':0,
+    'As of Date':new Date().toISOString().slice(0,10),
+    'Display Order':window.BTO_LIVESTOCK_ROWS.length+1,
+    'Status':'ACTIVE',
+    _new:true
+  });
+  renderLivestockBatchAdmin();
+  setTimeout(()=>{
+    const els=document.querySelectorAll('.livestock-batch-animal');
+    els[els.length-1]?.focus();
+  },50);
 }
 
-async function saveLivestockDynamic(btn){
-  return btoSingleSave('LIVESTOCK',async()=>{
-    return withButtonSpinner(btn,'Saving...',async()=>{
-      const payload={
-        livestockKey:document.getElementById('livestockKey').value.trim(),
-        animal:document.getElementById('livestockAnimal').value.trim(),
-        count:document.getElementById('livestockCount').value,
-        asOfDate:document.getElementById('livestockAsOfDate').value,
-        displayOrder:document.getElementById('livestockDisplayOrder').value,
-        status:document.getElementById('livestockStatus').value
-      };
+function removeLivestockRow(index){
+  const row=window.BTO_LIVESTOCK_ROWS[index];
+  if(!row) return;
 
-      if(!payload.animal) throw new Error('Animal Name is required.');
+  const animal=String(row.Animal||'this animal');
+  if(!confirm(`Remove ${animal} from Livestock Population? Changes will apply when you click SAVE ALL LIVESTOCK.`)) return;
 
-      const r=await api('saveLivestockStat',payload);
-      if(!r.success) throw new Error(r.message||'Unable to save livestock record.');
+  const key=String(row['Livestock Key']||'').trim();
+  if(key && !window.BTO_LIVESTOCK_DELETE_KEYS.includes(key)){
+    window.BTO_LIVESTOCK_DELETE_KEYS.push(key);
+  }
 
-      showGlobalActionStatus(r.message||'Livestock saved.','ok');
-      await loadLivestock();
+  window.BTO_LIVESTOCK_ROWS.splice(index,1);
+  renderLivestockBatchAdmin();
+}
+
+function renderLivestockBatchAdmin(){
+  const rows=window.BTO_LIVESTOCK_ROWS||[];
+
+  document.getElementById('moduleArea').innerHTML=`
+    <div class="card">
+      <div class="livestock-batch-head">
+        <div>
+          <h2>Livestock Population</h2>
+          <div class="help">
+            Edit all livestock records directly below, then click <strong>SAVE ALL LIVESTOCK</strong> once.
+          </div>
+        </div>
+        <button class="secondary" onclick="addLivestockRow()">+ Add Animal</button>
+      </div>
+
+      <div class="livestock-batch-table-wrap">
+        <table class="livestock-batch-table">
+          <thead>
+            <tr>
+              <th>Animal</th>
+              <th>Population</th>
+              <th>As of Date</th>
+              <th>Order</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.length ? rows.map((x,i)=>`
+              <tr>
+                <td data-label="Animal">
+                  <div class="livestock-animal-input-wrap">
+                    <span class="livestock-row-icon">${livestockIcon(x.Animal)}</span>
+                    <input
+                      class="livestock-batch-animal"
+                      id="livAnimal_${i}"
+                      value="${esc(x.Animal||'')}"
+                      placeholder="Animal name">
+                  </div>
+                </td>
+
+                <td data-label="Population">
+                  <input
+                    id="livCount_${i}"
+                    type="number"
+                    min="0"
+                    value="${esc(x.Count??0)}">
+                </td>
+
+                <td data-label="As of Date">
+                  <input
+                    id="livDate_${i}"
+                    type="date"
+                    value="${esc(livestockDateInput(x['As of Date'])||new Date().toISOString().slice(0,10))}">
+                </td>
+
+                <td data-label="Order">
+                  <input
+                    id="livOrder_${i}"
+                    type="number"
+                    min="0"
+                    value="${esc(x['Display Order']??i+1)}">
+                </td>
+
+                <td data-label="Status">
+                  <select id="livStatus_${i}">
+                    <option value="ACTIVE" ${String(x.Status||'ACTIVE').toUpperCase()==='ACTIVE'?'selected':''}>ACTIVE</option>
+                    <option value="INACTIVE" ${String(x.Status||'').toUpperCase()==='INACTIVE'?'selected':''}>INACTIVE</option>
+                  </select>
+                </td>
+
+                <td data-label="Action" class="livestock-row-action">
+                  <button class="danger" onclick="removeLivestockRow(${i})">Delete</button>
+                </td>
+              </tr>
+            `).join('') : `
+              <tr>
+                <td colspan="6">
+                  <div class="help" style="padding:16px;text-align:center">
+                    No livestock records yet. Click + Add Animal.
+                  </div>
+                </td>
+              </tr>`}
+          </tbody>
+        </table>
+      </div>
+
+      ${window.BTO_LIVESTOCK_DELETE_KEYS.length?`
+        <div class="livestock-pending-delete">
+          ${window.BTO_LIVESTOCK_DELETE_KEYS.length} record(s) marked for deletion.
+          Click SAVE ALL LIVESTOCK to apply.
+        </div>`:''}
+
+      <div class="livestock-batch-footer">
+        <button class="livestock-save-all" onclick="saveAllLivestock(this)">
+          SAVE ALL LIVESTOCK
+        </button>
+      </div>
+    </div>`;
+}
+
+async function saveAllLivestock(btn){
+  return btoSingleSave('LIVESTOCK_BATCH',async()=>{
+    return withButtonSpinner(btn,'Saving all livestock...',async()=>{
+      const rows=window.BTO_LIVESTOCK_ROWS||[];
+      const items=[];
+
+      for(let i=0;i<rows.length;i++){
+        const animal=document.getElementById(`livAnimal_${i}`)?.value.trim()||'';
+        const count=document.getElementById(`livCount_${i}`)?.value||0;
+        const asOfDate=document.getElementById(`livDate_${i}`)?.value||'';
+        const displayOrder=document.getElementById(`livOrder_${i}`)?.value||0;
+        const status=document.getElementById(`livStatus_${i}`)?.value||'ACTIVE';
+
+        if(!animal) continue;
+
+        items.push({
+          livestockKey:String(rows[i]['Livestock Key']||'').trim(),
+          animal,
+          count,
+          asOfDate,
+          displayOrder,
+          status
+        });
+      }
+
+      const r=await api('saveLivestockBatch',{
+        items,
+        deleteKeys:window.BTO_LIVESTOCK_DELETE_KEYS||[]
+      });
+
+      if(!r.success){
+        throw new Error(r.message||'Unable to save livestock population.');
+      }
+
+      window.BTO_LIVESTOCK_ROWS=(r.data||[]).map(x=>Object.assign({},x));
+      window.BTO_LIVESTOCK_DELETE_KEYS=[];
+      renderLivestockBatchAdmin();
+
+      showGlobalActionStatus(
+        `Livestock population saved: ${r.saved||0} row(s).`,
+        'ok'
+      );
+
       return r;
     },'Livestock population saved.');
   });
-}
-
-async function deleteLivestockDynamic(key,animal){
-  if(!key) return;
-  if(!confirm(`Delete ${animal||'this animal'} from Livestock Population?`)) return;
-
-  const r=await api('deleteLivestockStat',{livestockKey:key});
-
-  if(!r.success){
-    showGlobalActionStatus(r.message||'Delete failed.','err');
-    return;
-  }
-
-  showGlobalActionStatus(r.message||'Animal deleted.','ok');
-  await loadLivestock();
 }
 
 window.BTO_CONTENT_ADMIN_ROWS=[];
