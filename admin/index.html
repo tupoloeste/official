@@ -820,7 +820,10 @@ async function api(action,data={}){
   }
 
   const controller=new AbortController();
-  const timeoutMs=15000;
+  const timeoutMs =
+    action==='uploadBase64' ? 120000 :
+    (action==='saveLegislative' || action==='saveFullDisclosure' || action==='saveDisclosureCategory') ? 45000 :
+    20000;
   const timeout=setTimeout(()=>controller.abort(),timeoutMs);
 
   const modalText=apiActionModalText(action);
@@ -850,9 +853,14 @@ async function api(action,data={}){
       return JSON.parse(text);
     }catch(e){
       console.error('[BTO API] NON-JSON',action,text.slice(0,300));
+      const looksHtml=/^\s*<!doctype|^\s*<html/i.test(text||'');
       return {
         success:false,
-        message:'Backend returned a non-JSON response. Check the Apps Script deployment and access settings.'
+        nonJson:true,
+        httpStatus:response.status,
+        message: looksHtml
+          ? 'Google/Apps Script returned an HTML error page instead of API data. The upload may be too large, the request may have timed out on Google, or the latest Apps Script deployment is not active.'
+          : 'Backend returned an invalid response. Please try again.'
       };
     }
 
@@ -2244,6 +2252,53 @@ function dateInputValue(v){
 
 
 
+
+/* ===== RELIABLE DOCUMENT UPLOAD HELPERS ===== */
+window.BTO_PENDING_UPLOADS = window.BTO_PENDING_UPLOADS || {
+  legislativePdf:'',
+  disclosureImage:'',
+  disclosurePdf:''
+};
+
+function btoResetPendingUpload(key){
+  if(window.BTO_PENDING_UPLOADS) window.BTO_PENDING_UPLOADS[key]='';
+}
+
+async function btoUploadDocumentFile(file, kind){
+  if(!file) return '';
+
+  const maxMb = kind==='image' ? 12 : 25;
+  const maxBytes = maxMb * 1024 * 1024;
+
+  if(file.size > maxBytes){
+    throw new Error(`File is too large. Maximum allowed here is ${maxMb} MB.`);
+  }
+
+  if(kind==='pdf'){
+    const ok=(file.type==='application/pdf') || /\.pdf$/i.test(file.name||'');
+    if(!ok) throw new Error('Please select a PDF file.');
+  }
+
+  const base64=await fileToBase64(file);
+
+  const u=await api('uploadBase64',{
+    fileName:file.name,
+    mimeType:file.type || (kind==='pdf'?'application/pdf':'application/octet-stream'),
+    base64
+  });
+
+  if(!u.success){
+    throw new Error('UPLOAD FAILED: ' + (u.message||'Unable to upload file.'));
+  }
+
+  if(!u.url){
+    throw new Error('UPLOAD FAILED: backend did not return a file URL.');
+  }
+
+  return u.url;
+}
+
+
 /* ===== ORDINANCES & RESOLUTIONS ===== */
 window.BTO_LEGISLATIVE_ROWS={ordinances:[],resolutions:[]};
 window.BTO_EDIT_LEGISLATIVE=null;
@@ -2295,7 +2350,7 @@ function renderLegislativeModule(){
       <input id="legTitle" placeholder="Example: Barangay Ordinance No. 01, Series of 2026 – Anti-Rabies...">
 
       <label>Upload PDF</label>
-      <input id="legPdf" type="file" accept="application/pdf,.pdf">
+      <input id="legPdf" type="file" accept="application/pdf,.pdf" onchange="btoResetPendingUpload('legislativePdf')">
       <div class="doc-file-note">Accepted file: PDF only. Leave blank when editing if you want to keep the current PDF.</div>
       <div id="legCurrentFile" class="doc-file-current hidden"></div>
 
@@ -2350,6 +2405,7 @@ function editLegislativeDocument(json){
 }
 
 function clearLegislativeForm(){
+  btoResetPendingUpload('legislativePdf');
   window.BTO_EDIT_LEGISLATIVE=null;
   document.getElementById('legId').value='';
   document.getElementById('legType').value='ORDINANCE';
@@ -2363,20 +2419,14 @@ function clearLegislativeForm(){
 async function saveLegislativeDocument(btn){
   return withButtonSpinner(btn,'Saving...',async()=>{
     const file=document.getElementById('legPdf').files[0];
-    let pdfUrl='';
 
-    if(file){
-      if(file.type && file.type!=='application/pdf' && !/\.pdf$/i.test(file.name))
-        throw new Error('Please select a PDF file.');
+    let pdfUrl=window.BTO_PENDING_UPLOADS.legislativePdf || '';
 
-      const base64=await fileToBase64(file);
-      const u=await api('uploadBase64',{
-        fileName:file.name,
-        mimeType:file.type||'application/pdf',
-        base64
-      });
-      if(!u.success) throw new Error(u.message||'PDF upload failed.');
-      pdfUrl=u.url;
+    if(file && !pdfUrl){
+      showProcessModal('Uploading PDF...','Please wait. Large PDF files may take longer.');
+      pdfUrl=await btoUploadDocumentFile(file,'pdf');
+      window.BTO_PENDING_UPLOADS.legislativePdf=pdfUrl;
+      showProcessModal('Saving document...','PDF uploaded successfully. Saving the record now.');
     }
 
     const r=await api('saveLegislative',{
@@ -2387,8 +2437,12 @@ async function saveLegislativeDocument(btn){
       pdfUrl:pdfUrl,
       status:document.getElementById('legStatus').value
     });
-    if(!r.success) throw new Error(r.message||'Save failed.');
 
+    if(!r.success){
+      throw new Error('SAVE FAILED: ' + (r.message||'The PDF may already be uploaded, but the document record was not saved. Click Save again; it will reuse the uploaded file.'));
+    }
+
+    btoResetPendingUpload('legislativePdf');
     await legislativeForm();
     return r;
   },'Document saved.');
@@ -2460,12 +2514,12 @@ function renderFullDisclosureModule(){
       <div class="doc-form-grid">
         <div>
           <label>Upload Image (optional)</label>
-          <input id="fdImage" type="file" accept="image/*">
+          <input id="fdImage" type="file" accept="image/*" onchange="btoResetPendingUpload('disclosureImage')">
           <div id="fdCurrentImage" class="doc-file-current hidden"></div>
         </div>
         <div>
           <label>Upload PDF (optional)</label>
-          <input id="fdPdf" type="file" accept="application/pdf,.pdf">
+          <input id="fdPdf" type="file" accept="application/pdf,.pdf" onchange="btoResetPendingUpload('disclosurePdf')">
           <div id="fdCurrentPdf" class="doc-file-current hidden"></div>
         </div>
       </div>
@@ -2554,6 +2608,8 @@ function editFullDisclosureDocument(json){
 }
 
 function clearFullDisclosureForm(){
+  btoResetPendingUpload('disclosureImage');
+  btoResetPendingUpload('disclosurePdf');
   window.BTO_EDIT_DISCLOSURE=null;
   document.getElementById('fdId').value='';
   document.getElementById('fdYear').value=currentYearValue();
@@ -2571,33 +2627,22 @@ async function saveFullDisclosureDocument(btn){
     const imageFile=document.getElementById('fdImage').files[0];
     const pdfFile=document.getElementById('fdPdf').files[0];
 
-    let imageUrl='';
-    let pdfUrl='';
+    let imageUrl=window.BTO_PENDING_UPLOADS.disclosureImage || '';
+    let pdfUrl=window.BTO_PENDING_UPLOADS.disclosurePdf || '';
 
-    if(imageFile){
-      const base64=await fileToBase64(imageFile);
-      const u=await api('uploadBase64',{
-        fileName:imageFile.name,
-        mimeType:imageFile.type||'image/jpeg',
-        base64
-      });
-      if(!u.success) throw new Error(u.message||'Image upload failed.');
-      imageUrl=u.url;
+    if(imageFile && !imageUrl){
+      showProcessModal('Uploading image...','Please wait while the image is uploaded.');
+      imageUrl=await btoUploadDocumentFile(imageFile,'image');
+      window.BTO_PENDING_UPLOADS.disclosureImage=imageUrl;
     }
 
-    if(pdfFile){
-      if(pdfFile.type && pdfFile.type!=='application/pdf' && !/\.pdf$/i.test(pdfFile.name))
-        throw new Error('Please select a PDF file.');
-
-      const base64=await fileToBase64(pdfFile);
-      const u=await api('uploadBase64',{
-        fileName:pdfFile.name,
-        mimeType:pdfFile.type||'application/pdf',
-        base64
-      });
-      if(!u.success) throw new Error(u.message||'PDF upload failed.');
-      pdfUrl=u.url;
+    if(pdfFile && !pdfUrl){
+      showProcessModal('Uploading PDF...','Please wait. Large PDF files may take longer.');
+      pdfUrl=await btoUploadDocumentFile(pdfFile,'pdf');
+      window.BTO_PENDING_UPLOADS.disclosurePdf=pdfUrl;
     }
+
+    showProcessModal('Saving Full Disclosure...','Uploaded files are ready. Saving the document record now.');
 
     const r=await api('saveFullDisclosure',{
       id:document.getElementById('fdId').value,
@@ -2608,7 +2653,13 @@ async function saveFullDisclosureDocument(btn){
       pdfUrl,
       status:document.getElementById('fdStatus').value
     });
-    if(!r.success) throw new Error(r.message||'Save failed.');
+
+    if(!r.success){
+      throw new Error('SAVE FAILED: ' + (r.message||'The file may already be uploaded, but the record was not saved. Click Save again; uploaded files will be reused.'));
+    }
+
+    btoResetPendingUpload('disclosureImage');
+    btoResetPendingUpload('disclosurePdf');
 
     await fullDisclosureForm();
     return r;
