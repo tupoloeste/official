@@ -4070,6 +4070,7 @@ function isSKOfficial(o){
   const p=officialPosition(o).toUpperCase();
   return g==='SK' ||
     g==='SANGGUNIANG KABATAAN' ||
+    g==='SANGGUNIANG KABATAAN MEMBERS' ||
     p.includes('SK ') ||
     p.includes('SANGGUNIANG KABATAAN');
 }
@@ -4079,6 +4080,7 @@ function isTanodOfficial(o){
   const p=officialPosition(o).toUpperCase();
   return g==='TANOD' ||
     g==='BARANGAY TANOD' ||
+    g==='BARANGAY TANODS' ||
     p.includes('TANOD');
 }
 
@@ -4091,8 +4093,12 @@ function committeeViewName(id){
 function renderOfficialCard(o,primary=false){
   const name=o['Full Name']||o.fullName||o.name||'';
   const position=o['Position']||o.position||'';
-  const contact=String(o['Contact Number']||o.contactNumber||'').trim();
-  const photo=normalizePublicImageUrl(o['Photo URL']||o.photoUrl||'');
+  const contact=String(
+    o['Contact Number']||o.contactNumber||o['Contact No.']||o['Contact No']||''
+  ).trim();
+  const photo=normalizePublicImageUrl(
+    o['Photo URL']||o.photoUrl||o['Photo Url']||o.photoURL||''
+  );
   const initial=(name.trim().charAt(0)||'B').toUpperCase();
   const rawCommittees=Array.isArray(o.committees)?o.committees:[];
   const committeeSeen=new Set();
@@ -4147,6 +4153,16 @@ function normalizedOfficialName(o){
   return String(o['Full Name']||o.fullName||o.name||'')
     .trim()
     .toUpperCase()
+    .replace(/[.,]/g,'')
+    .replace(/\s+/g,' ');
+}
+
+function looseOfficialNameKey(value){
+  return String(value||'')
+    .trim()
+    .toUpperCase()
+    .replace(/[.,]/g,'')
+    .replace(/\bJR\b/g,'JR')
     .replace(/\s+/g,' ');
 }
 
@@ -4184,35 +4200,32 @@ function deDuplicateOfficials(rows){
 
 function mergeLiveWithFallback(liveRows,fallbackRows){
   const live=deDuplicateOfficials(liveRows);
-  const liveMap=new Map(live.map(o=>[normalizedOfficialName(o),o]));
-
-  const usedLive=new Set();
+  const used=new Set();
 
   const result=fallbackRows.map(f=>{
-    const fallbackName=String(f.name||'').trim();
-    const key=fallbackName.toUpperCase().replace(/\s+/g,' ');
+    const wanted=looseOfficialNameKey(f.name);
 
-    let found=null;
+    let found=live.find((o,index)=>{
+      if(used.has(index)) return false;
+      return looseOfficialNameKey(o['Full Name']||o.fullName||'')===wanted;
+    });
 
-    // Named master-list entries match by name.
-    if(key){
-      found=liveMap.get(key) || null;
-    }
+    // Secondary tolerant match: first + last name.
+    if(!found && wanted){
+      const parts=wanted.split(' ').filter(Boolean);
+      const first=parts[0]||'';
+      const last=parts[parts.length-1]||'';
 
-    // Secretary/Treasurer placeholders match by position.
-    if(!found && f.placeholder){
-      const wanted=String(f.position||'').toUpperCase();
-      found=live.find(o=>{
-        if(usedLive.has(o)) return false;
-        const p=String(o['Position']||o.position||'').toUpperCase();
-        if(wanted.includes('SECRETARY')) return p.includes('SECRETARY');
-        if(wanted.includes('TREASURER')) return p.includes('TREASURER');
-        return false;
-      }) || null;
+      found=live.find((o,index)=>{
+        if(used.has(index)) return false;
+        const key=looseOfficialNameKey(o['Full Name']||o.fullName||'');
+        return key && key.startsWith(first+' ') && key.endsWith(' '+last);
+      });
     }
 
     if(found){
-      usedLive.add(found);
+      const idx=live.indexOf(found);
+      if(idx>=0) used.add(idx);
 
       const livePos=String(found['Position']||found.position||'').trim();
       const resolvedPos=(livePos && livePos.toUpperCase()!=='KAGAWAD')
@@ -4221,21 +4234,26 @@ function mergeLiveWithFallback(liveRows,fallbackRows){
 
       return {
         ...found,
-        'Full Name':found['Full Name']||fallbackName,
+        'Full Name':found['Full Name']||f.name,
         'Position':resolvedPos
       };
     }
 
     return {
-      'Full Name':fallbackName || 'Coming Soon',
+      'Full Name':f.name || 'Coming Soon',
       'Position':f.position,
       'Photo URL':'',
-      committees:[],
-      _placeholder:!!f.placeholder
+      'Contact Number':'',
+      committees:[]
     };
   });
 
-  return result;
+  // Append encoded/live personnel not found in the fallback list.
+  live.forEach((o,index)=>{
+    if(!used.has(index)) result.push(o);
+  });
+
+  return deDuplicateOfficials(result);
 }
 
 function renderOfficialsPersonnel(data){
