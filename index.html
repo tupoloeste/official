@@ -3722,6 +3722,68 @@ body.bto-site-loading{overflow:hidden!important}
   50%{opacity:1;transform:scale(1)}
 }
 
+
+/* ===== Dogs per Sitio donut size/layout adjustment ===== */
+#view-dog-statistics .dog-stats-lower-grid{
+  grid-template-columns:minmax(0,1.28fr) minmax(320px,.72fr);
+  align-items:start;
+}
+
+#view-dog-statistics .dog-sitio-chart-layout{
+  grid-template-columns:220px minmax(0,1fr);
+  gap:22px;
+  align-items:center;
+}
+
+#view-dog-statistics .dog-sitio-donut{
+  width:210px !important;
+  max-width:100%;
+  margin:8px auto !important;
+}
+
+#view-dog-statistics .dog-sitio-legend{
+  min-width:0;
+  width:100%;
+}
+
+#view-dog-statistics .dog-sitio-legend-head,
+#view-dog-statistics .dog-sitio-legend-row{
+  grid-template-columns:minmax(120px,1fr) 64px 82px;
+  gap:10px;
+}
+
+#view-dog-statistics .dog-sitio-legend-row{
+  min-height:34px;
+}
+
+#view-dog-statistics .dog-sitio-legend-row > span{
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+
+@media(max-width:1000px){
+  #view-dog-statistics .dog-stats-lower-grid{
+    grid-template-columns:1fr;
+  }
+}
+
+@media(max-width:680px){
+  #view-dog-statistics .dog-sitio-chart-layout{
+    grid-template-columns:1fr;
+    gap:16px;
+  }
+
+  #view-dog-statistics .dog-sitio-donut{
+    width:190px !important;
+  }
+
+  #view-dog-statistics .dog-sitio-legend-head,
+  #view-dog-statistics .dog-sitio-legend-row{
+    grid-template-columns:minmax(0,1fr) 58px 72px;
+    gap:7px;
+  }
+}
+
 </style>
 </head>
 <body>
