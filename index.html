@@ -3063,7 +3063,7 @@ function switchTab(scope,panelId,btn){
 
 
 const BTO_PUBLIC_API = "https://script.google.com/macros/s/AKfycbwM6bagjlHKao-NCB3d_nDwX29zO4EFKcoj50vABCQP7bKJuSI4j7772Zam9LwNiLCqNg/exec?action=publicData";
-const BTO_PUBLIC_CACHE_KEY = 'bto_public_data_v2';
+const BTO_PUBLIC_CACHE_KEY = 'bto_public_data_v3';
 const BTO_PUBLIC_CACHE_MS = 5 * 60 * 1000;
 
 function publicEsc(v){
@@ -4257,6 +4257,12 @@ function mergeLiveWithFallback(liveRows,fallbackRows){
 }
 
 function renderOfficialsPersonnel(data){
+  console.log('[BTO PUBLIC PERSONNEL]',{
+    officials:(data.officials||[]).length,
+    barangayOfficials:(data.barangayOfficials||[]).length,
+    skOfficials:(data.skOfficials||[]).length,
+    tanods:(data.tanods||[]).length
+  });
   const active=deDuplicateOfficials(
     (data.officials||[]).filter(o=>
       String(o.Status||o.status||'ACTIVE').toUpperCase()!=='INACTIVE'
@@ -4265,18 +4271,30 @@ function renderOfficialsPersonnel(data){
 
   // Always preserve the full official master list.
   // Encoded/live records replace the matching fallback person by name.
+  const liveBarangay = (Array.isArray(data.barangayOfficials) && data.barangayOfficials.length)
+    ? data.barangayOfficials
+    : active.filter(isBarangayOfficial);
+
+  const liveSK = (Array.isArray(data.skOfficials) && data.skOfficials.length)
+    ? data.skOfficials
+    : active.filter(isSKOfficial);
+
+  const liveTanod = (Array.isArray(data.tanods) && data.tanods.length)
+    ? data.tanods
+    : active.filter(isTanodOfficial);
+
   let barangay=mergeLiveWithFallback(
-    active.filter(isBarangayOfficial),
+    liveBarangay,
     BTO_FALLBACK_BARANGAY
   );
 
   let sk=mergeLiveWithFallback(
-    active.filter(isSKOfficial),
+    liveSK,
     BTO_FALLBACK_SK
   );
 
   let tanod=mergeLiveWithFallback(
-    active.filter(isTanodOfficial),
+    liveTanod,
     BTO_FALLBACK_TANODS
   );
 
@@ -4326,7 +4344,8 @@ async function loadPublicData(){
   if(cached) applyPublicData(cached);
 
   try{
-    const res=await fetch(BTO_PUBLIC_API,{cache:'no-store'});
+    const freshUrl=BTO_PUBLIC_API + (BTO_PUBLIC_API.includes('?')?'&':'?') + '_ts=' + Date.now();
+    const res=await fetch(freshUrl,{cache:'no-store'});
     const data=await res.json();
     if(data && data.success){
       publicCacheSet(data);
