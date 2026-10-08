@@ -2010,6 +2010,95 @@ a.back-btn:focus{
   }
 }
 
+
+/* ===== Compact Final Officials Card Layout ===== */
+.official-live-card{
+  min-height:278px !important;
+  padding:14px 12px !important;
+}
+
+.official-live-photo,
+.official-live-avatar{
+  width:112px !important;
+  height:112px !important;
+  flex:0 0 112px !important;
+  margin:0 auto 10px !important;
+}
+
+.official-live-info{
+  grid-template-rows:auto auto auto auto !important;
+  align-content:start !important;
+}
+
+.official-live-info strong{
+  min-height:30px !important;
+  margin:0 0 2px !important;
+  align-items:center !important;
+  font-size:14px !important;
+  line-height:1.15 !important;
+}
+
+.official-live-info .position{
+  min-height:24px !important;
+  margin:0 0 2px !important;
+  align-items:center !important;
+  font-size:11px !important;
+  line-height:1.15 !important;
+}
+
+.official-live-info .contact-number{
+  min-height:16px !important;
+  margin:0 0 4px !important;
+  font-size:10px !important;
+  line-height:1.1 !important;
+}
+
+.official-live-committees{
+  min-height:38px !important;
+  margin-top:4px !important;
+  padding-top:2px !important;
+  align-items:flex-start !important;
+  align-content:flex-start !important;
+  gap:4px !important;
+}
+
+.official-live-info:not(:has(.official-live-committees))::after{
+  min-height:38px !important;
+}
+
+.official-live-committees button,
+.official-live-committees .tag{
+  padding:4px 7px !important;
+  font-size:9px !important;
+}
+
+@media(max-width:760px){
+  .official-live-card{
+    min-height:262px !important;
+  }
+
+  .official-live-photo,
+  .official-live-avatar{
+    width:104px !important;
+    height:104px !important;
+    flex-basis:104px !important;
+  }
+}
+
+@media(max-width:480px){
+  .official-live-card{
+    min-height:248px !important;
+    padding:12px 8px !important;
+  }
+
+  .official-live-photo,
+  .official-live-avatar{
+    width:92px !important;
+    height:92px !important;
+    flex-basis:92px !important;
+  }
+}
+
 </style>
 </head>
 <body>
