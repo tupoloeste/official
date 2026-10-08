@@ -1910,6 +1910,106 @@ a.back-btn:focus{
   white-space:nowrap;
 }
 
+
+/* ===== Final Uniform Officials Card Alignment ===== */
+.officials-live-grid{
+  align-items:stretch !important;
+}
+
+.official-live-card{
+  min-height:320px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  text-align:center !important;
+}
+
+.official-live-photo,
+.official-live-avatar{
+  width:120px !important;
+  height:120px !important;
+  flex:0 0 120px !important;
+  margin:0 auto 14px !important;
+}
+
+.official-live-info{
+  width:100% !important;
+  display:grid !important;
+  grid-template-rows:auto auto auto 1fr;
+  align-items:start;
+  justify-items:center;
+  flex:1 !important;
+}
+
+.official-live-info strong{
+  min-height:36px !important;
+  display:flex !important;
+  align-items:flex-end;
+  justify-content:center;
+  margin:0 0 3px !important;
+}
+
+.official-live-info .position{
+  min-height:30px !important;
+  display:flex !important;
+  align-items:flex-start;
+  justify-content:center;
+  margin:0 0 3px !important;
+}
+
+.official-live-info .contact-number{
+  min-height:18px !important;
+  margin:0 0 6px !important;
+  display:flex !important;
+  align-items:center;
+  justify-content:center;
+}
+
+.official-live-committees{
+  min-height:46px !important;
+  width:100% !important;
+  margin-top:auto !important;
+  padding-top:6px !important;
+  display:flex !important;
+  align-content:flex-end;
+  align-items:flex-end;
+  justify-content:center !important;
+  gap:5px !important;
+  flex-wrap:wrap !important;
+}
+
+/* Reserve same committee space even when none exists */
+.official-live-info:not(:has(.official-live-committees))::after{
+  content:"";
+  display:block;
+  min-height:46px;
+  width:100%;
+}
+
+@media(max-width:760px){
+  .official-live-card{
+    min-height:300px !important;
+  }
+  .official-live-photo,
+  .official-live-avatar{
+    width:108px !important;
+    height:108px !important;
+    flex-basis:108px !important;
+  }
+}
+
+@media(max-width:480px){
+  .official-live-card{
+    min-height:285px !important;
+  }
+  .official-live-photo,
+  .official-live-avatar{
+    width:96px !important;
+    height:96px !important;
+    flex-basis:96px !important;
+  }
+}
+
 </style>
 </head>
 <body>
