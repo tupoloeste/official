@@ -3559,29 +3559,6 @@ body.bto-site-loading{overflow:hidden!important}
   color:var(--red-dark);
   font-size:16px;
 }
-.livestock-cards-title{
-  font-size:17px;
-  font-weight:900;
-  color:var(--ink);
-  margin:0 0 12px;
-}
-.livestock-card-enhanced{
-  position:relative;
-  overflow:hidden;
-}
-.livestock-card-accent{
-  position:absolute;
-  left:0;
-  top:0;
-  right:0;
-  height:4px;
-}
-.livestock-card-enhanced span{
-  display:block;
-  color:var(--muted);
-  font-size:11px;
-  margin-top:4px;
-}
 @media(max-width:850px){
   .livestock-donut-layout{
     grid-template-columns:1fr;
@@ -4139,10 +4116,6 @@ body.bto-site-loading{overflow:hidden!important}
         </div>
       </div>
 
-      <div class="livestock-cards-title">Livestock Details</div>
-      <div id="publicLivestockGrid" class="livestock-grid">
-        <div class="live-empty">Loading livestock statistics...</div>
-      </div>
     </div>
   </div>
 </div>
@@ -6490,13 +6463,10 @@ function publicLivestockColor(index,total){
 }
 
 function renderPublicLivestock(data){
-  const grid=document.getElementById('publicLivestockGrid');
   const asOf=document.getElementById('publicLivestockAsOf');
   const donut=document.getElementById('publicLivestockDonut');
   const totalEl=document.getElementById('publicLivestockTotal');
   const legend=document.getElementById('publicLivestockLegend');
-
-  if(!grid) return;
 
   const rows=Array.isArray(data.livestockStats)
     ? data.livestockStats
@@ -6514,7 +6484,6 @@ function renderPublicLivestock(data){
     }));
 
   if(!active.length){
-    grid.innerHTML='<div class="live-empty">No livestock statistics have been encoded yet.</div>';
     if(legend) legend.innerHTML='<div class="live-empty">No livestock population available.</div>';
     if(asOf) asOf.textContent='Not yet available';
     if(totalEl) totalEl.textContent='0';
@@ -6573,19 +6542,7 @@ function renderPublicLivestock(data){
     }).join('');
   }
 
-  grid.innerHTML=active.map((x,i)=>{
-    const percent=total>0 ? (x.count/total*100) : 0;
-    const color=publicLivestockColor(i,active.length);
-
-    return `
-      <div class="livestock-card livestock-card-enhanced">
-        <div class="livestock-card-accent" style="background:${color}"></div>
-        <div class="animal">${publicLivestockIcon(x.animal)}</div>
-        <small>${publicEsc(x.animal)}</small>
-        <strong>${x.count.toLocaleString()}</strong>
-        <span>${percent.toFixed(percent<1 && percent>0 ? 1 : 0)}% of total population</span>
-      </div>`;
-  }).join('');
+  
 }
 
 let BTO_PUBLIC_ORGANIZATIONS=[];
