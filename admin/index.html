@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!-- BTO ADMIN BUILD: 2026-10-07 LOGIN-FINAL-FIX-5 -->
+<!-- BTO ADMIN BUILD: 2026-10-08 DYNAMIC-COMMITTEES-PHOTO-FIX-6
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#f8324b">
@@ -396,6 +396,23 @@ button.secondary .btn-spinner{
 .committee-admin-item button[onclick^="deleteCommitteeAdmin"]:hover{
   background:#8f1d14;
 }
+
+
+.official-admin-list{display:grid;gap:10px;margin-top:12px}
+.official-admin-row{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:10px 12px;border:1px solid #e5e7eb;border-radius:12px;background:#fff
+}
+.official-admin-person{display:flex;align-items:center;gap:11px;min-width:0}
+.official-admin-person img,.official-admin-avatar{
+  width:54px;height:54px;border-radius:10px;flex:0 0 54px
+}
+.official-admin-person img{object-fit:cover;object-position:center top}
+.official-admin-avatar{
+  display:grid;place-items:center;background:#fff0f3;color:#c61f35;font-weight:900;font-size:20px
+}
+.official-admin-person strong{display:block}
+.official-admin-person small{display:block;color:#6b7280;margin-top:3px}
 
 </style>
 </head>
@@ -918,27 +935,160 @@ async function saveContent(){
   alert(r.success?'Published':r.message);
 }
 
-function officialsForm(){
+async function officialsForm(){
+  document.getElementById('moduleArea').innerHTML=
+    '<div class="bto-loading"><span class="bto-spinner"></span><span>Loading officials...</span></div>';
+
+  const r=await api('getOfficials');
+  if(!r.success){showModuleError(r.message);return}
+
+  window.BTO_OFFICIALS_ADMIN_ROWS=r.data||[];
+  renderOfficialsAdmin();
+}
+
+function renderOfficialsAdmin(){
+  const rows=window.BTO_OFFICIALS_ADMIN_ROWS||[];
+
   document.getElementById('moduleArea').innerHTML=`
     <div class="card">
       <h2>Add / Update Official</h2>
-      <label>Official ID (leave blank for new)</label><input id="oId">
-      <label>Full Name</label><input id="oName">
-      <label>Position</label>
-      <select id="oPosition">
-        <option value="">Select position</option>
-      </select>
-      <label>Group</label>
-      <select id="oGroup" onchange="updateOfficialPositionOptions()"><option>BARANGAY</option><option>SK</option><option>TANOD</option><option>STAFF</option></select>
-      <label>Contact Number (optional)</label><input id="oContact">
-      <label>Status</label><select id="oStatus"><option>ACTIVE</option><option>INACTIVE</option></select>
-      <label>Photo</label><input id="oPhoto" type="file" accept="image/*">
-      <button onclick="saveOfficial(this)">Save Official</button>
-    </div>`;
 
-  setTimeout(()=>updateOfficialPositionOptions(),0);
+      <input id="oId" type="hidden">
+      <input id="oExistingPhotoUrl" type="hidden">
+
+      <label>Full Name</label>
+      <input id="oName">
+
+      <label>Group</label>
+      <select id="oGroup" onchange="updateOfficialPositionOptions()">
+        <option value="BARANGAY">BARANGAY</option>
+        <option value="SK">SK</option>
+        <option value="TANOD">TANOD</option>
+        <option value="STAFF">STAFF</option>
+      </select>
+
+      <label>Position</label>
+      <select id="oPosition"><option value="">Select position</option></select>
+
+      <label>Contact Number (optional)</label>
+      <input id="oContact">
+
+      <label>Status</label>
+      <select id="oStatus">
+        <option value="ACTIVE">ACTIVE</option>
+        <option value="INACTIVE">INACTIVE</option>
+      </select>
+
+      <label>Photo</label>
+      <div id="officialPhotoPreviewWrap" style="margin:8px 0 10px;display:none">
+        <img id="officialPhotoPreview"
+             alt="Official photo preview"
+             style="width:140px;height:140px;object-fit:cover;object-position:center top;border-radius:14px;border:1px solid #ddd;background:#fff">
+      </div>
+
+      <input id="oPhoto" type="file" accept="image/*" onchange="previewOfficialPhoto(this)">
+      <div class="help">When editing, leave Photo blank to keep the current photo.</div>
+
+      <div class="row" style="margin-top:12px">
+        <button id="officialSaveBtn" onclick="saveOfficial(this)">Save Official</button>
+        <button class="secondary" onclick="clearOfficialForm()">Clear</button>
+        <span id="officialSaveStatus" class="save-status"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Existing Officials</h2>
+      <div class="official-admin-list">
+        ${rows.length ? rows.map(o=>{
+          const photo=normalizePortalImageUrl(o['Photo URL']||'');
+          return `
+            <div class="official-admin-row">
+              <div class="official-admin-person">
+                ${photo
+                  ? `<img src="${esc(photo)}" alt="${esc(o['Full Name']||'')}" referrerpolicy="no-referrer"
+                      onerror="this.style.display='none'">`
+                  : `<div class="official-admin-avatar">${esc((o['Full Name']||'?').charAt(0).toUpperCase())}</div>`}
+                <div>
+                  <strong>${esc(o['Full Name']||'')}</strong>
+                  <small>${esc(o['Position']||'')} · ${esc(o['Group']||'')} · ${esc(o['Status']||'ACTIVE')}</small>
+                </div>
+              </div>
+              <button class="secondary" onclick="editOfficialAdmin('${esc(o['Official ID']||'')}')">Edit</button>
+            </div>`;
+        }).join('') : '<div class="live-empty">No officials encoded yet.</div>'}
+      </div>
+    </div>
+  `;
+
+  updateOfficialPositionOptions();
 }
 
+function previewOfficialPhoto(input){
+  const file=input?.files?.[0];
+  if(!file) return;
+
+  const wrap=document.getElementById('officialPhotoPreviewWrap');
+  const img=document.getElementById('officialPhotoPreview');
+  if(!wrap || !img) return;
+
+  img.src=URL.createObjectURL(file);
+  wrap.style.display='block';
+}
+
+function clearOfficialForm(){
+  document.getElementById('oId').value='';
+  document.getElementById('oExistingPhotoUrl').value='';
+  document.getElementById('oName').value='';
+  document.getElementById('oGroup').value='BARANGAY';
+  updateOfficialPositionOptions();
+  document.getElementById('oPosition').value='';
+  document.getElementById('oContact').value='';
+  document.getElementById('oStatus').value='ACTIVE';
+  document.getElementById('oPhoto').value='';
+
+  const wrap=document.getElementById('officialPhotoPreviewWrap');
+  const img=document.getElementById('officialPhotoPreview');
+  if(wrap) wrap.style.display='none';
+  if(img) img.removeAttribute('src');
+
+  const btn=document.getElementById('officialSaveBtn');
+  if(btn) btn.textContent='Save Official';
+
+  const status=document.getElementById('officialSaveStatus');
+  if(status) status.textContent='';
+}
+
+function editOfficialAdmin(id){
+  const row=(window.BTO_OFFICIALS_ADMIN_ROWS||[])
+    .find(o=>String(o['Official ID'])===String(id));
+  if(!row) return;
+
+  document.getElementById('oId').value=row['Official ID']||'';
+  document.getElementById('oName').value=row['Full Name']||'';
+  document.getElementById('oGroup').value=row['Group']||'BARANGAY';
+  updateOfficialPositionOptions(row['Position']||'');
+  document.getElementById('oContact').value=row['Contact Number']||'';
+  document.getElementById('oStatus').value=row['Status']||'ACTIVE';
+  document.getElementById('oPhoto').value='';
+
+  const existing=row['Photo URL']||'';
+  document.getElementById('oExistingPhotoUrl').value=existing;
+
+  const wrap=document.getElementById('officialPhotoPreviewWrap');
+  const img=document.getElementById('officialPhotoPreview');
+  if(existing){
+    img.src=normalizePortalImageUrl(existing);
+    wrap.style.display='block';
+  }else{
+    img.removeAttribute('src');
+    wrap.style.display='none';
+  }
+
+  const btn=document.getElementById('officialSaveBtn');
+  if(btn) btn.textContent='Save Changes';
+
+  window.scrollTo({top:0,behavior:'smooth'});
+}
 
 const BTO_OFFICIAL_POSITION_OPTIONS = {
   BARANGAY: [
@@ -1000,34 +1150,75 @@ function updateOfficialPositionOptions(selectedValue){
 }
 
 async function saveOfficial(btn){
-  setBusyButton(btn,true,'Saving official...');
-  try{
-  let photoUrl='';
-  const file=document.getElementById('oPhoto').files[0];
+  if(btn?.classList?.contains('is-busy')) return;
 
-  if(file){
-    const base64=await fileToBase64(file);
-    const u=await api('uploadBase64',{fileName:file.name,mimeType:file.type,base64});
-    if(!u.success){alert(u.message);return}
-    photoUrl=u.url;
+  const status=document.getElementById('officialSaveStatus');
+  const fullName=document.getElementById('oName').value.trim();
+  const position=document.getElementById('oPosition').value.trim();
+
+  if(!fullName){
+    alert('Full Name is required.');
+    return;
+  }
+  if(!position){
+    alert('Position is required.');
+    return;
   }
 
-  const r=await api('saveOfficial',{
-    officialId:document.getElementById('oId').value,
-    fullName:document.getElementById('oName').value,
-    position:document.getElementById('oPosition').value,
-    group:document.getElementById('oGroup').value,
-    contactNumber:document.getElementById('oContact').value,
-    status:document.getElementById('oStatus').value,
-    photoUrl
-  });
+  setBusyButton(btn,true,'Saving...');
 
-  alert(r.success?'Saved: '+r.officialId:r.message);
+  try{
+    let photoUrl=document.getElementById('oExistingPhotoUrl').value.trim();
+    const file=document.getElementById('oPhoto').files[0];
 
-  showGlobalActionStatus('Official saved successfully.','ok');
+    if(file){
+      if(status){
+        status.className='save-status';
+        status.textContent='Uploading photo...';
+      }
+
+      const base64=await fileToBase64(file);
+      const u=await api('uploadBase64',{
+        fileName:file.name,
+        mimeType:file.type||'image/jpeg',
+        base64
+      });
+      if(!u.success) throw new Error(u.message);
+
+      photoUrl=u.url;
+    }
+
+    if(status) status.textContent='Saving official...';
+
+    const r=await api('saveOfficial',{
+      officialId:document.getElementById('oId').value.trim(),
+      fullName,
+      position,
+      group:document.getElementById('oGroup').value,
+      contactNumber:document.getElementById('oContact').value.trim(),
+      status:document.getElementById('oStatus').value,
+      photoUrl
+    });
+
+    if(!r.success) throw new Error(r.message);
+
+    if(status){
+      status.className='save-status ok';
+      status.textContent='Official saved successfully.';
+    }
+    showGlobalActionStatus('Official saved successfully.','ok');
+
+    cacheRemove('assignmentBundle');
+    cacheRemove('usersBundle');
+
+    await officialsForm();
+
   }catch(err){
-    showGlobalActionStatus(err?.message || 'Action failed.','err');
-    throw err;
+    if(status){
+      status.className='save-status err';
+      status.textContent=err.message||'Save failed.';
+    }
+    showGlobalActionStatus(err.message||'Save failed.','err');
   }finally{
     setBusyButton(btn,false);
   }
@@ -1973,6 +2164,19 @@ async function saveSiteMediaPhoto(triggerBtn,mediaKey,inputId,buttonId,statusId,
 
 let committeeAdminRows=[];
 
+
+async function refreshPortalCommitteesAfterChange(){
+  cacheRemove('committees');
+  cacheRemove('usersBundle');
+  cacheRemove('assignmentBundle');
+
+  const r=await api('getCommittees');
+  if(r.success){
+    window.BTO_COMMITTEES_CACHE=r.data||[];
+    cacheSet('committees',window.BTO_COMMITTEES_CACHE);
+  }
+}
+
 async function committeesForm(){
   document.getElementById('moduleArea').innerHTML=
     '<div class="bto-loading"><span class="bto-spinner"></span><span>Loading committees...</span></div>';
@@ -2081,6 +2285,7 @@ async function deleteCommitteeAdmin(btn,id,name){
     if(!r.success) throw new Error(r.message);
 
     showGlobalActionStatus(r.message || 'Committee deleted successfully.','ok');
+    await refreshPortalCommitteesAfterChange();
     await committeesForm();
 
   }catch(err){
@@ -2117,6 +2322,7 @@ async function saveCommitteeAdmin(btn){
     msg.textContent=r.message || 'Committee saved successfully.';
     showGlobalActionStatus(r.message || 'Committee saved successfully.','ok');
 
+    await refreshPortalCommitteesAfterChange();
     await committeesForm();
 
   }catch(err){
