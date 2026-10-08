@@ -2553,6 +2553,23 @@ a.back-btn:focus{
   }
 }
 
+
+/* ===== Organizational Chart header/back-button alignment ===== */
+#view-organizational-chart .page-head-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+}
+#view-organizational-chart .back-btn{
+  flex:0 0 auto;
+}
+@media(max-width:700px){
+  #view-organizational-chart .page-head-row{
+    align-items:flex-start;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -3522,8 +3539,8 @@ a.back-btn:focus{
 
 
 <div class="view" id="view-organizational-chart">
-  <div class="page-hero">
-    <div class="container">
+  <div class="page-head">
+    <div class="container page-head-row">
       <div>
         <h1>Barangay Organizational Chart</h1>
         <p>Official organizational structure of Barangay Tupol Oeste.</p>
@@ -3532,7 +3549,8 @@ a.back-btn:focus{
     </div>
   </div>
 
-  <div class="container page-body">
+  <div class="page-content">
+    <div class="container">
     <div class="org-chart-photo-card">
       <img id="public-org-chart-photo"
            alt="Barangay Tupol Oeste Organizational Chart"
