@@ -1831,7 +1831,10 @@ async function api(action,data={}){
     (
       action==='saveOrganization' ||
       action==='deleteOrganization' ||
-      action==='getOrganizations'
+      action==='getOrganizations' ||
+      action==='saveOrganizationOfficer' ||
+      action==='deleteOrganizationOfficer' ||
+      action==='getOrganizationOfficers'
     ) ? 60000 :
     (
       action==='saveLegislative' ||
@@ -2844,6 +2847,16 @@ function renderOrganizationsAdmin(){
 
       <div class="grid">
         <div>
+          <label>Total Registered Members</label>
+          <input id="orgTotalMembers" type="number" min="0"
+            value="${esc(orgAdminValue(e,'totalRegisteredMembers')||0)}">
+          <div class="help">For a Farmers Association, this will display publicly as Total Registered Farmers.</div>
+        </div>
+        <div></div>
+      </div>
+
+      <div class="grid">
+        <div>
           <label>Status</label>
           <select id="orgStatus">
             <option value="ACTIVE" ${String(e.status||'ACTIVE').toUpperCase()==='ACTIVE'?'selected':''}>ACTIVE</option>
@@ -2882,6 +2895,7 @@ function renderOrganizationsAdmin(){
             </div>
             <div class="admin-actions">
               <button class="secondary" onclick="editOrganizationAdmin(${i})">Edit</button>
+              <button class="light" onclick="manageOrganizationOfficers('${esc(x.id||'')}','${esc(x.name||'Organization')}')">Officers</button>
               <button class="danger" onclick="deleteOrganizationAdmin('${esc(x.id||'')}')">Delete</button>
             </div>
           </div>`).join('') : '<div class="help">No organizations encoded yet.</div>'}
@@ -2981,6 +2995,7 @@ async function saveOrganization(btn){
         contactNumber:document.getElementById('orgContactNumber').value,
         email:document.getElementById('orgEmail').value,
         meetingSchedule:document.getElementById('orgMeeting').value,
+        totalRegisteredMembers:document.getElementById('orgTotalMembers').value,
         status:document.getElementById('orgStatus').value,
         displayOrder:document.getElementById('orgOrder').value
       };
@@ -3034,6 +3049,148 @@ async function deleteOrganizationAdmin(id){
   }catch(err){
     showGlobalActionStatus(err?.message||'Delete failed.','err');
   }
+}
+
+
+
+window.BTO_ORG_OFFICER_ORG_ID='';
+window.BTO_ORG_OFFICER_ORG_NAME='';
+window.BTO_ORG_OFFICERS=[];
+window.BTO_EDIT_ORG_OFFICER=null;
+
+async function manageOrganizationOfficers(orgId,orgName){
+  window.BTO_ORG_OFFICER_ORG_ID=orgId;
+  window.BTO_ORG_OFFICER_ORG_NAME=orgName||'Organization';
+
+  const r=await api('getOrganizationOfficers',{organizationId:orgId});
+  if(!r.success){showModuleError(r.message);return}
+
+  window.BTO_ORG_OFFICERS=r.data||[];
+  window.BTO_EDIT_ORG_OFFICER=null;
+  renderOrganizationOfficersAdmin();
+}
+
+function renderOrganizationOfficersAdmin(){
+  const rows=window.BTO_ORG_OFFICERS||[];
+  const e=window.BTO_EDIT_ORG_OFFICER||{};
+
+  document.getElementById('moduleArea').innerHTML=`
+    <div class="module-page-header">
+      <div>
+        <h2>${esc(window.BTO_ORG_OFFICER_ORG_NAME)}</h2>
+        <div class="help">Organization Officers</div>
+      </div>
+      <button class="back-btn" onclick="organizationsForm()">← Back to Organizations</button>
+    </div>
+
+    <div class="card">
+      <h2>${e.id?'Edit':'Add'} Officer</h2>
+
+      <input id="orgOfficerId" type="hidden" value="${esc(e.id||'')}">
+
+      <div class="grid">
+        <div>
+          <label>Officer Name</label>
+          <input id="orgOfficerName" value="${esc(e.name||'')}">
+        </div>
+        <div>
+          <label>Position</label>
+          <input id="orgOfficerPosition" value="${esc(e.position||'')}"
+            placeholder="Example: President">
+        </div>
+      </div>
+
+      <div class="grid">
+        <div>
+          <label>Contact Number (optional)</label>
+          <input id="orgOfficerContact" value="${esc(e.contactNumber||'')}">
+        </div>
+        <div>
+          <label>Display Order</label>
+          <input id="orgOfficerOrder" type="number" min="0" value="${esc(e.displayOrder||0)}">
+        </div>
+      </div>
+
+      <label>Status</label>
+      <select id="orgOfficerStatus">
+        <option value="ACTIVE" ${String(e.status||'ACTIVE').toUpperCase()==='ACTIVE'?'selected':''}>ACTIVE</option>
+        <option value="INACTIVE" ${String(e.status||'').toUpperCase()==='INACTIVE'?'selected':''}>INACTIVE</option>
+      </select>
+
+      <div class="admin-actions">
+        <button onclick="saveOrganizationOfficer(this)">${e.id?'Update Officer':'Save Officer'}</button>
+        ${e.id?`<button class="secondary" onclick="window.BTO_EDIT_ORG_OFFICER=null;renderOrganizationOfficersAdmin()">Cancel Edit</button>`:''}
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Existing Officers</h2>
+      <div class="organization-admin-list">
+        ${rows.length ? rows.map((x,i)=>`
+          <div class="organization-admin-row">
+            <div>
+              <strong>${esc(x.name||'')}</strong>
+              <small>${esc(x.position||'')} ${x.contactNumber?'• '+esc(x.contactNumber):''}</small>
+            </div>
+            <div class="admin-actions">
+              <button class="secondary" onclick="editOrganizationOfficer(${i})">Edit</button>
+              <button class="danger" onclick="deleteOrganizationOfficer('${esc(x.id||'')}')">Delete</button>
+            </div>
+          </div>`).join('') : '<div class="help">No officers encoded yet.</div>'}
+      </div>
+    </div>`;
+}
+
+function editOrganizationOfficer(index){
+  window.BTO_EDIT_ORG_OFFICER=(window.BTO_ORG_OFFICERS||[])[index]||null;
+  renderOrganizationOfficersAdmin();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+async function saveOrganizationOfficer(btn){
+  return btoSingleSave('ORG_OFFICER',async()=>{
+    return withButtonSpinner(btn,'Saving...',async()=>{
+      const payload={
+        id:document.getElementById('orgOfficerId').value,
+        organizationId:window.BTO_ORG_OFFICER_ORG_ID,
+        name:document.getElementById('orgOfficerName').value.trim(),
+        position:document.getElementById('orgOfficerPosition').value.trim(),
+        contactNumber:document.getElementById('orgOfficerContact').value.trim(),
+        displayOrder:document.getElementById('orgOfficerOrder').value,
+        status:document.getElementById('orgOfficerStatus').value
+      };
+
+      if(!payload.name) throw new Error('Officer Name is required.');
+      if(!payload.position) throw new Error('Position is required.');
+
+      const r=await api('saveOrganizationOfficer',payload);
+      if(!r.success) throw new Error(r.message||'Unable to save officer.');
+
+      await manageOrganizationOfficers(
+        window.BTO_ORG_OFFICER_ORG_ID,
+        window.BTO_ORG_OFFICER_ORG_NAME
+      );
+
+      return r;
+    },'Officer saved successfully.');
+  });
+}
+
+async function deleteOrganizationOfficer(id){
+  if(!confirm('Delete this officer?')) return;
+
+  const r=await api('deleteOrganizationOfficer',{id});
+  if(!r.success){
+    showGlobalActionStatus(r.message||'Delete failed.','err');
+    return;
+  }
+
+  showGlobalActionStatus(r.message||'Officer deleted.','ok');
+
+  await manageOrganizationOfficers(
+    window.BTO_ORG_OFFICER_ORG_ID,
+    window.BTO_ORG_OFFICER_ORG_NAME
+  );
 }
 
 
