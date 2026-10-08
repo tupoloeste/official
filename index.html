@@ -1898,6 +1898,18 @@ a.back-btn:focus{
   }
 }
 
+
+/* ===== Official contact number ===== */
+.official-live-info .contact-number{
+  display:block;
+  font-size:11px;
+  color:#4b5563;
+  line-height:1.2;
+  margin:0 0 5px !important;
+  min-height:0 !important;
+  white-space:nowrap;
+}
+
 </style>
 </head>
 <body>
@@ -3890,6 +3902,7 @@ function committeeViewName(id){
 function renderOfficialCard(o,primary=false){
   const name=o['Full Name']||o.fullName||o.name||'';
   const position=o['Position']||o.position||'';
+  const contact=String(o['Contact Number']||o.contactNumber||'').trim();
   const photo=normalizePublicImageUrl(o['Photo URL']||o.photoUrl||'');
   const initial=(name.trim().charAt(0)||'B').toUpperCase();
   const rawCommittees=Array.isArray(o.committees)?o.committees:[];
@@ -3926,6 +3939,7 @@ function renderOfficialCard(o,primary=false){
     <div class="official-live-info">
       <strong>${publicEsc(name)}</strong>
       <span class="position">${publicEsc(position)}</span>
+      ${contact ? `<span class="contact-number">📱 ${publicEsc(contact)}</span>` : ''}
       ${committeeHtml}
     </div>
   </div>`;
