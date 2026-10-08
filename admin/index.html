@@ -1464,6 +1464,32 @@ button.danger,
   .organization-admin-row>.admin-actions{width:100%}
 }
 
+
+.org-save-message{
+  margin-top:12px;
+  padding:11px 13px;
+  border-radius:10px;
+  font-size:12px;
+  font-weight:800;
+  line-height:1.45;
+}
+.org-save-message.hidden{display:none!important}
+.org-save-message.info{
+  color:#344054;
+  background:#f5f7fa;
+  border:1px solid #d9dee5;
+}
+.org-save-message.ok{
+  color:#166534;
+  background:#ecfdf3;
+  border:1px solid #b7e4c7;
+}
+.org-save-message.err{
+  color:#9f1239;
+  background:#fff0f3;
+  border:1px solid #fac8d0;
+}
+
 </style>
 </head>
 <body>
@@ -1802,6 +1828,11 @@ async function api(action,data={}){
   const timeoutMs =
     action==='uploadBase64' ? 120000 :
     action==='login' ? 60000 :
+    (
+      action==='saveOrganization' ||
+      action==='deleteOrganization' ||
+      action==='getOrganizations'
+    ) ? 60000 :
     (
       action==='saveLegislative' ||
       action==='saveFullDisclosure' ||
@@ -2829,6 +2860,8 @@ function renderOrganizationsAdmin(){
         <button onclick="saveOrganization(this)">${e.id?'Update Organization':'Save Organization'}</button>
         ${e.id?`<button class="secondary" onclick="window.BTO_EDIT_ORGANIZATION=null;renderOrganizationsAdmin()">Cancel Edit</button>`:''}
       </div>
+
+      <div id="orgSaveMessage" class="org-save-message hidden"></div>
     </div>
 
     <div class="card">
@@ -2862,9 +2895,35 @@ function editOrganizationAdmin(index){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
+
+function setOrgSaveMessage(message,type=''){
+  const el=document.getElementById('orgSaveMessage');
+  if(!el) return;
+  el.textContent=message||'';
+  el.className='org-save-message'+(type?' '+type:'');
+  el.classList.toggle('hidden',!message);
+}
+
+async function btoOrganizationApiWithRetry(action,data){
+  let r=await api(action,data);
+
+  // One safe retry for timeout/network-style failures.
+  // Creating the same organization twice is protected by backend duplicate-name logic.
+  if(!r.success && (r.timedOut || /network|fetch|respond|timeout/i.test(String(r.message||'')))){
+    setOrgSaveMessage('Backend is taking longer than usual. Retrying automatically...','info');
+    await new Promise(resolve=>setTimeout(resolve,1200));
+    r=await api(action,data);
+  }
+
+  return r;
+}
+
 async function saveOrganization(btn){
   return btoSingleSave('ORGANIZATION',async()=>{
-    return withButtonSpinner(btn,'Saving...',async()=>{
+    setOrgSaveMessage('Preparing organization record...','info');
+    setBusyButton(btn,true,'Saving...');
+
+    try{
       const id=document.getElementById('orgId').value.trim();
       const name=document.getElementById('orgName').value.trim();
 
@@ -2875,29 +2934,41 @@ async function saveOrganization(btn){
 
       const logoFile=document.getElementById('orgLogo').files[0];
       if(logoFile){
+        setOrgSaveMessage('Uploading organization logo...','info');
+
         const base64=await fileToBase64(logoFile);
         const u=await api('uploadBase64',{
           fileName:logoFile.name,
           mimeType:logoFile.type||'image/jpeg',
           base64
         });
-        if(!u.success) throw new Error(u.message||'Logo upload failed.');
+
+        if(!u.success){
+          throw new Error(u.message||'Organization logo upload failed.');
+        }
+
         logoUrl=u.url||'';
       }
 
       const featuredFile=document.getElementById('orgFeatured').files[0];
       if(featuredFile){
+        setOrgSaveMessage('Uploading cover photo...','info');
+
         const base64=await fileToBase64(featuredFile);
         const u=await api('uploadBase64',{
           fileName:featuredFile.name,
           mimeType:featuredFile.type||'image/jpeg',
           base64
         });
-        if(!u.success) throw new Error(u.message||'Featured photo upload failed.');
+
+        if(!u.success){
+          throw new Error(u.message||'Cover photo upload failed.');
+        }
+
         featuredPhotoUrl=u.url||'';
       }
 
-      const r=await api('saveOrganization',{
+      const payload={
         id,
         name,
         acronym:document.getElementById('orgAcronym').value,
@@ -2912,14 +2983,42 @@ async function saveOrganization(btn){
         meetingSchedule:document.getElementById('orgMeeting').value,
         status:document.getElementById('orgStatus').value,
         displayOrder:document.getElementById('orgOrder').value
-      });
+      };
 
-      if(!r.success) throw new Error(r.message||'Unable to save organization.');
+      setOrgSaveMessage('Saving organization to the Barangay database...','info');
 
-      cacheRemove('organizations');
+      const r=await btoOrganizationApiWithRetry('saveOrganization',payload);
+
+      if(!r.success){
+        throw new Error(r.message||'Unable to save organization.');
+      }
+
+      if(r.duplicatePrevented){
+        setOrgSaveMessage(r.message||'This organization is already encoded.','ok');
+      }else{
+        setOrgSaveMessage(r.message||'Organization saved successfully.','ok');
+      }
+
+      showGlobalActionStatus(
+        r.message || (id?'Organization updated.':'Organization saved.'),
+        'ok'
+      );
+
+      // Wait briefly so the user can see success before form refresh.
+      await new Promise(resolve=>setTimeout(resolve,650));
       await organizationsForm();
       return r;
-    }, id ? 'Organization updated.' : 'Organization saved.');
+
+    }catch(err){
+      const message=err?.message || 'Unable to save organization.';
+      setOrgSaveMessage(message,'err');
+      showGlobalActionStatus(message,'err');
+      return {success:false,message};
+
+    }finally{
+      setBusyButton(btn,false);
+      hideProcessModal();
+    }
   });
 }
 
