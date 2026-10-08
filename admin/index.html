@@ -755,6 +755,8 @@ async function withButtonSpinner(btnOrEvent,label,fn,successMessage){
     throw err;
   }finally{
     setBusyButton(btn,false);
+    // Safety release: document upload/save sequences may involve multiple API calls.
+    hideProcessModal(true);
   }
 }
 
@@ -869,7 +871,7 @@ async function api(action,data={}){
       console.error('[BTO API] TIMEOUT',action,timeoutMs+'ms');
       return {
         success:false,
-        message:'Barangay backend did not respond within 15 seconds. Check the Apps Script Web App deployment, then try again.'
+        message:'Barangay backend did not respond within the allowed time. Check the Apps Script Web App deployment, then try again.'
       };
     }
 
@@ -2423,10 +2425,8 @@ async function saveLegislativeDocument(btn){
     let pdfUrl=window.BTO_PENDING_UPLOADS.legislativePdf || '';
 
     if(file && !pdfUrl){
-      showProcessModal('Uploading PDF...','Please wait. Large PDF files may take longer.');
       pdfUrl=await btoUploadDocumentFile(file,'pdf');
       window.BTO_PENDING_UPLOADS.legislativePdf=pdfUrl;
-      showProcessModal('Saving document...','PDF uploaded successfully. Saving the record now.');
     }
 
     const r=await api('saveLegislative',{
@@ -2631,18 +2631,15 @@ async function saveFullDisclosureDocument(btn){
     let pdfUrl=window.BTO_PENDING_UPLOADS.disclosurePdf || '';
 
     if(imageFile && !imageUrl){
-      showProcessModal('Uploading image...','Please wait while the image is uploaded.');
       imageUrl=await btoUploadDocumentFile(imageFile,'image');
       window.BTO_PENDING_UPLOADS.disclosureImage=imageUrl;
     }
 
     if(pdfFile && !pdfUrl){
-      showProcessModal('Uploading PDF...','Please wait. Large PDF files may take longer.');
       pdfUrl=await btoUploadDocumentFile(pdfFile,'pdf');
       window.BTO_PENDING_UPLOADS.disclosurePdf=pdfUrl;
     }
 
-    showProcessModal('Saving Full Disclosure...','Uploaded files are ready. Saving the document record now.');
 
     const r=await api('saveFullDisclosure',{
       id:document.getElementById('fdId').value,
