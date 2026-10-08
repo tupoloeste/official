@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!-- BTO ADMIN BUILD: 2026-10-08 SAFE-MODAL-SPINNER-8
+<!-- BTO ADMIN BUILD: 2026-10-08 GLOBAL-MODAL-SPINNER-7 -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#f8324b">
@@ -415,48 +415,39 @@ button.secondary .btn-spinner{
 .official-admin-person small{display:block;color:#6b7280;margin-top:3px}
 
 
-/* ===== SAFE GLOBAL PROCESSING MODAL ===== */
+/* ===== Global Encoder Processing Modal ===== */
 .bto-process-modal{
-  position:fixed;
-  inset:0;
-  z-index:30000;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  background:rgba(17,24,39,.42);
-  backdrop-filter:blur(2px);
-  padding:20px;
+  position:fixed; inset:0; z-index:20000; display:none;
+  align-items:center; justify-content:center;
+  background:rgba(17,24,39,.42); backdrop-filter:blur(2px); padding:20px;
 }
 .bto-process-modal.show{display:flex}
 .bto-process-card{
-  min-width:260px;
-  max-width:90vw;
-  background:#fff;
-  border-radius:16px;
-  padding:24px 28px;
-  box-shadow:0 22px 60px rgba(0,0,0,.25);
-  text-align:center;
+  min-width:260px; max-width:90vw; background:#fff; border-radius:16px;
+  padding:24px 26px; box-shadow:0 22px 60px rgba(0,0,0,.24); text-align:center;
 }
 .bto-process-spinner{
-  width:46px;
-  height:46px;
-  margin:0 auto 14px;
-  border:5px solid #f1c2c9;
-  border-top-color:#f8324b;
-  border-radius:50%;
-  animation:btoSafeSpin .75s linear infinite;
+  width:46px; height:46px; margin:0 auto 14px;
+  border:5px solid #f1c2c9; border-top-color:#f8324b;
+  border-radius:50%; animation:btoProcessSpin .75s linear infinite;
 }
-.bto-process-title{
-  font-size:17px;
-  font-weight:900;
-  margin-bottom:5px;
-}
-.bto-process-sub{
-  font-size:12px;
-  color:#6b7280;
-}
-@keyframes btoSafeSpin{to{transform:rotate(360deg)}}
+.bto-process-title{font-size:17px;font-weight:900;color:#20242a;margin-bottom:5px}
+.bto-process-sub{font-size:12px;color:#6b7280;line-height:1.4}
+@keyframes btoProcessSpin{to{transform:rotate(360deg)}}
 body.bto-processing{overflow:hidden}
+
+/* Uniform save buttons */
+button[id*="Save"],
+button[id*="save"],
+button[onclick*="save"],
+button[onclick*="Save"]{
+  background:#f8324b; color:#fff; border:0;
+  min-width:120px; min-height:40px; border-radius:9px; font-weight:800;
+}
+button[id*="Save"]:hover,
+button[id*="save"]:hover,
+button[onclick*="save"]:hover,
+button[onclick*="Save"]:hover{background:#d91e37}
 
 </style>
 </head>
@@ -521,6 +512,70 @@ body.bto-processing{overflow:hidden}
 </div>
 
 <script>
+
+let btoProcessDepth=0;
+let btoProcessHideTimer=null;
+
+function showProcessModal(title='Saving...',sub='Please wait while your changes are being processed.'){
+  const modal=document.getElementById('btoProcessModal');
+  const titleEl=document.getElementById('btoProcessTitle');
+  const subEl=document.getElementById('btoProcessSub');
+  if(!modal) return;
+
+  clearTimeout(btoProcessHideTimer);
+  btoProcessDepth++;
+
+  if(titleEl) titleEl.textContent=title;
+  if(subEl) subEl.textContent=sub;
+
+  modal.classList.add('show');
+  modal.setAttribute('aria-hidden','false');
+  document.body.classList.add('bto-processing');
+}
+
+function updateProcessModal(title,sub){
+  const titleEl=document.getElementById('btoProcessTitle');
+  const subEl=document.getElementById('btoProcessSub');
+  if(title && titleEl) titleEl.textContent=title;
+  if(sub !== undefined && subEl) subEl.textContent=sub;
+}
+
+function hideProcessModal(force=false){
+  if(force) btoProcessDepth=0;
+  else btoProcessDepth=Math.max(0,btoProcessDepth-1);
+
+  if(btoProcessDepth>0) return;
+
+  clearTimeout(btoProcessHideTimer);
+  btoProcessHideTimer=setTimeout(()=>{
+    const modal=document.getElementById('btoProcessModal');
+    if(modal){
+      modal.classList.remove('show');
+      modal.setAttribute('aria-hidden','true');
+    }
+    document.body.classList.remove('bto-processing');
+  },120);
+}
+
+function apiActionModalText(action){
+  const a=String(action||'').toLowerCase();
+  if(a.includes('upload')) return ['Uploading...','Uploading file. Please wait.'];
+  if(a.includes('delete')) return ['Deleting...','Removing the selected record.'];
+  if(a.includes('reject')) return ['Rejecting...','Updating the record status.'];
+  if(a.includes('approve')) return ['Approving...','Updating the record status.'];
+  if(a.includes('login')) return ['Signing in...','Connecting to the Barangay backend.'];
+  if(a.includes('save') || a.includes('update') || a.includes('record') || a.includes('assign')){
+    return ['Saving...','Saving your changes. Please wait.'];
+  }
+  return null;
+}
+
+function isWriteApiAction(action){
+  const a=String(action||'').toLowerCase();
+  return /^(save|update|delete|upload|approve|reject|record|assign)/.test(a) ||
+         a.includes('save') || a.includes('delete') || a.includes('upload');
+}
+
 console.info('BTO ADMIN BUILD: 2026-10-07 LOGIN-FINAL-FIX-5');
 
 function ensureGlobalActionStatus(){
@@ -640,7 +695,7 @@ function apiConfigured(){
   return /^https:\/\/script\.google\.com\/macros\/s\/.+\/exec/.test(API_URL);
 }
 
-async function apiCore(action,data={}){
+async function api(action,data={}){
   if(!apiConfigured()){
     return {success:false,message:'Apps Script API URL is not configured.'};
   }
@@ -655,6 +710,13 @@ async function apiCore(action,data={}){
   const controller=new AbortController();
   const timeoutMs=15000;
   const timeout=setTimeout(()=>controller.abort(),timeoutMs);
+
+  const modalText=apiActionModalText(action);
+  const useModal=isWriteApiAction(action) || action==='login';
+
+  if(useModal && modalText){
+    showProcessModal(modalText[0],modalText[1]);
+  }
 
   const started=Date.now();
   console.log('[BTO API] START',action);
@@ -692,69 +754,11 @@ async function apiCore(action,data={}){
     }
 
     console.error('[BTO API] ERROR',action,err);
-    return {
-      success:false,
-      message:err?.message || String(err)
-    };
+    return {success:false,message:err?.message || String(err)};
 
   }finally{
     clearTimeout(timeout);
-  }
-}
-
-
-function btoActionLabel(action){
-  const a=String(action||'').toLowerCase();
-
-  if(a.includes('upload')) return ['Uploading...','Uploading file. Please wait.'];
-  if(a.includes('delete')) return ['Deleting...','Removing the selected record.'];
-  if(a.includes('approve')) return ['Approving...','Updating the record.'];
-  if(a.includes('reject')) return ['Rejecting...','Updating the record.'];
-  if(a==='login') return ['Signing in...','Connecting to Barangay backend.'];
-  if(
-    a.includes('save') ||
-    a.includes('update') ||
-    a.includes('record') ||
-    a.includes('assign')
-  ){
-    return ['Saving...','Saving your changes. Please wait.'];
-  }
-
-  return null;
-}
-
-function btoShowProcess(title,sub){
-  const modal=document.getElementById('btoProcessModal');
-  if(!modal) return;
-
-  const titleEl=document.getElementById('btoProcessTitle');
-  const subEl=document.getElementById('btoProcessSub');
-
-  if(titleEl) titleEl.textContent=title||'Saving...';
-  if(subEl) subEl.textContent=sub||'Please wait...';
-
-  modal.classList.add('show');
-  modal.setAttribute('aria-hidden','false');
-  document.body.classList.add('bto-processing');
-}
-
-function btoHideProcess(){
-  const modal=document.getElementById('btoProcessModal');
-  if(modal){
-    modal.classList.remove('show');
-    modal.setAttribute('aria-hidden','true');
-  }
-  document.body.classList.remove('bto-processing');
-}
-
-async function api(action,data={}){
-  const label=btoActionLabel(action);
-  if(label) btoShowProcess(label[0],label[1]);
-
-  try{
-    return await apiCore(action,data);
-  }finally{
-    if(label) btoHideProcess();
+    if(useModal) hideProcessModal();
   }
 }
 
@@ -1275,6 +1279,7 @@ async function saveOfficial(btn){
       if(status){
         status.className='save-status';
         status.textContent='Uploading photo...';
+        updateProcessModal('Uploading photo...','Uploading the selected photo.');
       }
 
       const base64=await fileToBase64(file);
@@ -1289,6 +1294,7 @@ async function saveOfficial(btn){
     }
 
     if(status) status.textContent='Saving official...';
+    updateProcessModal('Saving official...','Saving official information.');
 
     const r=await api('saveOfficial',{
       officialId:document.getElementById('oId').value.trim(),
@@ -1982,6 +1988,7 @@ async function saveCommitteeQuickActivity(triggerBtn){
 
     if(featuredFile){
       if(status) status.textContent='Uploading featured photo...';
+      updateProcessModal('Uploading featured photo...','Uploading the main event/activity photo.');
       const base64=await fileToBase64(featuredFile);
       const u=await api('uploadBase64',{
         fileName:featuredFile.name,
@@ -2010,6 +2017,7 @@ async function saveCommitteeQuickActivity(triggerBtn){
     }
 
     if(status) status.textContent='Publishing event/activity...';
+    updateProcessModal('Publishing...','Saving the event/activity to the public website.');
 
     const title=document.getElementById('qaTitle').value.trim();
     if(!title) throw new Error('Title is required.');
@@ -2477,7 +2485,7 @@ document.addEventListener('keydown',e=>{
   <div class="bto-process-card" role="status" aria-live="polite">
     <div class="bto-process-spinner"></div>
     <div class="bto-process-title" id="btoProcessTitle">Saving...</div>
-    <div class="bto-process-sub" id="btoProcessSub">Please wait...</div>
+    <div class="bto-process-sub" id="btoProcessSub">Please wait while your changes are being processed.</div>
   </div>
 </div>
 
