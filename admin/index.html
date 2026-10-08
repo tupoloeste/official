@@ -585,6 +585,50 @@ button[onclick*="Save"]:hover{background:#d91e37}
   .stats-admin-grid{grid-template-columns:1fr}
 }
 
+
+.age-group-editor{
+  display:grid;
+  gap:10px;
+  margin:14px 0 16px;
+}
+.age-group-edit-row{
+  display:grid;
+  grid-template-columns:2fr 1fr .65fr 1fr auto;
+  gap:10px;
+  align-items:end;
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  padding:12px;
+  background:#fafafa;
+}
+.age-group-edit-row label{
+  margin-top:0;
+}
+.age-group-remove-wrap button{
+  width:auto;
+  margin:0;
+  min-height:42px;
+}
+#saveAllStatsBtn{
+  margin-top:8px;
+}
+@media(max-width:900px){
+  .age-group-edit-row{
+    grid-template-columns:1fr 1fr;
+  }
+  .age-group-remove-wrap{
+    grid-column:1/-1;
+  }
+  .age-group-remove-wrap button{
+    width:100%;
+  }
+}
+@media(max-width:560px){
+  .age-group-edit-row{
+    grid-template-columns:1fr;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1179,7 +1223,9 @@ async function saveAboutBarangay(btn){
   },'About Barangay saved.');
 }
 
+
 window.BTO_ENHANCED_STATS={basic:[],demographics:[],asOfDate:''};
+window.BTO_LAST_SEX_EDIT='MALE';
 
 async function loadStats(){
   const r=await api('getEnhancedBarangayStats');
@@ -1189,128 +1235,237 @@ async function loadStats(){
   renderEnhancedStatsAdmin();
 }
 
+function statValue(key){
+  const row=(window.BTO_ENHANCED_STATS.basic||[]).find(x=>x.key===key);
+  return row ? (row.value ?? '') : '';
+}
+
 function renderEnhancedStatsAdmin(){
   const d=window.BTO_ENHANCED_STATS||{};
-  const basic=d.basic||[];
   const demographics=d.demographics||[];
   const defaultDate=d.asOfDate||new Date().toISOString().slice(0,10);
+
+  const ageRows=demographics.length ? demographics : [{
+    id:'',label:'',value:'',displayOrder:1,status:'ACTIVE'
+  }];
 
   document.getElementById('moduleArea').innerHTML=`
     <div class="card">
       <h2>Barangay Statistics</h2>
-      <div class="help">General barangay population and demographic data only. Farmers and livestock are intentionally excluded from this module.</div>
+      <div class="help">General barangay population and demographic data only. Farmers and livestock are not included here.</div>
 
       <label>As of Date</label>
       <input id="statsAsOfDate" type="date" value="${esc(defaultDate)}">
 
       <div class="stats-admin-grid">
-        ${basic.map(x=>`
+        ${[
+          ['TOTAL_POPULATION','Total Population'],
+          ['MALE','Male'],
+          ['FEMALE','Female'],
+          ['TOTAL_HOUSEHOLDS','Total Households'],
+          ['TOTAL_FAMILIES','Total Families'],
+          ['REGISTERED_VOTERS','Registered Voters'],
+          ['SENIOR_CITIZENS','Senior Citizens'],
+          ['PWD','Persons with Disability']
+        ].map(([key,label])=>`
           <div class="stats-admin-item">
-            <label>${esc(x.label)}</label>
-            <input id="bs_${esc(x.key)}" type="number" min="0" step="1" value="${esc(x.value||'')}" placeholder="Leave blank until validated">
-            <button onclick="saveEnhancedBasicStat('${esc(x.key)}',this)">Save</button>
+            <label>${label}</label>
+            <input
+              id="bs_${key}"
+              type="number"
+              min="0"
+              step="1"
+              value="${esc(statValue(key))}"
+              placeholder="Leave blank until validated"
+              ${key==='TOTAL_POPULATION' ? `oninput="autoBalanceSex('TOTAL')"` : ''}
+              ${key==='MALE' ? `oninput="autoBalanceSex('MALE')"` : ''}
+              ${key==='FEMALE' ? `oninput="autoBalanceSex('FEMALE')"` : ''}
+            >
           </div>
         `).join('')}
       </div>
     </div>
 
     <div class="card">
-      <h2>Demographic / Age Groups</h2>
-      <div class="help">Flexible entries. Add any age bracket or demographic group only when actual validated numbers are available.</div>
-
-      <input id="demoId" type="hidden">
-
-      <div class="grid">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
         <div>
-          <label>Label</label>
-          <input id="demoLabel" placeholder="Example: 0–5 years old">
+          <h2 style="margin-bottom:4px">Demographic / Age Groups</h2>
+          <div class="help">Add as many age-group fields as needed. Blank rows are ignored.</div>
         </div>
-        <div>
-          <label>Value</label>
-          <input id="demoValue" type="number" min="0" step="1" placeholder="Actual count">
-        </div>
+        <button type="button" class="secondary" style="width:auto" onclick="addAgeGroupRow()">+ Add Row</button>
       </div>
 
-      <div class="grid">
-        <div>
-          <label>Display Order</label>
-          <input id="demoOrder" type="number" min="0" step="1" value="1">
-        </div>
-        <div>
-          <label>Status</label>
-          <select id="demoStatus">
-            <option value="ACTIVE">ACTIVE</option>
-            <option value="INACTIVE">INACTIVE</option>
-          </select>
-        </div>
+      <div id="ageGroupRows" class="age-group-editor">
+        ${ageRows.map((x,i)=>ageGroupRowHtml(x,i)).join('')}
       </div>
 
-      <div class="grid">
-        <button onclick="saveDemographicStat(this)">Save Statistic / Age Group</button>
-        <button class="secondary" onclick="clearDemographicForm()">Clear</button>
-      </div>
+      <button id="saveAllStatsBtn" onclick="saveAllBarangayStats(this)">Save All Barangay Statistics</button>
+    </div>`;
+}
 
-      <div class="doc-list">
-        ${demographics.length?demographics.map(x=>`
-          <div class="doc-row">
-            <div class="doc-row-main">
-              <div class="doc-row-title">${esc(x.label)}</div>
-              <div class="doc-row-meta">Value: ${esc(x.value||'—')} • Order: ${esc(x.displayOrder)} • ${esc(x.status)}</div>
-            </div>
-            <div class="doc-row-actions">
-              <button onclick='editDemographicStat(${JSON.stringify(JSON.stringify(x))})'>Edit</button>
-            </div>
-          </div>
-        `).join(''):'<div class="help">No demographic or age-group data encoded yet.</div>'}
+function ageGroupRowHtml(x,index){
+  const order=x.displayOrder || index+1;
+  return `
+    <div class="age-group-edit-row" data-demo-id="${esc(x.id||'')}">
+      <div>
+        <label>Age Group / Demographic Label</label>
+        <input class="demo-label" value="${esc(x.label||'')}" placeholder="Example: 0–5 years old">
+      </div>
+      <div>
+        <label>Value</label>
+        <input class="demo-value" type="number" min="0" step="1" value="${esc(x.value||'')}" placeholder="Actual count">
+      </div>
+      <div>
+        <label>Order</label>
+        <input class="demo-order" type="number" min="0" step="1" value="${esc(order)}">
+      </div>
+      <div>
+        <label>Status</label>
+        <select class="demo-status">
+          <option value="ACTIVE" ${(x.status||'ACTIVE')==='ACTIVE'?'selected':''}>ACTIVE</option>
+          <option value="INACTIVE" ${x.status==='INACTIVE'?'selected':''}>INACTIVE</option>
+        </select>
+      </div>
+      <div class="age-group-remove-wrap">
+        <button type="button" class="secondary" onclick="removeAgeGroupRow(this)">Remove</button>
       </div>
     </div>`;
 }
 
-async function saveEnhancedBasicStat(key,btn){
-  return withButtonSpinner(btn,'Saving...',async()=>{
-    const r=await api('saveEnhancedBasicStat',{
-      statKey:key,
-      value:document.getElementById('bs_'+key).value,
-      asOfDate:document.getElementById('statsAsOfDate').value
+function addAgeGroupRow(){
+  const root=document.getElementById('ageGroupRows');
+  const count=root.querySelectorAll('.age-group-edit-row').length;
+  root.insertAdjacentHTML('beforeend',ageGroupRowHtml({
+    id:'',label:'',value:'',displayOrder:count+1,status:'ACTIVE'
+  },count));
+}
+
+function removeAgeGroupRow(btn){
+  const row=btn.closest('.age-group-edit-row');
+  const root=document.getElementById('ageGroupRows');
+  if(root.querySelectorAll('.age-group-edit-row').length<=1){
+    row.querySelector('.demo-label').value='';
+    row.querySelector('.demo-value').value='';
+    row.querySelector('.demo-order').value='1';
+    row.querySelector('.demo-status').value='ACTIVE';
+    row.dataset.demoId='';
+    return;
+  }
+  row.remove();
+}
+
+function numberOrBlank(id){
+  const el=document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+
+function autoBalanceSex(changed){
+  const totalEl=document.getElementById('bs_TOTAL_POPULATION');
+  const maleEl=document.getElementById('bs_MALE');
+  const femaleEl=document.getElementById('bs_FEMALE');
+  if(!totalEl||!maleEl||!femaleEl) return;
+
+  const total=Number(totalEl.value);
+  if(!Number.isFinite(total) || total<0 || totalEl.value==='') return;
+
+  if(changed==='MALE'){
+    window.BTO_LAST_SEX_EDIT='MALE';
+    const male=Number(maleEl.value);
+    if(Number.isFinite(male) && male>=0){
+      femaleEl.value=Math.max(0,total-male);
+    }
+    return;
+  }
+
+  if(changed==='FEMALE'){
+    window.BTO_LAST_SEX_EDIT='FEMALE';
+    const female=Number(femaleEl.value);
+    if(Number.isFinite(female) && female>=0){
+      maleEl.value=Math.max(0,total-female);
+    }
+    return;
+  }
+
+  // Total Population changed.
+  // Recalculate the opposite sex based on whichever sex the user last edited.
+  if(window.BTO_LAST_SEX_EDIT==='FEMALE' && femaleEl.value!==''){
+    const female=Number(femaleEl.value);
+    if(Number.isFinite(female) && female>=0){
+      maleEl.value=Math.max(0,total-female);
+      return;
+    }
+  }
+
+  if(maleEl.value!==''){
+    const male=Number(maleEl.value);
+    if(Number.isFinite(male) && male>=0){
+      femaleEl.value=Math.max(0,total-male);
+      return;
+    }
+  }
+
+  if(femaleEl.value!==''){
+    const female=Number(femaleEl.value);
+    if(Number.isFinite(female) && female>=0){
+      maleEl.value=Math.max(0,total-female);
+    }
+  }
+}
+
+function collectAgeGroupRows(){
+  return Array.from(document.querySelectorAll('#ageGroupRows .age-group-edit-row')).map((row,index)=>({
+    id:row.dataset.demoId||'',
+    label:row.querySelector('.demo-label').value.trim(),
+    value:row.querySelector('.demo-value').value.trim(),
+    displayOrder:row.querySelector('.demo-order').value || String(index+1),
+    status:row.querySelector('.demo-status').value
+  })).filter(x=>x.label || x.value);
+}
+
+async function saveAllBarangayStats(btn){
+  return withButtonSpinner(btn,'Saving All...',async()=>{
+    const asOfDate=document.getElementById('statsAsOfDate').value;
+
+    const total=numberOrBlank('bs_TOTAL_POPULATION');
+    const male=numberOrBlank('bs_MALE');
+    const female=numberOrBlank('bs_FEMALE');
+
+    if(total!=='' && male!=='' && female!==''){
+      if(Number(male)+Number(female)!==Number(total)){
+        throw new Error('Male + Female must equal Total Population.');
+      }
+    }
+
+    const core=await api('saveEnhancedStatsBatch',{
+      asOfDate,
+      values:{
+        TOTAL_POPULATION:total,
+        MALE:male,
+        FEMALE:female,
+        TOTAL_HOUSEHOLDS:numberOrBlank('bs_TOTAL_HOUSEHOLDS'),
+        TOTAL_FAMILIES:numberOrBlank('bs_TOTAL_FAMILIES'),
+        REGISTERED_VOTERS:numberOrBlank('bs_REGISTERED_VOTERS'),
+        SENIOR_CITIZENS:numberOrBlank('bs_SENIOR_CITIZENS'),
+        PWD:numberOrBlank('bs_PWD')
+      }
     });
-    if(!r.success) throw new Error(r.message||'Save failed.');
-    await loadStats();
-    return r;
-  },'Statistic saved.');
-}
 
-function editDemographicStat(json){
-  const x=JSON.parse(json);
-  document.getElementById('demoId').value=x.id||'';
-  document.getElementById('demoLabel').value=x.label||'';
-  document.getElementById('demoValue').value=x.value||'';
-  document.getElementById('demoOrder').value=x.displayOrder||1;
-  document.getElementById('demoStatus').value=x.status||'ACTIVE';
-  window.scrollTo({top:0,behavior:'smooth'});
-}
+    if(!core.success) throw new Error(core.message||'Unable to save Barangay Statistics.');
 
-function clearDemographicForm(){
-  document.getElementById('demoId').value='';
-  document.getElementById('demoLabel').value='';
-  document.getElementById('demoValue').value='';
-  document.getElementById('demoOrder').value='1';
-  document.getElementById('demoStatus').value='ACTIVE';
-}
-
-async function saveDemographicStat(btn){
-  return withButtonSpinner(btn,'Saving...',async()=>{
-    const r=await api('saveDemographic',{
-      id:document.getElementById('demoId').value,
-      label:document.getElementById('demoLabel').value,
-      value:document.getElementById('demoValue').value,
-      displayOrder:document.getElementById('demoOrder').value,
-      status:document.getElementById('demoStatus').value,
-      asOfDate:document.getElementById('statsAsOfDate').value
+    const demographics=await api('saveDemographicsBatch',{
+      asOfDate,
+      rows:collectAgeGroupRows()
     });
-    if(!r.success) throw new Error(r.message||'Save failed.');
+
+    if(!demographics.success) throw new Error(demographics.message||'Unable to save age groups.');
+
     await loadStats();
-    return r;
-  },'Demographic statistic saved.');
+
+    return {
+      success:true,
+      message:'All Barangay Statistics saved.'
+    };
+  },'All Barangay Statistics saved.');
 }
 
 async function loadLivestock(){
