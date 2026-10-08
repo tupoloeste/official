@@ -2997,18 +2997,7 @@ a.back-btn:focus{
 }
 
 
-/* ===== First-load performance ===== */
-.view:not(.active){
-  content-visibility:auto;
-  contain-intrinsic-size:1px 700px;
-}
-.hero-activity-placeholder,
-.highlights-gallery-empty{
-  animation:none !important;
-}
-
-
-/* ===== Welcome / Full Site Loading Screen ===== */
+/* ===== Stable Welcome Loader (working publicData baseline) ===== */
 html.bto-site-loading,
 body.bto-site-loading{
   overflow:hidden !important;
@@ -3023,185 +3012,144 @@ body.bto-site-loading{
   justify-content:center;
   padding:24px;
   background:
-    radial-gradient(circle at 50% 36%, rgba(255,255,255,.96) 0 22%, rgba(255,247,248,.97) 45%, rgba(246,248,250,.99) 100%);
+    radial-gradient(circle at 50% 36%, #ffffff 0%, #fff7f8 45%, #f5f6f8 100%);
   opacity:1;
   visibility:visible;
   transition:opacity .55s ease, visibility .55s ease;
 }
 
-.bto-welcome-loader.is-ready{
+.bto-welcome-loader.is-complete{
   opacity:0;
   visibility:hidden;
   pointer-events:none;
 }
 
-.bto-welcome-card{
+.bto-welcome-inner{
   width:min(520px,100%);
   text-align:center;
-  animation:btoWelcomeRise .65s ease both;
+  animation:btoWelcomeEnter .55s ease both;
 }
 
-.bto-logo-orbit{
+.bto-welcome-logo-wrap{
   position:relative;
-  width:168px;
-  height:168px;
-  margin:0 auto 24px;
+  width:166px;
+  height:166px;
   display:grid;
   place-items:center;
+  margin:0 auto 22px;
 }
 
-.bto-logo-ring{
+.bto-welcome-ring{
   position:absolute;
   inset:0;
   border-radius:50%;
-  border:4px solid rgba(240,42,67,.14);
-  border-top-color:#f02a43;
-  border-right-color:#f02a43;
-  animation:btoWelcomeSpin 1.05s linear infinite;
-  box-shadow:0 10px 35px rgba(240,42,67,.14);
+  border:4px solid rgba(239,43,67,.13);
+  border-top-color:#ef2b43;
+  border-right-color:#ef2b43;
+  animation:btoRingSpin 1.05s linear infinite;
 }
 
 .bto-welcome-logo{
-  width:132px;
-  height:132px;
+  width:130px;
+  height:130px;
   object-fit:contain;
   border-radius:50%;
   background:#fff;
-  box-shadow:0 12px 34px rgba(0,0,0,.12);
-  animation:btoWelcomePulse 1.8s ease-in-out infinite;
+  box-shadow:0 12px 34px rgba(0,0,0,.13);
+  animation:btoLogoPulse 1.8s ease-in-out infinite;
 }
 
-.bto-welcome-copy small{
-  display:block;
+.bto-welcome-eyebrow{
+  margin-bottom:8px;
   font-size:11px;
   font-weight:900;
-  letter-spacing:1.7px;
-  color:#707784;
-  margin-bottom:9px;
+  letter-spacing:1.6px;
+  color:#747b87;
 }
 
-.bto-welcome-copy h1{
+.bto-welcome-inner h1{
   margin:0;
+  color:#d91e37;
   font-size:30px;
-  line-height:1.1;
-  color:#d91f37;
-  letter-spacing:.3px;
+  line-height:1.08;
 }
 
-.bto-welcome-copy p{
+.bto-welcome-inner p{
   margin:8px 0 0;
   color:#667085;
   font-size:14px;
 }
 
-.bto-loader-progress{
+.bto-welcome-bar{
   width:min(320px,82%);
   height:5px;
-  margin:28px auto 12px;
-  background:#e9edf1;
+  margin:27px auto 12px;
   border-radius:999px;
+  background:#e7eaee;
   overflow:hidden;
 }
 
-.bto-loader-progress span{
+.bto-welcome-bar span{
   display:block;
-  height:100%;
   width:38%;
+  height:100%;
   border-radius:999px;
-  background:#f02a43;
-  animation:btoLoaderSweep 1.15s ease-in-out infinite;
+  background:#ef2b43;
+  animation:btoBarMove 1.15s ease-in-out infinite;
 }
 
-.bto-loader-status{
+.bto-welcome-status{
   min-height:20px;
   color:#667085;
   font-size:12px;
   font-weight:700;
 }
 
-.bto-loader-retry{
-  margin-top:16px;
-  border:0;
-  border-radius:10px;
-  padding:10px 20px;
-  background:#242424;
-  color:#fff;
-  font-weight:800;
-  cursor:pointer;
-}
-
-@keyframes btoWelcomeSpin{
+@keyframes btoRingSpin{
   to{transform:rotate(360deg)}
 }
 
-@keyframes btoWelcomePulse{
+@keyframes btoLogoPulse{
   0%,100%{transform:scale(1)}
   50%{transform:scale(1.045)}
 }
 
-@keyframes btoLoaderSweep{
-  0%{transform:translateX(-135%)}
-  50%{transform:translateX(80%)}
-  100%{transform:translateX(265%)}
+@keyframes btoBarMove{
+  0%{transform:translateX(-140%)}
+  50%{transform:translateX(85%)}
+  100%{transform:translateX(270%)}
 }
 
-@keyframes btoWelcomeRise{
-  from{opacity:0;transform:translateY(15px)}
+@keyframes btoWelcomeEnter{
+  from{opacity:0;transform:translateY(12px)}
   to{opacity:1;transform:translateY(0)}
 }
 
 @media(max-width:600px){
-  .bto-logo-orbit{
-    width:148px;
-    height:148px;
-  }
-  .bto-welcome-logo{
-    width:116px;
-    height:116px;
-  }
-  .bto-welcome-copy h1{
-    font-size:25px;
-  }
+  .bto-welcome-logo-wrap{width:145px;height:145px}
+  .bto-welcome-logo{width:114px;height:114px}
+  .bto-welcome-inner h1{font-size:25px}
 }
 
 </style>
-
-<link rel="preconnect" href="https://script.google.com">
-<link rel="preconnect" href="https://script.googleusercontent.com">
-<link rel="dns-prefetch" href="//script.google.com">
-<link rel="dns-prefetch" href="//script.googleusercontent.com">
-
 </head>
 <body>
 
 <div id="btoWelcomeLoader" class="bto-welcome-loader" aria-live="polite">
-  <div class="bto-welcome-card">
-    <div class="bto-logo-orbit">
-      <div class="bto-logo-ring"></div>
-      <img src="barangay-logo.png" alt="Barangay Tupol Oeste Logo" class="bto-welcome-logo">
+  <div class="bto-welcome-inner">
+    <div class="bto-welcome-logo-wrap">
+      <span class="bto-welcome-ring"></span>
+      <img class="bto-welcome-logo" src="barangay-logo.png" alt="Barangay Tupol Oeste Logo">
     </div>
 
-    <div class="bto-welcome-copy">
-      <small>WELCOME TO THE OFFICIAL WEBSITE OF</small>
-      <h1>BARANGAY TUPOL OESTE</h1>
-      <p>Municipality of Cabatuan, Province of Iloilo</p>
-    </div>
+    <div class="bto-welcome-eyebrow">WELCOME TO THE OFFICIAL WEBSITE OF</div>
+    <h1>BARANGAY TUPOL OESTE</h1>
+    <p>Municipality of Cabatuan, Province of Iloilo</p>
 
-    <div id="btoLoaderProgress" class="bto-loader-progress">
-      <span></span>
-    </div>
-
-    <div id="btoLoaderStatus" class="bto-loader-status">
+    <div class="bto-welcome-bar"><span></span></div>
+    <div id="btoWelcomeStatus" class="bto-welcome-status">
       Loading official barangay information...
     </div>
-
-    <button id="btoLoaderRetry"
-            class="bto-loader-retry"
-            type="button"
-            style="display:none"
-            onclick="btoRetryPublicLoad()">
-      Retry
-    </button>
   </div>
 </div>
 
@@ -3235,7 +3183,7 @@ body.bto-site-loading{
     <div class="announcement-ticker-label">Announcements</div>
     <div class="announcement-ticker-window">
       <div class="announcement-ticker-track" id="announcement-ticker-track">
-        <div class="announcement-ticker-item"><span>Barangay announcements will appear here.</span></div>
+        <div class="announcement-ticker-item"><span>Loading latest barangay announcements...</span></div>
       </div>
     </div>
   </div>
@@ -3304,13 +3252,13 @@ body.bto-site-loading{
              id="highlights-live-slideshow"
              onmouseenter="pauseHighlightsSlideshow()"
              onmouseleave="resumeHighlightsSlideshow()">
-          <div class="highlights-gallery-empty">Latest barangay activities will appear here.</div>
+          <div class="highlights-gallery-empty">Loading latest activity photos...</div>
         </div>
 
         <div class="highlights-side-gallery">
           <h3>Barangay Activity Gallery</h3>
           <div class="highlights-side-grid" id="highlights-side-grid">
-            <div class="highlights-gallery-empty">Activity photos will appear here.</div>
+            <div class="highlights-gallery-empty">Loading photos...</div>
           </div>
           <div class="highlights-gallery-more" id="highlights-side-more"></div>
         </div>
@@ -4320,7 +4268,6 @@ function showView(name){
   if(navLinks) navLinks.classList.remove('show');
   window.scrollTo({top:0,behavior:'instant'});
   history.replaceState(null,'','#'+name);
-
 }
 
 function switchTab(scope,panelId,btn){
@@ -4334,13 +4281,9 @@ function switchTab(scope,panelId,btn){
 }
 
 
-const BTO_PUBLIC_SNAPSHOT_API = "https://script.google.com/macros/s/AKfycbwM6bagjlHKao-NCB3d_nDwX29zO4EFKcoj50vABCQP7bKJuSI4j7772Zam9LwNiLCqNg/exec?action=publicSnapshot";
-const BTO_PUBLIC_FULL_API = "https://script.google.com/macros/s/AKfycbwM6bagjlHKao-NCB3d_nDwX29zO4EFKcoj50vABCQP7bKJuSI4j7772Zam9LwNiLCqNg/exec?action=publicData";
-const BTO_PUBLIC_CACHE_KEY = 'bto_public_snapshot_v1';
+const BTO_PUBLIC_API = "https://script.google.com/macros/s/AKfycbwM6bagjlHKao-NCB3d_nDwX29zO4EFKcoj50vABCQP7bKJuSI4j7772Zam9LwNiLCqNg/exec?action=publicData";
+const BTO_PUBLIC_CACHE_KEY = 'bto_public_data_v10';
 const BTO_PUBLIC_CACHE_MS = 5 * 60 * 1000;
-
-const BTO_PUBLIC_CACHE_FALLBACK_KEYS=[];
-
 
 function publicEsc(v){
   return String(v ?? '').replace(/[&<>"']/g,m=>({
@@ -4348,31 +4291,14 @@ function publicEsc(v){
   }[m]));
 }
 
-function publicCacheGet(options={}){
+function publicCacheGet(){
   try{
-    let raw=localStorage.getItem(BTO_PUBLIC_CACHE_KEY);
-
-    if(!raw){
-      for(const key of BTO_PUBLIC_CACHE_FALLBACK_KEYS){
-        raw=localStorage.getItem(key);
-        if(raw) break;
-      }
-    }
-
+    const raw=localStorage.getItem(BTO_PUBLIC_CACHE_KEY);
     if(!raw) return null;
-
     const obj=JSON.parse(raw);
-    if(!obj || !obj.data) return null;
-
-    const age=Date.now()-(Number(obj.savedAt)||0);
-    const allowStale=options.allowStale===true;
-
-    if(!allowStale && age>BTO_PUBLIC_CACHE_MS) return null;
-
+    if(!obj || Date.now()-obj.savedAt>BTO_PUBLIC_CACHE_MS) return null;
     return obj.data;
-  }catch(e){
-    return null;
-  }
+  }catch(e){ return null; }
 }
 
 function publicCacheSet(data){
@@ -6362,188 +6288,90 @@ function applyPublicData(data){
   renderCommitteePublic(data,'COM-003');
 }
 
-
-
-
-let BTO_PUBLIC_SNAPSHOT_REQUEST=null;
-let BTO_PUBLIC_DATA_READY=false;
-
-function btoSetLoaderStatus(message,error=false){
-  const status=document.getElementById('btoLoaderStatus');
-  const retry=document.getElementById('btoLoaderRetry');
-  const progress=document.getElementById('btoLoaderProgress');
-
-  if(status){
-    status.textContent=message||'';
-    status.style.color=error ? '#c5162e' : '#667085';
-  }
-
-  if(retry) retry.style.display=error ? 'inline-block' : 'none';
-  if(progress) progress.style.display=error ? 'none' : 'block';
+function btoWelcomeStatus(message){
+  const el=document.getElementById('btoWelcomeStatus');
+  if(el) el.textContent=message||'';
 }
 
-function btoUnlockWebsite(){
-  if(BTO_PUBLIC_DATA_READY) return;
-  BTO_PUBLIC_DATA_READY=true;
-
+function btoOpenSite(){
   const loader=document.getElementById('btoWelcomeLoader');
 
   document.documentElement.classList.remove('bto-site-loading');
   document.body.classList.remove('bto-site-loading');
 
   if(loader){
-    loader.classList.add('is-ready');
+    loader.classList.add('is-complete');
     setTimeout(()=>{
-      if(loader && loader.parentNode) loader.parentNode.removeChild(loader);
+      if(loader.parentNode) loader.parentNode.removeChild(loader);
     },650);
   }
 }
 
-async function loadPublicSnapshot(force=false){
-  if(BTO_PUBLIC_SNAPSHOT_REQUEST && !force) return BTO_PUBLIC_SNAPSHOT_REQUEST;
+async function loadPublicDataForWelcome(){
+  btoWelcomeStatus('Loading official barangay information...');
 
-  btoSetLoaderStatus('Loading official barangay information...');
+  try{
+    /*
+     * Keep the original working publicData architecture.
+     * No snapshot, no LockService, no per-page endpoints, no forced timeout.
+     * We simply keep the welcome screen visible until this working request ends.
+     */
+    const freshUrl=BTO_PUBLIC_API +
+      (BTO_PUBLIC_API.includes('?')?'&':'?') +
+      '_ts=' + Date.now();
 
-  BTO_PUBLIC_SNAPSHOT_REQUEST=(async()=>{
-    let data=null;
+    const res=await fetch(freshUrl,{cache:'no-store'});
 
-    // --------------------------------------------------
-    // 1) FAST PATH: PREBUILT PUBLIC SNAPSHOT
-    // --------------------------------------------------
-    try{
-      const controller=new AbortController();
-      const timer=setTimeout(()=>controller.abort(),12000);
-
-      try{
-        const url=BTO_PUBLIC_SNAPSHOT_API+'&_ts='+Date.now();
-
-        const res=await fetch(url,{
-          cache:'no-store',
-          signal:controller.signal
-        });
-
-        if(res.ok){
-          const snapshot=await res.json();
-
-          if(snapshot && snapshot.success){
-            data=snapshot;
-          }
-        }
-      }finally{
-        clearTimeout(timer);
-      }
-    }catch(err){
-      console.warn('Public snapshot unavailable:',err);
+    if(!res.ok){
+      throw new Error('HTTP '+res.status);
     }
 
-    // --------------------------------------------------
-    // 2) FALLBACK: COMPLETE PUBLIC DATA
-    // If snapshot is missing/not initialized, do not trap
-    // the visitor in a Retry loop.
-    // --------------------------------------------------
-    if(!data){
-      btoSetLoaderStatus('Preparing latest barangay data...');
+    btoWelcomeStatus('Preparing website content...');
 
-      try{
-        const controller=new AbortController();
-        const timer=setTimeout(()=>controller.abort(),90000);
+    const data=await res.json();
 
-        try{
-          const url=BTO_PUBLIC_FULL_API+'&_ts='+Date.now();
-
-          const res=await fetch(url,{
-            cache:'no-store',
-            signal:controller.signal
-          });
-
-          if(!res.ok) throw new Error('HTTP '+res.status);
-
-          const full=await res.json();
-
-          if(full && full.success){
-            data=full;
-          }else{
-            throw new Error(full?.message || 'Public data is unavailable.');
-          }
-        }finally{
-          clearTimeout(timer);
-        }
-      }catch(err){
-        console.warn('Full public data fallback failed:',err);
-      }
+    if(!data || !data.success){
+      throw new Error(data?.message || 'Public data response was not successful.');
     }
 
-    // --------------------------------------------------
-    // 3) LAST RESORT: VALID BROWSER CACHE
-    // Use only if a complete cache exists.
-    // --------------------------------------------------
-    if(!data){
-      const cached=publicCacheGet({allowStale:true});
+    // Render all current site data before allowing access.
+    applyPublicData(data);
+    publicCacheSet(data);
 
-      if(cached && cached.success){
-        btoSetLoaderStatus('Using previously loaded barangay information...');
-        data=cached;
-      }
-    }
+    btoWelcomeStatus('Welcome to Barangay Tupol Oeste');
+    await new Promise(resolve=>setTimeout(resolve,300));
 
-    // --------------------------------------------------
-    // 4) READY OR RETRY
-    // --------------------------------------------------
-    if(data && data.success){
-      try{
-        btoSetLoaderStatus('Preparing website content...');
+    btoOpenSite();
+    return true;
 
-        applyPublicData(data);
-        publicCacheSet(data);
+  }catch(err){
+    console.warn('Public data load failed:',err);
 
-        btoSetLoaderStatus('Welcome to Barangay Tupol Oeste');
+    /*
+     * Do not trap the visitor on a manual Retry button.
+     * Retry automatically while the welcome animation remains visible.
+     */
+    btoWelcomeStatus('Connecting to the Barangay server...');
 
-        await new Promise(resolve=>setTimeout(resolve,300));
-        btoUnlockWebsite();
-
-        return data;
-      }catch(err){
-        console.warn('Public data render failed:',err);
-      }
-    }
-
-    btoSetLoaderStatus(
-      'Unable to load the barangay website data. Please check your internet connection and try again.',
-      true
-    );
-
-    return null;
-  })();
-
-  return BTO_PUBLIC_SNAPSHOT_REQUEST;
+    await new Promise(resolve=>setTimeout(resolve,3000));
+    return loadPublicDataForWelcome();
+  }
 }
 
-function btoRetryPublicLoad(){
-  BTO_PUBLIC_SNAPSHOT_REQUEST=null;
-  BTO_PUBLIC_DATA_READY=false;
-  btoSetLoaderStatus('Retrying connection...');
-  setTimeout(()=>loadPublicSnapshot(true),150);
-}
 
 document.getElementById('year').textContent=new Date().getFullYear();
 
-/*
- * IMPORTANT:
- * Use DOMContentLoaded, not window.load.
- * window.load waits for images and other assets, which made first-time
- * visitors feel that the site itself was loading slowly.
- */
 document.addEventListener('DOMContentLoaded',()=>{
   document.body.classList.add('bto-site-loading');
 
   const hash=location.hash.replace('#','');
   const requested=(hash && document.getElementById('view-'+hash)) ? hash : 'home';
 
-  // Prepare the correct page behind the welcome screen.
+  // Prepare the requested view behind the loader.
   showView(requested);
 
-  // Do not expose the site until all current public data has loaded and rendered.
-  loadPublicSnapshot();
+  // Site remains inaccessible until the original complete publicData succeeds.
+  loadPublicDataForWelcome();
 });
 </script>
 
