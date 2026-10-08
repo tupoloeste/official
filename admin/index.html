@@ -718,52 +718,64 @@ button.danger:hover{filter:brightness(.94)}
 .admin-actions button{width:auto}
 
 
-.assignment-existing-box{
-  margin:10px 0 16px;
-  padding:12px;
-  border:1px solid #e4e7ec;
-  border-radius:10px;
-  background:#f9fafb;
-}
-.assignment-existing-title{
-  font-size:12px;
-  font-weight:800;
-  color:#344054;
-  margin-bottom:8px;
-}
-.assignment-existing-list{
-  display:grid;
-  gap:8px;
-}
-.assignment-existing-item{
+.password-policy-overlay{
+  position:fixed;
+  inset:0;
+  z-index:1000000;
+  background:rgba(17,24,39,.72);
+  backdrop-filter:blur(5px);
   display:flex;
-  justify-content:space-between;
   align-items:center;
-  gap:12px;
-  padding:9px 10px;
+  justify-content:center;
+  padding:20px;
+}
+.password-policy-overlay.hidden{display:none!important}
+.password-policy-card{
+  width:min(460px,100%);
   background:#fff;
-  border:1px solid #eaecf0;
-  border-radius:8px;
+  border-radius:18px;
+  padding:26px;
+  box-shadow:0 24px 70px rgba(0,0,0,.28);
 }
-.assignment-existing-item strong{
-  display:block;
-  font-size:13px;
-  color:#20242a;
+.password-policy-card h2{
+  margin:6px 0 8px;
+  text-align:center;
 }
-.assignment-existing-item small{
-  display:block;
-  margin-top:2px;
+.password-policy-card p{
   color:#667085;
-  font-size:11px;
+  text-align:center;
+  line-height:1.5;
+  margin:0 0 20px;
 }
-.assignment-existing-empty{
-  color:#667085;
-  font-size:12px;
-}
+.password-policy-logo-wrap{text-align:center}
+.password-policy-logo-wrap img{width:72px;height:72px;object-fit:contain}
+.password-policy-card button{width:100%;margin-top:10px}
 
 </style>
 </head>
 <body>
+
+<div id="forcePasswordOverlay" class="password-policy-overlay hidden">
+  <div class="password-policy-card">
+    <div class="password-policy-logo-wrap">
+      <img src="../barangay-logo.png" alt="Barangay Tupol Oeste">
+    </div>
+    <h2>Create Your New Password</h2>
+    <p>You are using a temporary password. For account security, create your own password before accessing the encoder portal.</p>
+
+    <label>New Password</label>
+    <input id="forcedNewPassword" type="password" autocomplete="new-password" minlength="8" placeholder="At least 8 characters">
+
+    <label>Confirm New Password</label>
+    <input id="forcedConfirmPassword" type="password" autocomplete="new-password" minlength="8" placeholder="Re-enter new password">
+
+    <div id="forcedPasswordMsg" class="msg"></div>
+
+    <button id="forcedPasswordBtn" onclick="submitForcedPassword(this)">Save New Password</button>
+    <button class="secondary" onclick="logout()">Logout</button>
+  </div>
+</div>
+
 <div class="wrap">
 <div id="apiWarning" class="card hidden">
     <div class="msg err">
@@ -1137,6 +1149,60 @@ async function api(action,data={}){
   }
 }
 
+
+function showForcedPasswordChange(){
+  const overlay=document.getElementById('forcePasswordOverlay');
+  if(!overlay) return;
+  overlay.classList.remove('hidden');
+
+  const a=document.getElementById('forcedNewPassword');
+  const b=document.getElementById('forcedConfirmPassword');
+  const msg=document.getElementById('forcedPasswordMsg');
+
+  if(a) a.value='';
+  if(b) b.value='';
+  if(msg) msg.innerHTML='';
+
+  setTimeout(()=>a?.focus(),100);
+}
+
+function hideForcedPasswordChange(){
+  document.getElementById('forcePasswordOverlay')?.classList.add('hidden');
+}
+
+async function submitForcedPassword(btn){
+  const a=document.getElementById('forcedNewPassword').value;
+  const b=document.getElementById('forcedConfirmPassword').value;
+  const msg=document.getElementById('forcedPasswordMsg');
+
+  if(a.length<8){
+    if(msg) msg.innerHTML='<div class="msg err">Password must be at least 8 characters.</div>';
+    return;
+  }
+  if(a!==b){
+    if(msg) msg.innerHTML='<div class="msg err">Passwords do not match.</div>';
+    return;
+  }
+
+  setBusyButton(btn,true,'Saving...');
+  try{
+    const r=await api('changeOwnPassword',{newPassword:a,confirmPassword:b});
+    if(!r.success) throw new Error(r.message||'Unable to change password.');
+
+    me=r.user||Object.assign({},me,{forcePasswordChange:false});
+    me.forcePasswordChange=false;
+    cacheSet('me',me);
+
+    hideForcedPasswordChange();
+    showGlobalActionStatus('Password changed successfully.','ok');
+    renderApp();
+  }catch(err){
+    if(msg) msg.innerHTML='<div class="msg err">'+esc(err?.message||'Password change failed.')+'</div>';
+  }finally{
+    setBusyButton(btn,false);
+  }
+}
+
 async function login(triggerBtn){
   const btn=triggerBtn || document.getElementById('loginBtn');
   const msg=document.getElementById('loginMsg');
@@ -1181,6 +1247,7 @@ async function login(triggerBtn){
 }
 
 async function logout(){
+  hideForcedPasswordChange();
   await api('logout');
   localStorage.removeItem('btoToken');
   cacheRemove('me');
@@ -1198,6 +1265,14 @@ function hasModule(name){
 }
 
 function renderApp(){
+  if(me && me.forcePasswordChange){
+    document.getElementById('loginCard').classList.add('hidden');
+    document.getElementById('app').classList.add('hidden');
+    showForcedPasswordChange();
+    return;
+  }
+
+  hideForcedPasswordChange();
   document.getElementById('loginCard').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
 
@@ -2846,7 +2921,6 @@ async function saveOfficial(btn){
 }
 
 
-
 async function assignmentForm(){
   const bundle=await api('getAssignmentBundle');
   if(!bundle.success){showModuleError(bundle.message);return}
@@ -2857,76 +2931,6 @@ async function assignmentForm(){
   window.BTO_ASSIGNMENT_BUNDLE=bundle;
   window.BTO_EDIT_ASSIGNMENT=null;
   renderAssignmentBundle(bundle);
-}
-
-function btoAssignmentOfficialName_(id){
-  const b=window.BTO_ASSIGNMENT_BUNDLE||{};
-  const o=(b.officials||[]).find(x=>String(x['Official ID']||'')===String(id||''));
-  return o ? String(o['Full Name']||'') : String(id||'');
-}
-
-function btoAssignmentCommitteeName_(id){
-  const b=window.BTO_ASSIGNMENT_BUNDLE||{};
-  const c=(b.committees||[]).find(x=>String(x.committeeId||'')===String(id||''));
-  return c ? String(c.committeeName||'') : String(id||'');
-}
-
-function btoExistingAssignmentsForOfficial_(officialId){
-  const b=window.BTO_ASSIGNMENT_BUNDLE||{};
-  const editId=String((window.BTO_EDIT_ASSIGNMENT||{})['Assignment ID']||'');
-
-  return (b.assignments||[]).filter(a=>{
-    const sameOfficial=String(a['Official ID']||'')===String(officialId||'');
-    const status=String(a['Status']||'ACTIVE').toUpperCase();
-    const notDeleted=status!=='DELETED';
-    const notCurrentEdit=!editId || String(a['Assignment ID']||'')!==editId;
-    return sameOfficial && notDeleted && notCurrentEdit;
-  });
-}
-
-function renderOfficialExistingCommittees(){
-  const box=document.getElementById('aExistingCommittees');
-  const select=document.getElementById('aOfficial');
-  if(!box || !select) return;
-
-  const officialId=select.value;
-  const rows=btoExistingAssignmentsForOfficial_(officialId);
-
-  if(!rows.length){
-    box.innerHTML=`
-      <div class="assignment-existing-empty">
-        No existing committee assignment for this official.
-      </div>`;
-    return;
-  }
-
-  box.innerHTML=`
-    <div class="assignment-existing-title">
-      Existing Committee${rows.length>1?'s':''} (${rows.length})
-    </div>
-    <div class="assignment-existing-list">
-      ${rows.map(a=>`
-        <div class="assignment-existing-item">
-          <div>
-            <strong>${esc(btoAssignmentCommitteeName_(a['Committee ID']))}</strong>
-            <small>${esc(a['Role']||'Member')} · ${esc(a['Status']||'ACTIVE')}</small>
-          </div>
-        </div>
-      `).join('')}
-    </div>`;
-}
-
-function btoAssignmentDuplicateExists_(officialId,committeeId,currentAssignmentId){
-  const b=window.BTO_ASSIGNMENT_BUNDLE||{};
-
-  return (b.assignments||[]).some(a=>{
-    const status=String(a['Status']||'ACTIVE').toUpperCase();
-    if(status==='DELETED') return false;
-
-    return String(a['Official ID']||'')===String(officialId||'') &&
-           String(a['Committee ID']||'')===String(committeeId||'') &&
-           String(a['Assignment ID']||'')!==String(currentAssignmentId||'');
-  });
 }
 
 function renderAssignmentBundle(bundle){
@@ -2941,30 +2945,18 @@ function renderAssignmentBundle(bundle){
       <input id="aId" type="hidden" value="${esc(e['Assignment ID']||'')}">
 
       <label>Official</label>
-      <select id="aOfficial" onchange="renderOfficialExistingCommittees()">
-        ${officials.map(o=>`
-          <option value="${esc(o['Official ID'])}"
-            ${String(e['Official ID']||'')===String(o['Official ID'])?'selected':''}>
-            ${esc(o['Full Name'])}
-          </option>`).join('')}
+      <select id="aOfficial">
+        ${officials.map(o=>`<option value="${esc(o['Official ID'])}" ${String(e['Official ID']||'')===String(o['Official ID'])?'selected':''}>${esc(o['Full Name'])}</option>`).join('')}
       </select>
-
-      <div id="aExistingCommittees" class="assignment-existing-box"></div>
 
       <label>Committee</label>
       <select id="aCommittee">
-        ${committees.map(c=>`
-          <option value="${esc(c.committeeId)}"
-            ${String(e['Committee ID']||'')===String(c.committeeId)?'selected':''}>
-            ${esc(c.committeeName)}
-          </option>`).join('')}
+        ${committees.map(c=>`<option value="${esc(c.committeeId)}" ${String(e['Committee ID']||'')===String(c.committeeId)?'selected':''}>${esc(c.committeeName)}</option>`).join('')}
       </select>
 
       <label>Role</label>
       <select id="aRole">
-        ${['Chairperson','Vice Chairperson','Member'].map(x=>
-          `<option ${String(e['Role']||'')===x?'selected':''}>${x}</option>`
-        ).join('')}
+        ${['Chairperson','Vice Chairperson','Member'].map(x=>`<option ${String(e['Role']||'')===x?'selected':''}>${x}</option>`).join('')}
       </select>
 
       <label>Status</label>
@@ -2974,14 +2966,8 @@ function renderAssignmentBundle(bundle){
       </select>
 
       <div class="admin-actions">
-        <button onclick="saveAssignment(this)">
-          ${e['Assignment ID']?'Update Assignment':'Save Assignment'}
-        </button>
-        ${e['Assignment ID']?`
-          <button class="secondary"
-            onclick="window.BTO_EDIT_ASSIGNMENT=null;renderAssignmentBundle(window.BTO_ASSIGNMENT_BUNDLE)">
-            Cancel Edit
-          </button>`:''}
+        <button onclick="saveAssignment(this)">${e['Assignment ID']?'Update Assignment':'Save Assignment'}</button>
+        ${e['Assignment ID']?`<button class="secondary" onclick="window.BTO_EDIT_ASSIGNMENT=null;renderAssignmentBundle(window.BTO_ASSIGNMENT_BUNDLE)">Cancel Edit</button>`:''}
       </div>
     </div>
 
@@ -2990,25 +2976,15 @@ function renderAssignmentBundle(bundle){
       ${assignments.length ? assignments.map((a,i)=>`
         <div class="doc-row">
           <div class="doc-row-main">
-            <strong>${esc(btoAssignmentOfficialName_(a['Official ID']))}</strong>
-            <div class="help">
-              ${esc(btoAssignmentCommitteeName_(a['Committee ID']))}
-              • ${esc(a['Role']||'')}
-              • ${esc(a['Status']||'')}
-            </div>
+            <strong>${esc(a['Official Name']||a['Full Name']||a['Official ID']||'')}</strong>
+            <div class="help">${esc(a['Committee Name']||a['Committee ID']||'')} • ${esc(a['Role']||'')} • ${esc(a['Status']||'')}</div>
           </div>
           <div class="admin-actions">
             <button class="secondary" onclick="editAssignmentAdmin(${i})">Edit</button>
-            <button class="danger"
-              onclick="btoDeleteRecord('ASSIGNMENT','${esc(a['Assignment ID']||'')}',assignmentForm,'committee assignment')">
-              Delete
-            </button>
+            <button class="danger" onclick="btoDeleteRecord('ASSIGNMENT','${esc(a['Assignment ID']||'')}',assignmentForm,'committee assignment')">Delete</button>
           </div>
         </div>`).join('') : '<div class="help">No assignments yet.</div>'}
     </div>`;
-
-  // Show existing committees immediately for the selected official.
-  setTimeout(renderOfficialExistingCommittees,0);
 }
 
 function editAssignmentAdmin(index){
@@ -3020,48 +2996,33 @@ function editAssignmentAdmin(index){
 
 async function saveAssignment(btn){
   return btoSingleSave('ASSIGNMENT',async()=>{
-    setBusyButton(btn,true,'Saving assignment...');
 
-    try{
-      const id=document.getElementById('aId').value.trim();
-      const officialId=document.getElementById('aOfficial').value;
-      const committeeId=document.getElementById('aCommittee').value;
+  setBusyButton(btn,true,'Saving assignment...');
+  try{
+    const id=document.getElementById('aId').value.trim();
+    const payload={
+      id,
+      officialId:document.getElementById('aOfficial').value,
+      committeeId:document.getElementById('aCommittee').value,
+      role:document.getElementById('aRole').value,
+      status:document.getElementById('aStatus').value
+    };
 
-      if(btoAssignmentDuplicateExists_(officialId,committeeId,id)){
-        throw new Error(
-          `${btoAssignmentOfficialName_(officialId)} is already assigned to ${btoAssignmentCommitteeName_(committeeId)}.`
-        );
-      }
+    const r=id
+      ? await api('adminCrudUpdateAssignment',payload)
+      : await api('saveCommitteeAssignment',payload);
 
-      const payload={
-        id,
-        officialId,
-        committeeId,
-        role:document.getElementById('aRole').value,
-        status:document.getElementById('aStatus').value
-      };
+    if(!r.success) throw new Error(r.message||'Unable to save assignment.');
 
-      const r=id
-        ? await api('adminCrudUpdateAssignment',payload)
-        : await api('saveCommitteeAssignment',payload);
+    showGlobalActionStatus(id?'Assignment updated successfully.':'Assignment saved successfully.','ok');
+    await assignmentForm();
+  }catch(err){
+    showGlobalActionStatus(err?.message || 'Action failed.','err');
+    throw err;
+  }finally{
+    setBusyButton(btn,false);
+  }
 
-      if(!r.success) throw new Error(r.message||'Unable to save assignment.');
-
-      showGlobalActionStatus(
-        r.duplicatePrevented
-          ? (r.message||'Duplicate assignment prevented.')
-          : (id?'Assignment updated successfully.':'Assignment saved successfully.'),
-        'ok'
-      );
-
-      await assignmentForm();
-
-    }catch(err){
-      showGlobalActionStatus(err?.message || 'Action failed.','err');
-      throw err;
-    }finally{
-      setBusyButton(btn,false);
-    }
   });
 }
 
@@ -3113,8 +3074,8 @@ function renderUsersBundle(bundle){
         <div><label>Full Name</label><input id="uName"></div>
       </div>
 
-      <label>Password</label><input id="uPassword" type="password">
-      <div class="help">Required for a new user. Leave blank when editing if password should stay unchanged.</div>
+      <label>Temporary Password</label><input id="uPassword" type="password" autocomplete="new-password">
+      <div class="help">Required for a new user. The user will be required to create a new password at first login. Leave blank when editing to keep the current password.</div>
 
       <div class="grid">
         <div>
@@ -3166,9 +3127,13 @@ function renderUsersBundle(bundle){
             <strong>${esc(u.fullName||u.username)}</strong>
             <small>${esc(u.username)} · ${esc(u.role)} · ${esc(u.status)}</small>
             <small>Access: ${esc(u.assignedModules||'None')}</small>
+            <small>Password: ${u.forcePasswordChange?'Temporary — change required':'Set'}${u.lastPasswordChange?' · Last changed: '+esc(u.lastPasswordChange):''}</small>
           </div>
-          <button onclick='editUser(${JSON.stringify(u)})'>Edit</button>
-             <button class="danger" onclick="btoDeleteRecord('USER','${esc(u['User ID']||u.userId||'')}',usersForm,'user')">Delete</button>
+          <div class="admin-actions">
+            <button onclick='editUser(${JSON.stringify(u)})'>Edit</button>
+            <button class="secondary" onclick="resetUserPasswordPrompt('${esc(u.userId||u['User ID']||'')}','${esc(u.fullName||u.username||'user')}')">Reset Password</button>
+            <button class="danger" onclick="btoDeleteRecord('USER','${esc(u['User ID']||u.userId||'')}',usersForm,'user')">Delete</button>
+          </div>
         </div>`).join('') : '<p>No users found.</p>'}
     </div>`;
 
@@ -3226,6 +3191,34 @@ function editUser(u){
   window.scrollTo({top:document.getElementById('moduleArea').offsetTop,behavior:'smooth'});
 }
 
+
+async function resetUserPasswordPrompt(userId,name){
+  const temporaryPassword=prompt(
+    `Enter a temporary password for ${name}.\n\nMinimum 8 characters.\nThe user will be required to change it at next login.`
+  );
+
+  if(temporaryPassword===null) return;
+  if(temporaryPassword.length<8){
+    alert('Temporary password must be at least 8 characters.');
+    return;
+  }
+
+  if(!confirm(`Reset password for ${name}?`)) return;
+
+  try{
+    const r=await api('resetUserPassword',{userId,temporaryPassword});
+    if(!r.success) throw new Error(r.message||'Unable to reset password.');
+
+    cacheRemove('usersBundle');
+    showGlobalActionStatus(r.message||'Password reset successfully.','ok');
+    alert('Temporary password saved. The user must change it at next login.');
+    await usersForm();
+  }catch(err){
+    showGlobalActionStatus(err?.message||'Password reset failed.','err');
+    alert(err?.message||'Password reset failed.');
+  }
+}
+
 async function saveUser(btn){
   return btoSingleSave('USER',async()=>{
 
@@ -3250,6 +3243,14 @@ async function saveUser(btn){
 
   if(!payload.username||!payload.fullName){
     alert('Username and Full Name are required.');
+    return;
+  }
+  if(!payload.userId && payload.password.length<8){
+    alert('Temporary password is required for a new user and must be at least 8 characters.');
+    return;
+  }
+  if(payload.password && payload.password.length<8){
+    alert('Password must be at least 8 characters.');
     return;
   }
 
