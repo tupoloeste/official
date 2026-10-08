@@ -635,6 +635,37 @@ button[onclick*="Save"]:hover{background:#d91e37}
   min-height:44px;
 }
 
+
+/* ===== Officers of the Day - Duty Days ===== */
+.od-day-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:8px;
+  margin:7px 0 5px;
+}
+.od-day-item{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  border:1px solid #e5e7eb;
+  border-radius:10px;
+  padding:9px 10px;
+  background:#fafafa;
+  cursor:pointer;
+  margin:0;
+}
+.od-day-item input{
+  width:auto;
+  margin:0;
+}
+.od-day-item span{
+  font-size:12px;
+  font-weight:700;
+}
+@media(max-width:700px){
+  .od-day-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
 </style>
 </head>
 <body>
@@ -1925,6 +1956,17 @@ function renderContactOfficersAdmin(){
 
       <input id="odName" type="hidden">
 
+      <label>Duty Day(s)</label>
+      <div class="od-day-grid">
+        ${['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].map(day=>`
+          <label class="od-day-item">
+            <input type="checkbox" class="odDayCheck" value="${day}">
+            <span>${day}</span>
+          </label>
+        `).join('')}
+      </div>
+      <div class="help">Select one or more duty days.</div>
+
       <label>Duty / Remarks (optional)</label>
       <textarea id="odRemarks" rows="3" placeholder="Example: Public Assistance Desk"></textarea>
 
@@ -1957,6 +1999,7 @@ function renderContactOfficersAdmin(){
               <div class="doc-row-title">${esc(x.officerName||'')}</div>
               <div class="doc-row-meta">
                 ${esc(x.position||'No position')}
+                ${x.dutyDays?` • ${esc(x.dutyDays)}`:''}
                 ${x.contactNumber?` • ${esc(x.contactNumber)}`:''}
                 • ${esc(x.status||'ACTIVE')}
               </div>
@@ -2005,6 +2048,15 @@ function editOfficerOfTheDay(json){
     document.getElementById('odContact').value=x.contactNumber||'';
   }
 
+  const selectedDays=String(x.dutyDays||'')
+    .split(',')
+    .map(v=>v.trim())
+    .filter(Boolean);
+
+  document.querySelectorAll('.odDayCheck').forEach(cb=>{
+    cb.checked=selectedDays.includes(cb.value);
+  });
+
   document.getElementById('odRemarks').value=x.remarks||'';
   document.getElementById('odOrder').value=x.displayOrder||1;
   document.getElementById('odStatus').value=x.status||'ACTIVE';
@@ -2018,6 +2070,7 @@ function clearOfficerOfTheDayForm(){
   document.getElementById('odName').value='';
   document.getElementById('odPosition').value='';
   document.getElementById('odContact').value='';
+  document.querySelectorAll('.odDayCheck').forEach(cb=>cb.checked=false);
   document.getElementById('odRemarks').value='';
   document.getElementById('odOrder').value='1';
   document.getElementById('odStatus').value='ACTIVE';
@@ -2033,6 +2086,14 @@ async function saveOfficerOfTheDay(btn){
 
   fillOfficerOfDayFromOfficial();
 
+  const dutyDays=Array.from(document.querySelectorAll('.odDayCheck:checked'))
+    .map(cb=>cb.value);
+
+  if(!dutyDays.length){
+    alert('Please select at least one Duty Day.');
+    return;
+  }
+
   return withButtonSpinner(btn,'Saving...',async()=>{
     const r=await api('saveOfficerOfTheDay',{
       id:document.getElementById('odId').value,
@@ -2040,6 +2101,7 @@ async function saveOfficerOfTheDay(btn){
       officerName:document.getElementById('odName').value,
       position:document.getElementById('odPosition').value,
       contactNumber:document.getElementById('odContact').value,
+      dutyDays,
       remarks:document.getElementById('odRemarks').value,
       displayOrder:document.getElementById('odOrder').value,
       status:document.getElementById('odStatus').value
