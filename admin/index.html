@@ -970,7 +970,14 @@ async function api(action,data={}){
   const controller=new AbortController();
   const timeoutMs =
     action==='uploadBase64' ? 120000 :
-    (action==='saveLegislative' || action==='saveFullDisclosure' || action==='saveDisclosureCategory') ? 45000 :
+    (
+      action==='saveLegislative' ||
+      action==='saveFullDisclosure' ||
+      action==='saveDisclosureCategory' ||
+      action==='getContactInformation' ||
+      action==='saveContactInformation' ||
+      action==='saveEmergencyContactsBatch'
+    ) ? 45000 :
     20000;
   const timeout=setTimeout(()=>controller.abort(),timeoutMs);
 
@@ -2164,7 +2171,14 @@ async function saveOfficerOfTheDay(btn){
 window.BTO_CONTACT_INFO_DATA=null;
 
 async function contactInfoForm(){
-  const r=await api('getContactInformation');
+  let r=await api('getContactInformation');
+
+  // One automatic retry helps with Apps Script cold starts.
+  if(!r.success && /did not respond|timeout|timed out/i.test(String(r.message||''))){
+    await new Promise(resolve=>setTimeout(resolve,900));
+    r=await api('getContactInformation');
+  }
+
   if(!r.success){showModuleError(r.message);return}
 
   window.BTO_CONTACT_INFO_DATA=r.data||{};
