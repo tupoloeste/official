@@ -3445,6 +3445,172 @@ body.bto-site-loading{overflow:hidden!important}
   .organization-officers-grid{grid-template-columns:1fr}
 }
 
+
+/* ===== Livestock Population Donut / Color Wheel ===== */
+.livestock-donut-layout{
+  display:grid;
+  grid-template-columns:minmax(300px,.85fr) minmax(340px,1.15fr);
+  gap:18px;
+  align-items:stretch;
+  margin-bottom:24px;
+}
+.livestock-donut-card,
+.livestock-legend-card{
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:18px;
+  box-shadow:var(--shadow);
+}
+.livestock-donut-card{
+  min-height:350px;
+  display:grid;
+  place-items:center;
+  padding:24px;
+}
+.livestock-donut{
+  width:min(285px,78vw);
+  aspect-ratio:1;
+  border-radius:50%;
+  position:relative;
+  display:grid;
+  place-items:center;
+  background:#eceff2;
+  box-shadow:
+    inset 0 0 0 1px rgba(0,0,0,.03),
+    0 10px 26px rgba(20,28,38,.07);
+}
+.livestock-donut::after{
+  content:"";
+  position:absolute;
+  width:58%;
+  height:58%;
+  background:#fff;
+  border-radius:50%;
+  box-shadow:0 0 0 1px #edf0f2;
+}
+.livestock-donut-center{
+  position:relative;
+  z-index:2;
+  text-align:center;
+  width:50%;
+}
+.livestock-donut-center small{
+  display:block;
+  color:var(--muted);
+  font-weight:900;
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.4px;
+}
+.livestock-donut-center strong{
+  display:block;
+  margin-top:5px;
+  font-size:34px;
+  color:var(--red-dark);
+  line-height:1;
+}
+.livestock-legend-card{
+  padding:20px;
+}
+.livestock-legend-card h3{
+  margin:0 0 14px;
+  font-size:18px;
+}
+.livestock-legend-list{
+  display:grid;
+  gap:8px;
+}
+.livestock-legend-row{
+  display:grid;
+  grid-template-columns:12px 38px minmax(0,1fr) auto;
+  gap:9px;
+  align-items:center;
+  padding:9px 10px;
+  border:1px solid #edf0f2;
+  border-radius:11px;
+  background:#fafbfc;
+}
+.livestock-legend-dot{
+  width:10px;
+  height:10px;
+  border-radius:50%;
+}
+.livestock-legend-icon{
+  width:34px;
+  height:34px;
+  display:grid;
+  place-items:center;
+  font-size:20px;
+}
+.livestock-legend-main{
+  min-width:0;
+}
+.livestock-legend-main strong{
+  display:block;
+  font-size:13px;
+}
+.livestock-legend-main small{
+  display:block;
+  color:var(--muted);
+  font-size:11px;
+  margin-top:2px;
+}
+.livestock-legend-count{
+  color:var(--red-dark);
+  font-size:16px;
+}
+.livestock-cards-title{
+  font-size:17px;
+  font-weight:900;
+  color:var(--ink);
+  margin:0 0 12px;
+}
+.livestock-card-enhanced{
+  position:relative;
+  overflow:hidden;
+}
+.livestock-card-accent{
+  position:absolute;
+  left:0;
+  top:0;
+  right:0;
+  height:4px;
+}
+.livestock-card-enhanced span{
+  display:block;
+  color:var(--muted);
+  font-size:11px;
+  margin-top:4px;
+}
+@media(max-width:850px){
+  .livestock-donut-layout{
+    grid-template-columns:1fr;
+  }
+  .livestock-donut-card{
+    min-height:310px;
+  }
+}
+@media(max-width:520px){
+  .livestock-donut-card,
+  .livestock-legend-card{
+    border-radius:14px;
+  }
+  .livestock-donut-card{
+    min-height:285px;
+    padding:18px;
+  }
+  .livestock-donut{
+    width:min(245px,76vw);
+  }
+  .livestock-donut-center strong{
+    font-size:28px;
+  }
+  .livestock-legend-row{
+    grid-template-columns:10px 32px minmax(0,1fr) auto;
+    padding:8px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -3955,6 +4121,25 @@ body.bto-site-loading{overflow:hidden!important}
         </div>
       </div>
 
+      <div class="livestock-donut-layout">
+        <div class="livestock-donut-card">
+          <div id="publicLivestockDonut" class="livestock-donut" aria-label="Livestock population distribution">
+            <div class="livestock-donut-center">
+              <small>Total Livestock</small>
+              <strong id="publicLivestockTotal">0</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="livestock-legend-card">
+          <h3>Population Distribution</h3>
+          <div id="publicLivestockLegend" class="livestock-legend-list">
+            <div class="live-empty">Loading livestock population...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="livestock-cards-title">Livestock Details</div>
       <div id="publicLivestockGrid" class="livestock-grid">
         <div class="live-empty">Loading livestock statistics...</div>
       </div>
@@ -6276,45 +6461,129 @@ function publicLivestockIcon(animal){
   return '🐾';
 }
 
+
+function formatPublicLivestockDate(value){
+  const s=String(value||'').trim();
+  if(!s) return 'Not specified';
+
+  // Preserve date-only values without timezone shifting.
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)){
+    const [y,m,d]=s.split('-').map(Number);
+    return new Intl.DateTimeFormat('en-US',{
+      month:'long',day:'numeric',year:'numeric'
+    }).format(new Date(y,m-1,d));
+  }
+
+  const dt=new Date(s);
+  if(isNaN(dt)) return s;
+
+  return new Intl.DateTimeFormat('en-US',{
+    month:'long',day:'numeric',year:'numeric'
+  }).format(dt);
+}
+
+function publicLivestockColor(index,total){
+  // Dynamic color wheel; no hard-coded animal list required.
+  const count=Math.max(total,1);
+  const hue=Math.round((index*360/count + 352) % 360);
+  return `hsl(${hue} 72% 50%)`;
+}
+
 function renderPublicLivestock(data){
   const grid=document.getElementById('publicLivestockGrid');
   const asOf=document.getElementById('publicLivestockAsOf');
+  const donut=document.getElementById('publicLivestockDonut');
+  const totalEl=document.getElementById('publicLivestockTotal');
+  const legend=document.getElementById('publicLivestockLegend');
+
   if(!grid) return;
 
   const rows=Array.isArray(data.livestockStats)
     ? data.livestockStats
     : (Array.isArray(data.livestockStats?.data) ? data.livestockStats.data : []);
 
-  const active=rows.filter(x=>{
-    const status=String(x.Status||x.status||'ACTIVE').toUpperCase();
-    return status!=='DELETED' && status!=='INACTIVE';
-  });
+  const active=rows
+    .filter(x=>{
+      const status=String(x.Status||x.status||'ACTIVE').toUpperCase();
+      return status!=='DELETED' && status!=='INACTIVE';
+    })
+    .map(x=>({
+      animal:String(x.Animal||x.animal||x['Livestock Type']||'Livestock'),
+      count:Math.max(0,Number(x.Count ?? x.count ?? x.Value ?? x.value ?? 0)||0),
+      asOfDate:String(x['As of Date']||x['As Of Date']||x.asOfDate||'').trim()
+    }));
 
   if(!active.length){
     grid.innerHTML='<div class="live-empty">No livestock statistics have been encoded yet.</div>';
+    if(legend) legend.innerHTML='<div class="live-empty">No livestock population available.</div>';
     if(asOf) asOf.textContent='Not yet available';
+    if(totalEl) totalEl.textContent='0';
+    if(donut) donut.style.background='#eceff2';
     return;
   }
 
-  const dates=active
-    .map(x=>String(x['As of Date']||x['As Of Date']||x.asOfDate||'').trim())
-    .filter(Boolean)
-    .sort();
+  const dates=active.map(x=>x.asOfDate).filter(Boolean);
+  let latestDate='';
+  dates.forEach(v=>{
+    const d=new Date(v);
+    if(!isNaN(d)){
+      if(!latestDate || d > new Date(latestDate)) latestDate=v;
+    }else if(!latestDate){
+      latestDate=v;
+    }
+  });
 
-  if(asOf){
-    asOf.textContent=dates.length ? dates[dates.length-1] : 'Not specified';
+  if(asOf) asOf.textContent=formatPublicLivestockDate(latestDate);
+
+  const total=active.reduce((sum,x)=>sum+x.count,0);
+  if(totalEl) totalEl.textContent=total.toLocaleString();
+
+  // Build conic-gradient donut.
+  if(donut){
+    if(total>0){
+      let running=0;
+      const segments=active.map((x,i)=>{
+        const start=(running/total)*100;
+        running+=x.count;
+        const finish=(running/total)*100;
+        const color=publicLivestockColor(i,active.length);
+        return `${color} ${start.toFixed(4)}% ${finish.toFixed(4)}%`;
+      });
+      donut.style.background=`conic-gradient(${segments.join(',')})`;
+    }else{
+      donut.style.background='#eceff2';
+    }
   }
 
-  grid.innerHTML=active.map(x=>{
-    const animal=String(x.Animal||x.animal||x['Livestock Type']||'Livestock');
-    const count=x.Count ?? x.count ?? x.Value ?? x.value ?? '—';
+  if(legend){
+    legend.innerHTML=active.map((x,i)=>{
+      const percent=total>0 ? (x.count/total*100) : 0;
+      const color=publicLivestockColor(i,active.length);
+
+      return `
+        <div class="livestock-legend-row">
+          <span class="livestock-legend-dot" style="background:${color}"></span>
+          <span class="livestock-legend-icon">${publicLivestockIcon(x.animal)}</span>
+          <div class="livestock-legend-main">
+            <strong>${publicEsc(x.animal)}</strong>
+            <small>${percent.toFixed(percent<1 && percent>0 ? 1 : 0)}% of total</small>
+          </div>
+          <strong class="livestock-legend-count">${x.count.toLocaleString()}</strong>
+        </div>`;
+    }).join('');
+  }
+
+  grid.innerHTML=active.map((x,i)=>{
+    const percent=total>0 ? (x.count/total*100) : 0;
+    const color=publicLivestockColor(i,active.length);
 
     return `
-      <div class="livestock-card">
-        <div class="animal">${publicLivestockIcon(animal)}</div>
-        <small>${publicEsc(animal)}</small>
-        <strong>${publicEsc(String(count))}</strong>
-        <span>Recorded livestock</span>
+      <div class="livestock-card livestock-card-enhanced">
+        <div class="livestock-card-accent" style="background:${color}"></div>
+        <div class="animal">${publicLivestockIcon(x.animal)}</div>
+        <small>${publicEsc(x.animal)}</small>
+        <strong>${x.count.toLocaleString()}</strong>
+        <span>${percent.toFixed(percent<1 && percent>0 ? 1 : 0)}% of total population</span>
       </div>`;
   }).join('');
 }
