@@ -2955,6 +2955,46 @@ a.back-btn:focus{
   }
 }
 
+
+/* ===== Public Contact Information ===== */
+.contact-subtext{
+  display:block;
+  margin-top:5px;
+  color:#bfc3c9;
+  font-size:11px;
+  line-height:1.35;
+}
+.emergency-contact-box{
+  justify-content:flex-start !important;
+}
+#publicEmergencyContacts{
+  display:grid;
+  gap:6px;
+  margin-top:6px;
+}
+.public-emergency-row{
+  padding-top:6px;
+  border-top:1px solid rgba(255,255,255,.10);
+}
+.public-emergency-row:first-child{
+  border-top:0;
+  padding-top:0;
+}
+.public-emergency-name{
+  font-size:12px;
+  font-weight:800;
+}
+.public-emergency-number{
+  font-size:12px;
+  color:#fff;
+  margin-top:2px;
+}
+.public-emergency-remarks{
+  font-size:10px;
+  color:#bfc3c9;
+  margin-top:2px;
+}
+
 </style>
 </head>
 <body>
@@ -3984,10 +4024,28 @@ a.back-btn:focus{
           </div>
         </div>
       <div class="contact-right">
-        <div class="contact-item"><strong>Barangay Office Contact Number</strong><span>Coming Soon</span></div>
-        <div class="contact-item"><strong>Office Hours</strong><span>Coming Soon</span></div>
-        <div class="contact-item"><strong>Barangay Health Station</strong><span>Coming Soon</span></div>
-        <div class="contact-item"><strong>Emergency Contacts</strong><span>Coming Soon</span></div>
+        <div class="contact-item">
+          <strong>Barangay Office Contact Number</strong>
+          <span id="publicOfficeContact">Coming Soon</span>
+        </div>
+
+        <div class="contact-item">
+          <strong>Office Hours</strong>
+          <span id="publicOfficeHours">Coming Soon</span>
+        </div>
+
+        <div class="contact-item">
+          <strong>Barangay Health Station</strong>
+          <span id="publicHealthContact">Coming Soon</span>
+          <small id="publicHealthRemarks" class="contact-subtext" style="display:none"></small>
+        </div>
+
+        <div class="contact-item emergency-contact-box">
+          <strong>Emergency Contacts</strong>
+          <div id="publicEmergencyContacts">
+            <span>Coming Soon</span>
+          </div>
+        </div>
       </div>
     </div>
   </div></div>
@@ -4069,7 +4127,7 @@ function switchTab(scope,panelId,btn){
 
 
 const BTO_PUBLIC_API = "https://script.google.com/macros/s/AKfycbwM6bagjlHKao-NCB3d_nDwX29zO4EFKcoj50vABCQP7bKJuSI4j7772Zam9LwNiLCqNg/exec?action=publicData";
-const BTO_PUBLIC_CACHE_KEY = 'bto_public_data_v9';
+const BTO_PUBLIC_CACHE_KEY = 'bto_public_data_v10';
 const BTO_PUBLIC_CACHE_MS = 5 * 60 * 1000;
 
 function publicEsc(v){
@@ -6004,6 +6062,53 @@ function renderPublicOfficersOfTheDay(data){
 }
 
 
+
+/* ===== PUBLIC CONTACT INFORMATION ===== */
+function renderPublicContactInformation(data){
+  const c=data?.contactInformation||{};
+
+  const officeContact=document.getElementById('publicOfficeContact');
+  const officeHours=document.getElementById('publicOfficeHours');
+  const healthContact=document.getElementById('publicHealthContact');
+  const healthRemarks=document.getElementById('publicHealthRemarks');
+  const emergency=document.getElementById('publicEmergencyContacts');
+
+  if(officeContact){
+    officeContact.textContent=String(c.officeContact||'').trim() || 'Coming Soon';
+  }
+
+  if(officeHours){
+    officeHours.textContent=String(c.officeHours||'').trim() || 'Coming Soon';
+  }
+
+  if(healthContact){
+    healthContact.textContent=String(c.healthContact||'').trim() || 'Coming Soon';
+  }
+
+  if(healthRemarks){
+    const value=String(c.healthRemarks||'').trim();
+    healthRemarks.textContent=value;
+    healthRemarks.style.display=value?'block':'none';
+  }
+
+  if(emergency){
+    const rows=Array.isArray(c.emergencyContacts)?c.emergencyContacts:[];
+
+    if(!rows.length){
+      emergency.innerHTML='<span>Coming Soon</span>';
+    }else{
+      emergency.innerHTML=rows.map(x=>`
+        <div class="public-emergency-row">
+          <div class="public-emergency-name">${btoEsc(x.name||'')}</div>
+          ${x.contactNumber?`<div class="public-emergency-number">${btoEsc(x.contactNumber)}</div>`:''}
+          ${x.remarks?`<div class="public-emergency-remarks">${btoEsc(x.remarks)}</div>`:''}
+        </div>
+      `).join('');
+    }
+  }
+}
+
+
 function applyPublicData(data){
   if(!data || !data.success) return;
   renderOfficialsPersonnel(data);
@@ -6012,6 +6117,7 @@ function applyPublicData(data){
   renderPublicPrograms(data);
   renderPublicServiceLinks(data);
   renderPublicOfficersOfTheDay(data);
+  renderPublicContactInformation(data);
   renderAboutBarangay(data);
   renderEnhancedBarangayStats(data);
   renderHighlightsLive(data);
