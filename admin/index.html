@@ -751,6 +751,103 @@ button.danger:hover{filter:brightness(.94)}
 .password-policy-logo-wrap img{width:72px;height:72px;object-fit:contain}
 .password-policy-card button{width:100%;margin-top:10px}
 
+
+/* ===== ADMIN UI ALIGNMENT + SAFE OPTIMIZATION ===== */
+
+.official-admin-row{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) 170px !important;
+  align-items:center !important;
+  gap:14px !important;
+  padding:10px 12px !important;
+}
+
+.official-admin-row .official-admin-person{
+  min-width:0;
+}
+
+.official-admin-row .official-admin-person > div:last-child{
+  min-width:0;
+}
+
+.official-admin-row .official-admin-person strong{
+  display:block;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.official-admin-row .official-admin-person small{
+  display:block;
+  line-height:1.3;
+}
+
+.official-admin-row .admin-actions{
+  width:170px;
+  min-width:170px;
+  display:grid !important;
+  grid-template-columns:1fr 1fr;
+  gap:8px !important;
+  justify-self:end;
+  align-items:center;
+}
+
+.official-admin-row .admin-actions button{
+  width:100%;
+  min-width:0;
+  height:34px;
+  margin:0 !important;
+  padding:0 10px !important;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.user-row > .admin-actions,
+.doc-row > .admin-actions{
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.user-row > .admin-actions button,
+.doc-row > .admin-actions button{
+  min-width:72px;
+  height:34px;
+  margin:0 !important;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+
+body.bto-module-busy #moduleMenu button{
+  pointer-events:none;
+}
+
+@media(max-width:700px){
+  .official-admin-row{
+    grid-template-columns:1fr !important;
+    align-items:start !important;
+  }
+
+  .official-admin-row .admin-actions{
+    width:100%;
+    min-width:0;
+    justify-self:stretch;
+  }
+
+  .official-admin-row .official-admin-person strong{
+    white-space:normal;
+  }
+
+  .user-row > .admin-actions,
+  .doc-row > .admin-actions{
+    width:100%;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1257,6 +1354,11 @@ async function logout(){
   document.getElementById('password').value='';
 }
 
+
+function btoIsModuleBusy(){
+  return !!window.BTO_MODULE_OPEN_IN_PROGRESS;
+}
+
 function hasModule(name){
   if(!me) return false;
   if(['SUPER_ADMIN','ADMIN'].includes(me.role)) return true;
@@ -1386,7 +1488,7 @@ async function restore(){
   }
 }
 
-async function openModule(name,title='Module'){
+async function btoOpenModuleRaw(name,title='Module'){
   document.getElementById('dashboardView').classList.add('hidden');
   const mv=document.getElementById('moduleView');
   mv.classList.remove('hidden');
@@ -1415,6 +1517,23 @@ async function openModule(name,title='Module'){
   if(name==='committeeProfiles') return committeeProfilesPicker();
   if(name.startsWith('committee:')) return openCommittee(name.split(':')[1]);
 }
+
+let BTO_MODULE_OPEN_IN_PROGRESS='';
+
+async function openModule(name,title='Module'){
+  if(BTO_MODULE_OPEN_IN_PROGRESS===name) return;
+
+  BTO_MODULE_OPEN_IN_PROGRESS=name;
+  document.body.classList.add('bto-module-busy');
+
+  try{
+    return await btoOpenModuleRaw(name,title);
+  }finally{
+    BTO_MODULE_OPEN_IN_PROGRESS='';
+    document.body.classList.remove('bto-module-busy');
+  }
+}
+
 
 
 async function aboutBarangayForm(){
@@ -2694,7 +2813,7 @@ function renderOfficialsAdmin(){
             <div class="official-admin-row">
               <div class="official-admin-person">
                 ${photo
-                  ? `<img src="${esc(photo)}" alt="${esc(o['Full Name']||'')}" referrerpolicy="no-referrer"
+                  ? `<img loading="lazy" decoding="async" src="${esc(photo)}" alt="${esc(o['Full Name']||'')}" referrerpolicy="no-referrer"
                       onerror="this.style.display='none'">`
                   : `<div class="official-admin-avatar">${esc((o['Full Name']||'?').charAt(0).toUpperCase())}</div>`}
                 <div>
@@ -2702,8 +2821,10 @@ function renderOfficialsAdmin(){
                   <small>${esc(o['Position']||'')} · ${esc(o['Group']||'')} · ${esc(o['Status']||'ACTIVE')}</small>
                 </div>
               </div>
-              <button class="secondary" onclick="editOfficialAdmin('${esc(o['Official ID']||'')}')">Edit</button>
-                 <button class="danger" onclick="btoDeleteRecord('OFFICIAL','${esc(o['Official ID']||'')}',officialsForm,'official')">Delete</button>
+              <div class="admin-actions">
+                <button class="secondary" onclick="editOfficialAdmin('${esc(o['Official ID']||'')}')">Edit</button>
+                <button class="danger" onclick="btoDeleteRecord('OFFICIAL','${esc(o['Official ID']||'')}',officialsForm,'official')">Delete</button>
+              </div>
             </div>`;
         }).join('') : '<div class="live-empty">No officials encoded yet.</div>'}
       </div>
