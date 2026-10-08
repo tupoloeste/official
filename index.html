@@ -3670,6 +3670,30 @@ body.bto-site-loading{overflow:hidden!important}
   cursor:pointer;
 }
 
+
+/* ===== FINAL Dog Statistics sticky-header safe area =====
+   The page can be opened directly using #dog-statistics.
+   Reserve space inside this page's red banner so its title is never
+   hidden behind the sticky Barangay navigation. */
+#view-dog-statistics .page-head{
+  padding-top:96px !important;
+  padding-bottom:24px !important;
+  margin-top:-72px !important;
+}
+
+#view-dog-statistics .page-head .page-head-row{
+  position:relative;
+  z-index:2;
+}
+
+@media(max-width:760px){
+  #view-dog-statistics .page-head{
+    padding-top:88px !important;
+    padding-bottom:20px !important;
+    margin-top:-64px !important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -4608,6 +4632,17 @@ function showView(name){
   if(navLinks) navLinks.classList.remove('show');
   window.scrollTo({top:0,behavior:'instant'});
   history.replaceState(null,'','#'+name);
+
+  // BTO_DOG_STATS_SCROLL_FIX
+  // Direct hash navigation plus a sticky header can place the title beneath
+  // the header. Re-anchor the document after the view becomes visible.
+  if(name==='dog-statistics'){
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{
+        window.scrollTo({top:0,left:0,behavior:'instant'});
+      });
+    });
+  }
 }
 
 function switchTab(scope,panelId,btn){
