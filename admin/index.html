@@ -666,6 +666,47 @@ button[onclick*="Save"]:hover{background:#d91e37}
   .od-day-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
+
+/* ===== Contact Information admin ===== */
+.contact-emergency-editor{
+  display:grid;
+  gap:10px;
+  margin:14px 0 16px;
+}
+.contact-emergency-row{
+  display:grid;
+  grid-template-columns:1.4fr 1fr 1.2fr .55fr .8fr auto;
+  gap:9px;
+  align-items:end;
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  padding:12px;
+  background:#fafafa;
+}
+.contact-emergency-row label{
+  margin-top:0;
+}
+.contact-emergency-remove-wrap button{
+  width:auto;
+  margin:0;
+}
+@media(max-width:1000px){
+  .contact-emergency-row{
+    grid-template-columns:1fr 1fr;
+  }
+  .contact-emergency-remove-wrap{
+    grid-column:1/-1;
+  }
+  .contact-emergency-remove-wrap button{
+    width:100%;
+  }
+}
+@media(max-width:600px){
+  .contact-emergency-row{
+    grid-template-columns:1fr;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1088,6 +1129,9 @@ function renderApp(){
   if(hasModule('CONTACT_OFFICERS'))
     items.push(['Officers of the Day','contactOfficers']);
 
+  if(hasModule('CONTACT_INFO'))
+    items.push(['Contact Information','contactInfo']);
+
   if(hasModule('LEGISLATIVE'))
     items.push(['Ordinances & Resolutions','legislative']);
 
@@ -1178,6 +1222,7 @@ async function openModule(name,title='Module'){
   if(name==='programsProjects') return programsProjectsForm();
   if(name==='serviceLinks') return serviceLinksForm();
   if(name==='contactOfficers') return contactOfficersForm();
+  if(name==='contactInfo') return contactInfoForm();
   if(name==='legislative') return legislativeForm();
   if(name==='fullDisclosure') return fullDisclosureForm();
   if(name==='officials') return officialsForm();
@@ -2114,6 +2159,170 @@ async function saveOfficerOfTheDay(btn){
   },'Officer of the Day saved.');
 }
 
+
+/* ===== CONTACT INFORMATION ===== */
+window.BTO_CONTACT_INFO_DATA=null;
+
+async function contactInfoForm(){
+  const r=await api('getContactInformation');
+  if(!r.success){showModuleError(r.message);return}
+
+  window.BTO_CONTACT_INFO_DATA=r.data||{};
+  renderContactInfoAdmin();
+}
+
+function emergencyContactRowHtml(x,index){
+  x=x||{};
+  return `
+    <div class="contact-emergency-row" data-emergency-id="${esc(x.id||'')}">
+      <div>
+        <label>Contact Name / Office</label>
+        <input class="eci-name" value="${esc(x.name||'')}" placeholder="Example: Barangay Tanod">
+      </div>
+
+      <div>
+        <label>Contact Number</label>
+        <input class="eci-number" value="${esc(x.contactNumber||'')}" placeholder="09XXXXXXXXX">
+      </div>
+
+      <div>
+        <label>Remarks (optional)</label>
+        <input class="eci-remarks" value="${esc(x.remarks||'')}" placeholder="Example: 24/7">
+      </div>
+
+      <div>
+        <label>Order</label>
+        <input class="eci-order" type="number" min="0" step="1" value="${esc(x.displayOrder||index+1)}">
+      </div>
+
+      <div>
+        <label>Status</label>
+        <select class="eci-status">
+          <option value="ACTIVE" ${(x.status||'ACTIVE')==='ACTIVE'?'selected':''}>ACTIVE</option>
+          <option value="INACTIVE" ${x.status==='INACTIVE'?'selected':''}>INACTIVE</option>
+        </select>
+      </div>
+
+      <div class="contact-emergency-remove-wrap">
+        <button type="button" class="secondary" onclick="removeEmergencyContactRow(this)">Remove</button>
+      </div>
+    </div>`;
+}
+
+function renderContactInfoAdmin(){
+  const d=window.BTO_CONTACT_INFO_DATA||{};
+  const emergency=(d.emergencyContacts||[]);
+  const rows=emergency.length ? emergency : [{
+    id:'',name:'',contactNumber:'',remarks:'',displayOrder:1,status:'ACTIVE'
+  }];
+
+  document.getElementById('moduleArea').innerHTML=`
+    <div class="card">
+      <h2>Contact Information</h2>
+      <div class="help">Update the public Contact page information here.</div>
+
+      <label>Barangay Office Contact Number</label>
+      <input id="ciOfficeContact" value="${esc(d.officeContact||'')}" placeholder="Example: 09XXXXXXXXX">
+
+      <label>Office Hours</label>
+      <input id="ciOfficeHours" value="${esc(d.officeHours||'')}" placeholder="Example: Monday–Friday, 8:00 AM–5:00 PM">
+
+      <label>Barangay Health Station Contact</label>
+      <input id="ciHealthContact" value="${esc(d.healthContact||'')}" placeholder="Example: 09XXXXXXXXX">
+
+      <label>Barangay Health Station Remarks (optional)</label>
+      <textarea id="ciHealthRemarks" rows="3" placeholder="Address, schedule, or additional information">${esc(d.healthRemarks||'')}</textarea>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">
+        <div>
+          <h2 style="margin-bottom:4px">Emergency Contacts</h2>
+          <div class="help">Add as many emergency contacts as needed.</div>
+        </div>
+
+        <button type="button" class="secondary" style="width:auto" onclick="addEmergencyContactRow()">+ Add Contact</button>
+      </div>
+
+      <div id="emergencyContactRows" class="contact-emergency-editor">
+        ${rows.map((x,i)=>emergencyContactRowHtml(x,i)).join('')}
+      </div>
+
+      <button onclick="saveAllContactInformation(this)">Save Contact Information</button>
+    </div>`;
+}
+
+function addEmergencyContactRow(){
+  const root=document.getElementById('emergencyContactRows');
+  const count=root.querySelectorAll('.contact-emergency-row').length;
+
+  root.insertAdjacentHTML('beforeend',emergencyContactRowHtml({
+    id:'',
+    name:'',
+    contactNumber:'',
+    remarks:'',
+    displayOrder:count+1,
+    status:'ACTIVE'
+  },count));
+}
+
+function removeEmergencyContactRow(btn){
+  const row=btn.closest('.contact-emergency-row');
+  const root=document.getElementById('emergencyContactRows');
+
+  if(root.querySelectorAll('.contact-emergency-row').length<=1){
+    row.querySelector('.eci-name').value='';
+    row.querySelector('.eci-number').value='';
+    row.querySelector('.eci-remarks').value='';
+    row.querySelector('.eci-order').value='1';
+    row.querySelector('.eci-status').value='ACTIVE';
+    row.dataset.emergencyId='';
+    return;
+  }
+
+  row.remove();
+}
+
+function collectEmergencyContacts(){
+  return Array.from(document.querySelectorAll('#emergencyContactRows .contact-emergency-row'))
+    .map((row,index)=>({
+      id:row.dataset.emergencyId||'',
+      name:row.querySelector('.eci-name').value.trim(),
+      contactNumber:row.querySelector('.eci-number').value.trim(),
+      remarks:row.querySelector('.eci-remarks').value.trim(),
+      displayOrder:row.querySelector('.eci-order').value || String(index+1),
+      status:row.querySelector('.eci-status').value
+    }))
+    .filter(x=>x.name || x.contactNumber || x.remarks);
+}
+
+async function saveAllContactInformation(btn){
+  return withButtonSpinner(btn,'Saving...',async()=>{
+    const info=await api('saveContactInformation',{
+      officeContact:document.getElementById('ciOfficeContact').value,
+      officeHours:document.getElementById('ciOfficeHours').value,
+      healthContact:document.getElementById('ciHealthContact').value,
+      healthRemarks:document.getElementById('ciHealthRemarks').value
+    });
+
+    if(!info.success) throw new Error(info.message||'Unable to save Contact Information.');
+
+    const emergency=await api('saveEmergencyContactsBatch',{
+      rows:collectEmergencyContacts()
+    });
+
+    if(!emergency.success) throw new Error(emergency.message||'Unable to save Emergency Contacts.');
+
+    await contactInfoForm();
+
+    return {
+      success:true,
+      message:'Contact Information saved.'
+    };
+  },'Contact Information saved.');
+}
+
+
 async function officialsForm(){
   document.getElementById('moduleArea').innerHTML=
     '<div class="bto-loading"><span class="bto-spinner"></span><span>Loading officials...</span></div>';
@@ -2504,6 +2713,7 @@ function renderUsersBundle(bundle){
     ['PROGRAMS_PROJECTS','Programs & Projects'],
     ['SERVICE_LINKS','Service Links'],
     ['CONTACT_OFFICERS','Officers of the Day'],
+    ['CONTACT_INFO','Contact Information'],
     ['LEGISLATIVE','Ordinances & Resolutions'],
     ['FULL_DISCLOSURE','Barangay Full Disclosure']
   ];
