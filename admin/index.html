@@ -2009,16 +2009,6 @@ function renderApp(){
 
   const committees=window.BTO_COMMITTEES_CACHE||[];
 
-  if(['SUPER_ADMIN','ADMIN'].includes(me.role)){
-    items.push(['Committee Profiles','committeeProfiles']);
-  }else{
-    const allowed=String(me.assignedModules||'')
-      .split(',').map(x=>x.trim().toUpperCase()).filter(x=>x.startsWith('COM-'));
-
-    committees
-      .filter(c=>allowed.includes(String(c.committeeId).toUpperCase()))
-      .forEach(c=>items.push([c.committeeName,'committee:'+c.committeeId]));
-  }
 
   document.getElementById('moduleMenu').innerHTML=
     items.map(i=>`<button onclick="openModule('${i[1]}','${esc(i[0])}')">${esc(i[0])}</button>`).join('');
@@ -2093,8 +2083,6 @@ async function btoOpenModuleRaw(name,title='Module'){
   if(name==='users') return usersForm();
   if(name==='siteMedia') return siteMediaForm();
   if(name==='committees') return committeesForm();
-  if(name==='committeeProfiles') return committeeProfilesPicker();
-  if(name.startsWith('committee:')) return openCommittee(name.split(':')[1]);
 }
 
 let BTO_MODULE_OPEN_IN_PROGRESS='';
@@ -3790,6 +3778,11 @@ function renderUsersBundle(bundle){
         </div>
       </div>
 
+      <div class="help" style="margin-bottom:12px">
+        Committee responsibilities are managed separately under Committee Assignments.
+        Committee activities and public updates should be encoded under Announcements & Activities.
+      </div>
+
       <div class="check-section">
         <h4>System Modules</h4>
         <div class="check-grid">
@@ -3797,18 +3790,6 @@ function renderUsersBundle(bundle){
             <div class="check-item">
               <input type="checkbox" class="moduleCheck" id="mod_${m[0]}" value="${m[0]}">
               <label for="mod_${m[0]}">${m[1]}</label>
-            </div>`).join('')}
-        </div>
-      </div>
-
-      <div class="check-section">
-        <h4>Assigned Committees</h4>
-        <div class="help">Select the current committees assigned to the user.</div>
-        <div class="check-grid">
-          ${committees.map(c=>`
-            <div class="check-item">
-              <input type="checkbox" class="committeeCheck" id="com_${c.committeeId}" value="${esc(c.committeeId)}">
-              <label for="com_${c.committeeId}">${esc(c.committeeName)}</label>
             </div>`).join('')}
         </div>
       </div>
@@ -3842,16 +3823,14 @@ function renderUsersBundle(bundle){
 }
 
 function selectedAccess(){
-  return [
-    ...Array.from(document.querySelectorAll('.moduleCheck:checked')).map(x=>x.value),
-    ...Array.from(document.querySelectorAll('.committeeCheck:checked')).map(x=>x.value)
-  ];
+  return Array.from(document.querySelectorAll('.moduleCheck:checked'))
+    .map(x=>x.value);
 }
 
 function applyRoleDefaults(){
   const role=document.getElementById('uRole').value;
   if(role==='SUPER_ADMIN'||role==='ADMIN'){
-    document.querySelectorAll('.moduleCheck,.committeeCheck').forEach(x=>x.checked=false);
+    document.querySelectorAll('.moduleCheck').forEach(x=>x.checked=false);
     return;
   }
   if(role==='KAGAWAD'){
@@ -3867,7 +3846,7 @@ function clearUserForm(){
   document.getElementById('uName').value='';
   document.getElementById('uRole').value='KAGAWAD';
   document.getElementById('uStatus').value='ACTIVE';
-  document.querySelectorAll('.moduleCheck,.committeeCheck').forEach(x=>x.checked=false);
+  document.querySelectorAll('.moduleCheck').forEach(x=>x.checked=false);
   applyRoleDefaults();
 }
 
@@ -3879,11 +3858,11 @@ function editUser(u){
   document.getElementById('uRole').value=u.role||'ENCODER';
   document.getElementById('uStatus').value=u.status||'ACTIVE';
 
-  document.querySelectorAll('.moduleCheck,.committeeCheck').forEach(x=>x.checked=false);
+  document.querySelectorAll('.moduleCheck').forEach(x=>x.checked=false);
   const access=String(u.assignedModules||'').split(',').map(x=>x.trim()).filter(Boolean);
 
   access.forEach(a=>{
-    document.querySelectorAll('.moduleCheck,.committeeCheck').forEach(el=>{
+    document.querySelectorAll('.moduleCheck').forEach(el=>{
       if(el.value===a)el.checked=true;
     });
   });
