@@ -1415,6 +1415,55 @@ button.danger,
 }
 .committee-update-field.hidden{display:none!important}
 
+
+/* ===== Barangay Organizations Admin ===== */
+.organization-admin-list{display:grid;gap:9px}
+.organization-admin-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:12px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:10px 12px;
+  background:#fff;
+}
+.organization-admin-main{
+  display:flex;
+  align-items:center;
+  gap:11px;
+  min-width:0;
+}
+.organization-admin-main img,
+.organization-admin-avatar{
+  width:54px;
+  height:54px;
+  border-radius:12px;
+  flex:0 0 54px;
+}
+.organization-admin-main img{
+  object-fit:cover;
+  border:1px solid #e3e6ea;
+}
+.organization-admin-avatar{
+  display:grid;
+  place-items:center;
+  background:var(--red-soft);
+  color:var(--red-dark);
+  font-size:21px;
+  font-weight:900;
+}
+.organization-admin-main strong{display:block}
+.organization-admin-main small{
+  display:block;
+  margin-top:3px;
+  color:var(--muted);
+}
+@media(max-width:700px){
+  .organization-admin-row{grid-template-columns:1fr}
+  .organization-admin-row>.admin-actions{width:100%}
+}
+
 </style>
 </head>
 <body>
@@ -1991,6 +2040,7 @@ function renderApp(){
   if(hasModule('ABOUT_BARANGAY')) items.push(['About Barangay','aboutBarangay']);
   if(hasModule('BARANGAY_STATISTICS')) items.push(['Barangay Statistics','stats']);
   if(hasModule('LIVESTOCK')) items.push(['Livestock Statistics','livestock']);
+  if(hasModule('ORGANIZATIONS')) items.push(['Barangay Organizations','organizations']);
 
   if(hasModule('CONTENT') || (me.assignedModules||'').includes('COM-'))
     items.push(['Announcements & Activities','content']);
@@ -2083,6 +2133,7 @@ async function btoOpenModuleRaw(name,title='Module'){
   if(name==='aboutBarangay') return aboutBarangayForm();
   if(name==='stats') return loadStats();
   if(name==='livestock') return loadLivestock();
+  if(name==='organizations') return organizationsForm();
   if(name==='content') return contentForm();
   if(name==='programsProjects') return programsProjectsForm();
   if(name==='serviceLinks') return serviceLinksForm();
@@ -2651,6 +2702,239 @@ async function saveContent(btn){
   }, id ? 'Announcement / Activity updated.' : 'Published successfully.');
 
   });
+}
+
+
+
+/* ===== BARANGAY ORGANIZATIONS ===== */
+window.BTO_ORGANIZATIONS_ROWS=[];
+window.BTO_EDIT_ORGANIZATION=null;
+
+async function organizationsForm(){
+  const r=await api('getOrganizations');
+  if(!r.success){showModuleError(r.message);return}
+
+  window.BTO_ORGANIZATIONS_ROWS=r.data||[];
+  window.BTO_EDIT_ORGANIZATION=null;
+  renderOrganizationsAdmin();
+}
+
+function orgAdminValue(x,key){
+  return x && x[key]!==undefined && x[key]!==null ? x[key] : '';
+}
+
+function renderOrganizationsAdmin(){
+  const rows=window.BTO_ORGANIZATIONS_ROWS||[];
+  const e=window.BTO_EDIT_ORGANIZATION||{};
+
+  document.getElementById('moduleArea').innerHTML=`
+    <div class="card">
+      <h2>${e.id?'Edit':'Add'} Barangay Organization</h2>
+      <div class="help">
+        Add organizations here. Each ACTIVE organization automatically gets its own public profile page.
+      </div>
+
+      <input id="orgId" type="hidden" value="${esc(orgAdminValue(e,'id'))}">
+      <input id="orgExistingLogo" type="hidden" value="${esc(orgAdminValue(e,'logoUrl'))}">
+      <input id="orgExistingFeatured" type="hidden" value="${esc(orgAdminValue(e,'featuredPhotoUrl'))}">
+
+      <div class="grid">
+        <div>
+          <label>Organization Name</label>
+          <input id="orgName" value="${esc(orgAdminValue(e,'name'))}" placeholder="Example: Tupol Oeste Farmers Association">
+        </div>
+        <div>
+          <label>Acronym / Short Name (optional)</label>
+          <input id="orgAcronym" value="${esc(orgAdminValue(e,'acronym'))}" placeholder="Optional">
+        </div>
+      </div>
+
+      <div class="grid">
+        <div>
+          <label>Category</label>
+          <input id="orgCategory" list="orgCategorySuggestions"
+            value="${esc(orgAdminValue(e,'category'))}"
+            placeholder="Example: Farmers Association">
+          <datalist id="orgCategorySuggestions">
+            <option value="Farmers Association">
+            <option value="Women's Organization">
+            <option value="Senior Citizens Organization">
+            <option value="Youth Organization">
+            <option value="Cooperative">
+            <option value="Community Organization">
+          </datalist>
+        </div>
+        <div>
+          <label>Year Established (optional)</label>
+          <input id="orgYear" type="number" min="1900" max="2200"
+            value="${esc(orgAdminValue(e,'yearEstablished'))}">
+        </div>
+      </div>
+
+      <label>Organization Profile / Description</label>
+      <textarea id="orgDescription" rows="6"
+        placeholder="Official background, purpose, membership, or other public information.">${esc(orgAdminValue(e,'description'))}</textarea>
+
+      <div class="grid">
+        <div>
+          <label>Organization Logo (optional)</label>
+          <input id="orgLogo" type="file" accept="image/*">
+          ${e.logoUrl?`<div class="doc-file-current"><a href="${esc(e.logoUrl)}" target="_blank" rel="noopener">Open current logo</a></div>`:''}
+        </div>
+        <div>
+          <label>Featured / Cover Photo (optional)</label>
+          <input id="orgFeatured" type="file" accept="image/*">
+          ${e.featuredPhotoUrl?`<div class="doc-file-current"><a href="${esc(e.featuredPhotoUrl)}" target="_blank" rel="noopener">Open current photo</a></div>`:''}
+        </div>
+      </div>
+
+      <div class="grid">
+        <div>
+          <label>Contact Person (optional)</label>
+          <input id="orgContactPerson" value="${esc(orgAdminValue(e,'contactPerson'))}">
+        </div>
+        <div>
+          <label>Contact Number (optional)</label>
+          <input id="orgContactNumber" value="${esc(orgAdminValue(e,'contactNumber'))}">
+        </div>
+      </div>
+
+      <div class="grid">
+        <div>
+          <label>Email (optional)</label>
+          <input id="orgEmail" type="email" value="${esc(orgAdminValue(e,'email'))}">
+        </div>
+        <div>
+          <label>Meeting Schedule (optional)</label>
+          <input id="orgMeeting" value="${esc(orgAdminValue(e,'meetingSchedule'))}"
+            placeholder="Example: Every first Friday of the month">
+        </div>
+      </div>
+
+      <div class="grid">
+        <div>
+          <label>Status</label>
+          <select id="orgStatus">
+            <option value="ACTIVE" ${String(e.status||'ACTIVE').toUpperCase()==='ACTIVE'?'selected':''}>ACTIVE</option>
+            <option value="INACTIVE" ${String(e.status||'').toUpperCase()==='INACTIVE'?'selected':''}>INACTIVE</option>
+          </select>
+        </div>
+        <div>
+          <label>Display Order</label>
+          <input id="orgOrder" type="number" min="0" value="${esc(orgAdminValue(e,'displayOrder')||0)}">
+        </div>
+      </div>
+
+      <div class="admin-actions">
+        <button onclick="saveOrganization(this)">${e.id?'Update Organization':'Save Organization'}</button>
+        ${e.id?`<button class="secondary" onclick="window.BTO_EDIT_ORGANIZATION=null;renderOrganizationsAdmin()">Cancel Edit</button>`:''}
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Existing Barangay Organizations</h2>
+      <div class="organization-admin-list">
+        ${rows.length ? rows.map((x,i)=>`
+          <div class="organization-admin-row">
+            <div class="organization-admin-main">
+              ${x.logoUrl?`<img src="${esc(x.logoUrl)}" alt="${esc(x.name||'Organization')}" loading="lazy">`
+                : `<div class="organization-admin-avatar">${esc((x.name||'O').charAt(0).toUpperCase())}</div>`}
+              <div>
+                <strong>${esc(x.name||'Untitled Organization')}</strong>
+                <small>
+                  ${x.acronym?esc(x.acronym)+' • ':''}
+                  ${esc(x.category||'Organization')} • ${esc(x.status||'ACTIVE')}
+                </small>
+              </div>
+            </div>
+            <div class="admin-actions">
+              <button class="secondary" onclick="editOrganizationAdmin(${i})">Edit</button>
+              <button class="danger" onclick="deleteOrganizationAdmin('${esc(x.id||'')}')">Delete</button>
+            </div>
+          </div>`).join('') : '<div class="help">No organizations encoded yet.</div>'}
+      </div>
+    </div>`;
+}
+
+function editOrganizationAdmin(index){
+  window.BTO_EDIT_ORGANIZATION=(window.BTO_ORGANIZATIONS_ROWS||[])[index]||null;
+  renderOrganizationsAdmin();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+async function saveOrganization(btn){
+  return btoSingleSave('ORGANIZATION',async()=>{
+    return withButtonSpinner(btn,'Saving...',async()=>{
+      const id=document.getElementById('orgId').value.trim();
+      const name=document.getElementById('orgName').value.trim();
+
+      if(!name) throw new Error('Organization Name is required.');
+
+      let logoUrl=document.getElementById('orgExistingLogo').value||'';
+      let featuredPhotoUrl=document.getElementById('orgExistingFeatured').value||'';
+
+      const logoFile=document.getElementById('orgLogo').files[0];
+      if(logoFile){
+        const base64=await fileToBase64(logoFile);
+        const u=await api('uploadBase64',{
+          fileName:logoFile.name,
+          mimeType:logoFile.type||'image/jpeg',
+          base64
+        });
+        if(!u.success) throw new Error(u.message||'Logo upload failed.');
+        logoUrl=u.url||'';
+      }
+
+      const featuredFile=document.getElementById('orgFeatured').files[0];
+      if(featuredFile){
+        const base64=await fileToBase64(featuredFile);
+        const u=await api('uploadBase64',{
+          fileName:featuredFile.name,
+          mimeType:featuredFile.type||'image/jpeg',
+          base64
+        });
+        if(!u.success) throw new Error(u.message||'Featured photo upload failed.');
+        featuredPhotoUrl=u.url||'';
+      }
+
+      const r=await api('saveOrganization',{
+        id,
+        name,
+        acronym:document.getElementById('orgAcronym').value,
+        category:document.getElementById('orgCategory').value,
+        yearEstablished:document.getElementById('orgYear').value,
+        description:document.getElementById('orgDescription').value,
+        logoUrl,
+        featuredPhotoUrl,
+        contactPerson:document.getElementById('orgContactPerson').value,
+        contactNumber:document.getElementById('orgContactNumber').value,
+        email:document.getElementById('orgEmail').value,
+        meetingSchedule:document.getElementById('orgMeeting').value,
+        status:document.getElementById('orgStatus').value,
+        displayOrder:document.getElementById('orgOrder').value
+      });
+
+      if(!r.success) throw new Error(r.message||'Unable to save organization.');
+
+      cacheRemove('organizations');
+      await organizationsForm();
+      return r;
+    }, id ? 'Organization updated.' : 'Organization saved.');
+  });
+}
+
+async function deleteOrganizationAdmin(id){
+  if(!id) return;
+  if(!confirm('Delete this organization from the public website?')) return;
+
+  try{
+    const r=await api('deleteOrganization',{id});
+    if(!r.success) throw new Error(r.message||'Unable to delete organization.');
+    showGlobalActionStatus(r.message||'Organization deleted.','ok');
+    await organizationsForm();
+  }catch(err){
+    showGlobalActionStatus(err?.message||'Delete failed.','err');
+  }
 }
 
 
@@ -3792,6 +4076,7 @@ function renderUsersBundle(bundle){
     ['ABOUT_BARANGAY','About Barangay'],
     ['BARANGAY_STATISTICS','Barangay Statistics'],
     ['LIVESTOCK','Livestock Statistics'],
+    ['ORGANIZATIONS','Barangay Organizations'],
     ['CONTENT','Announcements & Activities'],
     ['PROGRAMS_PROJECTS','Programs & Projects'],
     ['SERVICE_LINKS','Service Links'],
