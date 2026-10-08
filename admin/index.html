@@ -717,6 +717,50 @@ button.danger:hover{filter:brightness(.94)}
 .admin-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .admin-actions button{width:auto}
 
+
+.assignment-existing-box{
+  margin:10px 0 16px;
+  padding:12px;
+  border:1px solid #e4e7ec;
+  border-radius:10px;
+  background:#f9fafb;
+}
+.assignment-existing-title{
+  font-size:12px;
+  font-weight:800;
+  color:#344054;
+  margin-bottom:8px;
+}
+.assignment-existing-list{
+  display:grid;
+  gap:8px;
+}
+.assignment-existing-item{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  padding:9px 10px;
+  background:#fff;
+  border:1px solid #eaecf0;
+  border-radius:8px;
+}
+.assignment-existing-item strong{
+  display:block;
+  font-size:13px;
+  color:#20242a;
+}
+.assignment-existing-item small{
+  display:block;
+  margin-top:2px;
+  color:#667085;
+  font-size:11px;
+}
+.assignment-existing-empty{
+  color:#667085;
+  font-size:12px;
+}
+
 </style>
 </head>
 <body>
@@ -2802,6 +2846,7 @@ async function saveOfficial(btn){
 }
 
 
+
 async function assignmentForm(){
   const bundle=await api('getAssignmentBundle');
   if(!bundle.success){showModuleError(bundle.message);return}
@@ -2812,6 +2857,76 @@ async function assignmentForm(){
   window.BTO_ASSIGNMENT_BUNDLE=bundle;
   window.BTO_EDIT_ASSIGNMENT=null;
   renderAssignmentBundle(bundle);
+}
+
+function btoAssignmentOfficialName_(id){
+  const b=window.BTO_ASSIGNMENT_BUNDLE||{};
+  const o=(b.officials||[]).find(x=>String(x['Official ID']||'')===String(id||''));
+  return o ? String(o['Full Name']||'') : String(id||'');
+}
+
+function btoAssignmentCommitteeName_(id){
+  const b=window.BTO_ASSIGNMENT_BUNDLE||{};
+  const c=(b.committees||[]).find(x=>String(x.committeeId||'')===String(id||''));
+  return c ? String(c.committeeName||'') : String(id||'');
+}
+
+function btoExistingAssignmentsForOfficial_(officialId){
+  const b=window.BTO_ASSIGNMENT_BUNDLE||{};
+  const editId=String((window.BTO_EDIT_ASSIGNMENT||{})['Assignment ID']||'');
+
+  return (b.assignments||[]).filter(a=>{
+    const sameOfficial=String(a['Official ID']||'')===String(officialId||'');
+    const status=String(a['Status']||'ACTIVE').toUpperCase();
+    const notDeleted=status!=='DELETED';
+    const notCurrentEdit=!editId || String(a['Assignment ID']||'')!==editId;
+    return sameOfficial && notDeleted && notCurrentEdit;
+  });
+}
+
+function renderOfficialExistingCommittees(){
+  const box=document.getElementById('aExistingCommittees');
+  const select=document.getElementById('aOfficial');
+  if(!box || !select) return;
+
+  const officialId=select.value;
+  const rows=btoExistingAssignmentsForOfficial_(officialId);
+
+  if(!rows.length){
+    box.innerHTML=`
+      <div class="assignment-existing-empty">
+        No existing committee assignment for this official.
+      </div>`;
+    return;
+  }
+
+  box.innerHTML=`
+    <div class="assignment-existing-title">
+      Existing Committee${rows.length>1?'s':''} (${rows.length})
+    </div>
+    <div class="assignment-existing-list">
+      ${rows.map(a=>`
+        <div class="assignment-existing-item">
+          <div>
+            <strong>${esc(btoAssignmentCommitteeName_(a['Committee ID']))}</strong>
+            <small>${esc(a['Role']||'Member')} · ${esc(a['Status']||'ACTIVE')}</small>
+          </div>
+        </div>
+      `).join('')}
+    </div>`;
+}
+
+function btoAssignmentDuplicateExists_(officialId,committeeId,currentAssignmentId){
+  const b=window.BTO_ASSIGNMENT_BUNDLE||{};
+
+  return (b.assignments||[]).some(a=>{
+    const status=String(a['Status']||'ACTIVE').toUpperCase();
+    if(status==='DELETED') return false;
+
+    return String(a['Official ID']||'')===String(officialId||'') &&
+           String(a['Committee ID']||'')===String(committeeId||'') &&
+           String(a['Assignment ID']||'')!==String(currentAssignmentId||'');
+  });
 }
 
 function renderAssignmentBundle(bundle){
@@ -2826,18 +2941,30 @@ function renderAssignmentBundle(bundle){
       <input id="aId" type="hidden" value="${esc(e['Assignment ID']||'')}">
 
       <label>Official</label>
-      <select id="aOfficial">
-        ${officials.map(o=>`<option value="${esc(o['Official ID'])}" ${String(e['Official ID']||'')===String(o['Official ID'])?'selected':''}>${esc(o['Full Name'])}</option>`).join('')}
+      <select id="aOfficial" onchange="renderOfficialExistingCommittees()">
+        ${officials.map(o=>`
+          <option value="${esc(o['Official ID'])}"
+            ${String(e['Official ID']||'')===String(o['Official ID'])?'selected':''}>
+            ${esc(o['Full Name'])}
+          </option>`).join('')}
       </select>
+
+      <div id="aExistingCommittees" class="assignment-existing-box"></div>
 
       <label>Committee</label>
       <select id="aCommittee">
-        ${committees.map(c=>`<option value="${esc(c.committeeId)}" ${String(e['Committee ID']||'')===String(c.committeeId)?'selected':''}>${esc(c.committeeName)}</option>`).join('')}
+        ${committees.map(c=>`
+          <option value="${esc(c.committeeId)}"
+            ${String(e['Committee ID']||'')===String(c.committeeId)?'selected':''}>
+            ${esc(c.committeeName)}
+          </option>`).join('')}
       </select>
 
       <label>Role</label>
       <select id="aRole">
-        ${['Chairperson','Vice Chairperson','Member'].map(x=>`<option ${String(e['Role']||'')===x?'selected':''}>${x}</option>`).join('')}
+        ${['Chairperson','Vice Chairperson','Member'].map(x=>
+          `<option ${String(e['Role']||'')===x?'selected':''}>${x}</option>`
+        ).join('')}
       </select>
 
       <label>Status</label>
@@ -2847,8 +2974,14 @@ function renderAssignmentBundle(bundle){
       </select>
 
       <div class="admin-actions">
-        <button onclick="saveAssignment(this)">${e['Assignment ID']?'Update Assignment':'Save Assignment'}</button>
-        ${e['Assignment ID']?`<button class="secondary" onclick="window.BTO_EDIT_ASSIGNMENT=null;renderAssignmentBundle(window.BTO_ASSIGNMENT_BUNDLE)">Cancel Edit</button>`:''}
+        <button onclick="saveAssignment(this)">
+          ${e['Assignment ID']?'Update Assignment':'Save Assignment'}
+        </button>
+        ${e['Assignment ID']?`
+          <button class="secondary"
+            onclick="window.BTO_EDIT_ASSIGNMENT=null;renderAssignmentBundle(window.BTO_ASSIGNMENT_BUNDLE)">
+            Cancel Edit
+          </button>`:''}
       </div>
     </div>
 
@@ -2857,15 +2990,25 @@ function renderAssignmentBundle(bundle){
       ${assignments.length ? assignments.map((a,i)=>`
         <div class="doc-row">
           <div class="doc-row-main">
-            <strong>${esc(a['Official Name']||a['Full Name']||a['Official ID']||'')}</strong>
-            <div class="help">${esc(a['Committee Name']||a['Committee ID']||'')} • ${esc(a['Role']||'')} • ${esc(a['Status']||'')}</div>
+            <strong>${esc(btoAssignmentOfficialName_(a['Official ID']))}</strong>
+            <div class="help">
+              ${esc(btoAssignmentCommitteeName_(a['Committee ID']))}
+              • ${esc(a['Role']||'')}
+              • ${esc(a['Status']||'')}
+            </div>
           </div>
           <div class="admin-actions">
             <button class="secondary" onclick="editAssignmentAdmin(${i})">Edit</button>
-            <button class="danger" onclick="btoDeleteRecord('ASSIGNMENT','${esc(a['Assignment ID']||'')}',assignmentForm,'committee assignment')">Delete</button>
+            <button class="danger"
+              onclick="btoDeleteRecord('ASSIGNMENT','${esc(a['Assignment ID']||'')}',assignmentForm,'committee assignment')">
+              Delete
+            </button>
           </div>
         </div>`).join('') : '<div class="help">No assignments yet.</div>'}
     </div>`;
+
+  // Show existing committees immediately for the selected official.
+  setTimeout(renderOfficialExistingCommittees,0);
 }
 
 function editAssignmentAdmin(index){
@@ -2877,33 +3020,48 @@ function editAssignmentAdmin(index){
 
 async function saveAssignment(btn){
   return btoSingleSave('ASSIGNMENT',async()=>{
+    setBusyButton(btn,true,'Saving assignment...');
 
-  setBusyButton(btn,true,'Saving assignment...');
-  try{
-    const id=document.getElementById('aId').value.trim();
-    const payload={
-      id,
-      officialId:document.getElementById('aOfficial').value,
-      committeeId:document.getElementById('aCommittee').value,
-      role:document.getElementById('aRole').value,
-      status:document.getElementById('aStatus').value
-    };
+    try{
+      const id=document.getElementById('aId').value.trim();
+      const officialId=document.getElementById('aOfficial').value;
+      const committeeId=document.getElementById('aCommittee').value;
 
-    const r=id
-      ? await api('adminCrudUpdateAssignment',payload)
-      : await api('saveCommitteeAssignment',payload);
+      if(btoAssignmentDuplicateExists_(officialId,committeeId,id)){
+        throw new Error(
+          `${btoAssignmentOfficialName_(officialId)} is already assigned to ${btoAssignmentCommitteeName_(committeeId)}.`
+        );
+      }
 
-    if(!r.success) throw new Error(r.message||'Unable to save assignment.');
+      const payload={
+        id,
+        officialId,
+        committeeId,
+        role:document.getElementById('aRole').value,
+        status:document.getElementById('aStatus').value
+      };
 
-    showGlobalActionStatus(id?'Assignment updated successfully.':'Assignment saved successfully.','ok');
-    await assignmentForm();
-  }catch(err){
-    showGlobalActionStatus(err?.message || 'Action failed.','err');
-    throw err;
-  }finally{
-    setBusyButton(btn,false);
-  }
+      const r=id
+        ? await api('adminCrudUpdateAssignment',payload)
+        : await api('saveCommitteeAssignment',payload);
 
+      if(!r.success) throw new Error(r.message||'Unable to save assignment.');
+
+      showGlobalActionStatus(
+        r.duplicatePrevented
+          ? (r.message||'Duplicate assignment prevented.')
+          : (id?'Assignment updated successfully.':'Assignment saved successfully.'),
+        'ok'
+      );
+
+      await assignmentForm();
+
+    }catch(err){
+      showGlobalActionStatus(err?.message || 'Action failed.','err');
+      throw err;
+    }finally{
+      setBusyButton(btn,false);
+    }
   });
 }
 
