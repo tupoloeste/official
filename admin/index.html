@@ -1403,6 +1403,18 @@ button.danger,
   line-height:1.4;
 }
 
+
+/* Committee Update conditional field */
+.committee-update-field{
+  margin:4px 0 6px;
+  padding:13px;
+  border:1px solid #f0c6cc;
+  border-left:4px solid var(--red);
+  border-radius:11px;
+  background:#fff7f8;
+}
+.committee-update-field.hidden{display:none!important}
+
 </style>
 </head>
 <body>
@@ -2499,15 +2511,17 @@ function renderContentAdmin(){
 
   document.getElementById('moduleArea').innerHTML=`
     <div class="card">
-      <h2>${btoContentId(e)?'Edit':'Add'} Announcement / Activity</h2>
+      <h2>${btoContentId(e)?'Edit':'Add'} Barangay Update</h2>
       <input id="cId" type="hidden" value="${esc(btoContentId(e))}">
       <input id="cExistingPhoto" type="hidden" value="${esc(btoContentVal(e,'Featured Photo URL','Photo URL'))}">
 
       <label>Type</label>
-      <select id="cType">
+      <select id="cType" onchange="toggleCommitteeUpdateField()">
         <option value="ANNOUNCEMENT" ${String(btoContentVal(e,'Type')).toUpperCase()==='ANNOUNCEMENT'?'selected':''}>ANNOUNCEMENT</option>
         <option value="ACTIVITY" ${String(btoContentVal(e,'Type')).toUpperCase()==='ACTIVITY'?'selected':''}>ACTIVITY</option>
+        <option value="COMMITTEE UPDATE" ${String(btoContentVal(e,'Type')).toUpperCase()==='COMMITTEE UPDATE'?'selected':''}>COMMITTEE UPDATE</option>
       </select>
+      <div class="help">Use Committee Update for activities, accomplishments, meetings, or notices of a specific committee.</div>
 
       <label>Title</label>
       <input id="cTitle" value="${esc(btoContentVal(e,'Title'))}">
@@ -2519,11 +2533,14 @@ function renderContentAdmin(){
 
       <label>Venue</label><input id="cVenue" value="${esc(btoContentVal(e,'Venue'))}">
 
-      <label>Related Committee</label>
-      <select id="cCommittee">
-        <option value="">General / No Committee</option>
-        ${list.map(c=>`<option value="${esc(c.committeeId)}" ${String(btoContentVal(e,'Committee ID','Related Committee'))===String(c.committeeId)?'selected':''}>${esc(c.committeeName)}</option>`).join('')}
-      </select>
+      <div id="cCommitteeWrap" class="committee-update-field hidden">
+        <label>Committee</label>
+        <select id="cCommittee">
+          <option value="">Select Committee</option>
+          ${list.map(c=>`<option value="${esc(c.committeeId)}" ${String(btoContentVal(e,'Committee ID','Related Committee'))===String(c.committeeId)?'selected':''}>${esc(c.committeeName)}</option>`).join('')}
+        </select>
+        <div class="help">Required when Type is Committee Update.</div>
+      </div>
 
       <label>Description</label>
       <textarea id="cDesc">${esc(btoContentVal(e,'Description'))}</textarea>
@@ -2545,7 +2562,13 @@ function renderContentAdmin(){
         return `<div class="doc-row">
           <div class="doc-row-main">
             <strong>${esc(btoContentVal(r,'Title')||'Untitled')}</strong>
-            <div class="help">${esc(btoContentVal(r,'Type'))} ${btoContentVal(r,'Event Date','Date')?'• '+esc(btoContentVal(r,'Event Date','Date')):''}</div>
+            <div class="help">
+              ${esc(btoContentVal(r,'Type'))}
+              ${btoContentVal(r,'Event Date','Date')?'• '+esc(btoContentVal(r,'Event Date','Date')):''}
+              ${String(btoContentVal(r,'Type')).toUpperCase()==='COMMITTEE UPDATE'
+                ? ' • '+esc((list.find(c=>String(c.committeeId)===String(btoContentVal(r,'Committee ID','Related Committee')))||{}).committeeName||'Committee')
+                : ''}
+            </div>
           </div>
           <div class="admin-actions">
             <button class="secondary" onclick="editContentAdmin(${i})">Edit</button>
@@ -2554,6 +2577,22 @@ function renderContentAdmin(){
         </div>`;
       }).join('') : '<div class="help">No records yet.</div>'}
     </div>`;
+
+  setTimeout(toggleCommitteeUpdateField,0);
+}
+
+function toggleCommitteeUpdateField(){
+  const type=document.getElementById('cType');
+  const wrap=document.getElementById('cCommitteeWrap');
+  const committee=document.getElementById('cCommittee');
+  if(!type || !wrap || !committee) return;
+
+  const isCommittee=String(type.value||'').toUpperCase()==='COMMITTEE UPDATE';
+  wrap.classList.toggle('hidden',!isCommittee);
+
+  if(!isCommittee){
+    committee.value='';
+  }
 }
 
 function editContentAdmin(index){
@@ -2577,15 +2616,25 @@ async function saveContent(btn){
       photoUrl=u.url||'';
     }
 
+    const contentType=document.getElementById('cType').value;
+    const committeeId=
+      String(contentType).toUpperCase()==='COMMITTEE UPDATE'
+        ? document.getElementById('cCommittee').value
+        : '';
+
+    if(String(contentType).toUpperCase()==='COMMITTEE UPDATE' && !committeeId){
+      throw new Error('Please select the committee for this Committee Update.');
+    }
+
     const payload={
       id:id,
       contentId:id,
-      type:document.getElementById('cType').value,
+      type:contentType,
       title:document.getElementById('cTitle').value,
       eventDate:document.getElementById('cDate').value,
       time:document.getElementById('cTime').value,
       venue:document.getElementById('cVenue').value,
-      committeeId:document.getElementById('cCommittee').value,
+      committeeId:committeeId,
       description:document.getElementById('cDesc').value,
       featuredPhotoUrl:photoUrl,
       status:'PUBLISHED'
