@@ -2309,6 +2309,15 @@ a.back-btn:focus{
   color:#475467;
 }
 
+
+.public-disclosure-preview img{
+  object-fit:contain !important;
+  background:#fff;
+}
+.public-disclosure-preview.no-image{
+  min-height:190px;
+}
+
 </style>
 </head>
 <body>
@@ -4594,6 +4603,14 @@ function publicDownloadUrl(url){
   return id ? `https://drive.google.com/uc?export=download&id=${encodeURIComponent(id)}` : String(url||'');
 }
 
+function publicImageUrl(url){
+  const id=publicDriveId(url);
+  if(id){
+    return `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w1200`;
+  }
+  return String(url||'');
+}
+
 function publicPrintFile(url,title){
   const preview=publicPreviewUrl(url);
   const w=window.open('','_blank');
@@ -4755,7 +4772,7 @@ function renderPublicDisclosureFiltered(){
 
     return `<article class="public-disclosure-card">
       <div class="public-disclosure-preview ${img?'':'no-image'}">
-        ${img?`<img src="${btoEsc(img)}" alt="${btoEsc(x.title||'Disclosure document')}" loading="lazy">`:'<span aria-hidden="true">📄</span>'}
+        ${img?`<img src="${btoEsc(publicImageUrl(img))}" alt="${btoEsc(x.title||'Disclosure document')}" loading="lazy" onerror="this.style.display='none';this.parentElement.classList.add('no-image');this.parentElement.innerHTML='<span aria-hidden=\'true\'>📄</span>';">`:'<span aria-hidden="true">📄</span>'}
       </div>
       <div class="public-disclosure-body">
         <span class="public-disclosure-category">${btoEsc(x.category||'Disclosure')}</span>
@@ -4764,8 +4781,8 @@ function renderPublicDisclosureFiltered(){
 
         <div class="public-doc-actions">
           ${img?`<a class="outline" href="${btoEsc(publicViewUrl(img))}" target="_blank" rel="noopener">View Image</a>`:''}
-          ${pdf?`<a class="outline" href="${btoEsc(publicViewUrl(pdf))}" target="_blank" rel="noopener">View</a>`:''}
-          ${preferred?`<a href="${btoEsc(publicDownloadUrl(preferred))}" target="_blank" rel="noopener">Download</a>`:''}
+          ${pdf?`<a class="outline" href="${btoEsc(publicViewUrl(pdf))}" target="_blank" rel="noopener">View PDF</a>`:''}
+          ${preferred?`<a href="${btoEsc(publicDownloadUrl(preferred))}" target="_blank" rel="noopener">${pdf?'Download PDF':'Download Image'}</a>`:''}
           ${preferred?`<button onclick='publicPrintFile(${JSON.stringify(preferred)},${JSON.stringify(x.title||"Document")})'>Print</button>`:''}
         </div>
       </div>
