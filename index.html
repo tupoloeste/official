@@ -2798,6 +2798,46 @@ a.back-btn:focus{
   .services-main-grid{grid-template-columns:1fr}
 }
 
+
+/* ===== Contact page: Officers of the Day ===== */
+.officers-duty-panel{
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-start;
+}
+.officers-duty-panel h2{
+  margin:0 0 16px;
+}
+#publicOfficersOfTheDay{
+  display:grid;
+  gap:10px;
+}
+.officer-duty-item{
+  background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.24);
+  border-radius:12px;
+  padding:12px 14px;
+}
+.officer-duty-name{
+  font-size:17px;
+  font-weight:800;
+  margin-bottom:3px;
+}
+.officer-duty-position{
+  font-size:13px;
+  opacity:.95;
+}
+.officer-duty-contact,
+.officer-duty-remarks{
+  font-size:12px;
+  margin-top:5px;
+  opacity:.9;
+}
+.officers-duty-empty{
+  margin:0;
+  opacity:.92;
+}
+
 </style>
 </head>
 <body>
@@ -3817,10 +3857,15 @@ a.back-btn:focus{
 <!-- DOWNLOADS -->
 <!-- CONTACT -->
 <div class="view" id="view-contact">
-  <div class="page-head"><div class="container page-head-row"><div><h1>Contact Information</h1><p>Official contact details will be published once finalized.</p></div><button class="back-btn" onclick="showView('home')">← Back to Home</button></div></div>
+  <div class="page-head"><div class="container page-head-row"><div><h1>Contact Information</h1><p>Barangay office information and Officers of the Day.</p></div><button class="back-btn" onclick="showView('home')">← Back to Home</button></div></div>
   <div class="page-content"><div class="container">
     <div class="contact-box">
-      <div class="contact-left"><h2>Barangay Tupol Oeste</h2><p>Municipality of Cabatuan, Province of Iloilo</p></div>
+      <div class="contact-left officers-duty-panel">
+          <h2>Officers of the Day</h2>
+          <div id="publicOfficersOfTheDay">
+            <p class="officers-duty-empty">Duty officers will be posted here.</p>
+          </div>
+        </div>
       <div class="contact-right">
         <div class="contact-item"><strong>Barangay Office Contact Number</strong><span>Coming Soon</span></div>
         <div class="contact-item"><strong>Office Hours</strong><span>Coming Soon</span></div>
@@ -3907,7 +3952,7 @@ function switchTab(scope,panelId,btn){
 
 
 const BTO_PUBLIC_API = "https://script.google.com/macros/s/AKfycbwM6bagjlHKao-NCB3d_nDwX29zO4EFKcoj50vABCQP7bKJuSI4j7772Zam9LwNiLCqNg/exec?action=publicData";
-const BTO_PUBLIC_CACHE_KEY = 'bto_public_data_v7';
+const BTO_PUBLIC_CACHE_KEY = 'bto_public_data_v8';
 const BTO_PUBLIC_CACHE_MS = 5 * 60 * 1000;
 
 function publicEsc(v){
@@ -5815,6 +5860,32 @@ function renderPublicServiceLinks(data){
 }
 
 
+
+/* ===== PUBLIC OFFICERS OF THE DAY ===== */
+function renderPublicOfficersOfTheDay(data){
+  const root=document.getElementById('publicOfficersOfTheDay');
+  if(!root) return;
+
+  const rows=Array.isArray(data?.officersOfTheDay)
+    ? data.officersOfTheDay
+    : [];
+
+  if(!rows.length){
+    root.innerHTML='<p class="officers-duty-empty">Duty officers will be posted here.</p>';
+    return;
+  }
+
+  root.innerHTML=rows.map(x=>`
+    <div class="officer-duty-item">
+      <div class="officer-duty-name">${btoEsc(x.officerName||'')}</div>
+      ${x.position?`<div class="officer-duty-position">${btoEsc(x.position)}</div>`:''}
+      ${x.contactNumber?`<div class="officer-duty-contact">Contact: ${btoEsc(x.contactNumber)}</div>`:''}
+      ${x.remarks?`<div class="officer-duty-remarks">${btoEsc(x.remarks)}</div>`:''}
+    </div>
+  `).join('');
+}
+
+
 function applyPublicData(data){
   if(!data || !data.success) return;
   renderOfficialsPersonnel(data);
@@ -5822,6 +5893,7 @@ function applyPublicData(data){
   renderPublicDisclosure(data);
   renderPublicPrograms(data);
   renderPublicServiceLinks(data);
+  renderPublicOfficersOfTheDay(data);
   renderAboutBarangay(data);
   renderEnhancedBarangayStats(data);
   renderHighlightsLive(data);
