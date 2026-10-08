@@ -3595,6 +3595,52 @@ body.bto-site-loading{overflow:hidden!important}
   text-align:center;
 }
 
+
+.dog-stats-view-btn{width:100%;margin:8px 0 0;background:var(--red)!important;color:#fff!important;border:1px solid var(--red)!important;border-radius:8px;padding:11px 12px;font-weight:900;cursor:pointer}
+.dog-stats-asof{margin-bottom:16px;font-size:18px}
+.dog-stats-error{margin-bottom:14px;padding:12px;border:1px solid #fac8d0;border-radius:10px;background:#fff0f3;color:#9f1239;font-weight:800}
+.dog-stats-error.hidden{display:none!important}
+.dog-stat-cards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.dog-stat-card{min-height:190px;padding:17px;border-radius:15px;border:1px solid #e3e6ea;background:#fff;box-shadow:var(--shadow)}
+.dog-stat-card.registered{background:linear-gradient(145deg,#fff,#fff0f2)}
+.dog-stat-card.male{background:linear-gradient(145deg,#fff,#eef8ff)}
+.dog-stat-card.female{background:linear-gradient(145deg,#fff,#fff1f6)}
+.dog-stat-card.puppies{background:linear-gradient(145deg,#fff,#effcf3)}
+.dog-stat-card.vaccination{background:linear-gradient(145deg,#fff,#fff9e7)}
+.dog-stat-icon{font-size:31px;line-height:1;margin-bottom:9px}
+.dog-stat-card>span{display:block;font-weight:900;margin-bottom:4px}
+.dog-stat-card>strong{display:block;font-size:31px;color:var(--red)}
+.dog-stat-card>small{display:block;color:var(--muted);margin-top:6px;line-height:1.4}
+.dog-vax-mini{display:flex;align-items:center;gap:10px;margin-top:10px}
+.dog-vax-mini-donut{width:78px;height:78px;flex:0 0 78px;border-radius:50%;position:relative;display:grid;place-items:center;background:#eceff2}
+.dog-vax-mini-donut::after{content:"";position:absolute;inset:15px;border-radius:50%;background:#fff}
+.dog-vax-mini-donut strong{position:relative;z-index:2;font-size:15px;color:#17853b}
+.dog-vax-mini small{display:block;margin:4px 0}
+.dog-vax-mini b{color:#17853b}.dog-vax-mini small:last-child b{color:#e32b20}
+.dog-stats-lower-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:16px}
+.dog-stats-panel{background:#fff;border:1px solid var(--border);border-radius:17px;padding:18px;box-shadow:var(--shadow)}
+.dog-panel-title{display:flex;gap:10px;align-items:flex-start;margin-bottom:12px}
+.dog-panel-icon{width:42px;height:42px;display:grid;place-items:center;background:var(--red-soft);border-radius:12px;font-size:23px}
+.dog-panel-title h2{margin:0;font-size:21px}.dog-panel-title p{margin:3px 0 0;color:var(--muted);font-size:12px}
+.dog-sitio-chart-layout{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(280px,1.2fr);gap:16px;align-items:center}
+.dog-sitio-donut,.dog-vax-donut{width:min(270px,70vw);aspect-ratio:1;border-radius:50%;position:relative;display:grid;place-items:center;margin:auto;background:#eceff2}
+.dog-sitio-donut::after,.dog-vax-donut::after{content:"";position:absolute;width:55%;height:55%;border-radius:50%;background:#fff}
+.dog-sitio-donut-center,.dog-vax-donut-center{position:relative;z-index:2;text-align:center}
+.dog-sitio-donut-center small,.dog-vax-donut-center small{display:block;text-transform:uppercase;font-weight:900;font-size:10px;color:#4f5660}
+.dog-sitio-donut-center strong,.dog-vax-donut-center strong{display:block;color:var(--red);font-size:31px;margin-top:4px}
+.dog-sitio-legend-head,.dog-sitio-legend-row{display:grid;grid-template-columns:minmax(0,1fr) 70px 85px;gap:8px;align-items:center}
+.dog-sitio-legend-head{padding:6px 8px;font-size:11px;font-weight:900;color:#344054;border-bottom:1px solid #e7eaee}
+.dog-sitio-legend-row{padding:8px;border-bottom:1px solid #edf0f2;font-size:12px}
+.dog-sitio-legend-row>span{display:flex;align-items:center;gap:7px;min-width:0}
+.dog-sitio-legend-row i{width:11px;height:11px;flex:0 0 11px;border-radius:50%}
+.dog-sitio-legend-row strong{color:var(--red);text-align:right}.dog-sitio-legend-row small{text-align:right;color:#4f5660}
+.dog-vax-chart-layout{display:grid;gap:14px}.dog-vax-legend{display:grid;gap:8px}
+.dog-vax-legend>div{display:grid;grid-template-columns:12px minmax(0,1fr) auto;align-items:center;gap:8px;padding:9px;border-bottom:1px solid #edf0f2}
+.dog-dot{width:11px;height:11px;border-radius:50%}.dog-dot.vaccinated{background:#31c955}.dog-dot.unvaccinated{background:#ff3b22}
+@media(max-width:1050px){.dog-stat-cards{grid-template-columns:repeat(3,1fr)}.dog-stats-lower-grid{grid-template-columns:1fr}}
+@media(max-width:760px){.dog-stat-cards{grid-template-columns:1fr 1fr}.dog-sitio-chart-layout{grid-template-columns:1fr}}
+@media(max-width:520px){.dog-stat-cards{grid-template-columns:1fr}.dog-stat-card{min-height:0}}
+
 </style>
 </head>
 <body>
@@ -3871,6 +3917,9 @@ body.bto-site-loading{overflow:hidden!important}
                target="_blank"
                rel="noopener"
                style="display:none">
+          <button type="button" class="dog-stats-view-btn" onclick="showView('dog-statistics');loadPublicDogStats()">
+            View Dog & Rabies Statistics
+          </button>
               Download Android App
             </a>
 
@@ -3916,6 +3965,113 @@ body.bto-site-loading{overflow:hidden!important}
 
       <div id="all-barangay-updates">
         <div class="live-empty">Loading barangay updates...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- DOG / RABIES STATISTICS -->
+<div class="view" id="view-dog-statistics">
+  <div class="page-head">
+    <div class="container page-head-row">
+      <div>
+        <h1>Dog Registration & Rabies Statistics</h1>
+        <p>Summary of registered dogs, vaccination coverage, puppies, and dog population per Sitio.</p>
+      </div>
+      <button class="back-btn" onclick="showView('services-resources')">← Back to Services</button>
+    </div>
+  </div>
+
+  <div class="page-content">
+    <div class="container">
+      <div class="dog-stats-asof">As of: <strong id="dogStatsAsOf">—</strong></div>
+      <div id="dogStatsError" class="dog-stats-error hidden"></div>
+
+      <div class="dog-stat-cards">
+        <div class="dog-stat-card registered">
+          <div class="dog-stat-icon">🐶</div>
+          <span>Registered Dogs</span>
+          <strong id="dogStatRegistered">—</strong>
+          <small>Total active dogs in BRCC-DMS</small>
+        </div>
+
+        <div class="dog-stat-card male">
+          <div class="dog-stat-icon">♂</div>
+          <span>Male Dogs</span>
+          <strong id="dogStatMale">—</strong>
+          <small id="dogStatMalePct">—</small>
+        </div>
+
+        <div class="dog-stat-card female">
+          <div class="dog-stat-icon">♀</div>
+          <span>Female Dogs</span>
+          <strong id="dogStatFemale">—</strong>
+          <small id="dogStatFemalePct">—</small>
+        </div>
+
+        <div class="dog-stat-card puppies">
+          <div class="dog-stat-icon">🐕</div>
+          <span>Total Puppies Reported</span>
+          <strong id="dogStatPuppies">—</strong>
+          <small>From approved puppy reports</small>
+        </div>
+
+        <div class="dog-stat-card vaccination">
+          <div class="dog-stat-icon">💉</div>
+          <span>Rabies Vaccination Rate</span>
+          <div class="dog-vax-mini">
+            <div id="dogVaxMiniDonut" class="dog-vax-mini-donut">
+              <strong id="dogStatVaccinationRate">—</strong>
+            </div>
+            <div>
+              <small><b id="dogStatVaccinated">—</b> Vaccinated Dogs</small>
+              <small><b id="dogStatUnvaccinated">—</b> Unvaccinated Dogs</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dog-stats-lower-grid">
+        <section class="dog-stats-panel">
+          <div class="dog-panel-title">
+            <span class="dog-panel-icon">📍</span>
+            <div><h2>Dogs per Sitio</h2><p>Distribution of registered dogs by official Sitio.</p></div>
+          </div>
+
+          <div class="dog-sitio-chart-layout">
+            <div id="dogSitioDonut" class="dog-sitio-donut">
+              <div class="dog-sitio-donut-center">
+                <small>Total Dogs</small>
+                <strong id="dogSitioTotal">—</strong>
+              </div>
+            </div>
+            <div id="dogSitioLegend" class="dog-sitio-legend">
+              <div class="live-empty">Loading Sitio distribution...</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="dog-stats-panel">
+          <div class="dog-panel-title">
+            <span class="dog-panel-icon">🐾</span>
+            <div><h2>Vaccination Status</h2><p>Based on current/latest rabies vaccination record.</p></div>
+          </div>
+
+          <div class="dog-vax-chart-layout">
+            <div id="dogVaxDonut" class="dog-vax-donut">
+              <div class="dog-vax-donut-center">
+                <small>Registered Dogs</small>
+                <strong id="dogVaxTotal">—</strong>
+              </div>
+            </div>
+
+            <div class="dog-vax-legend">
+              <div><span class="dog-dot vaccinated"></span>Vaccinated Dogs <strong id="dogVaxLegendVaccinated">—</strong></div>
+              <div><span class="dog-dot unvaccinated"></span>Unvaccinated Dogs <strong id="dogVaxLegendUnvaccinated">—</strong></div>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   </div>
@@ -6818,6 +6974,136 @@ document.addEventListener('DOMContentLoaded',()=>{
   // One and only one public data request.
   loadPublicDataOnce();
 });
+
+let BTO_PUBLIC_DOG_STATS_LOADING=false;
+let BTO_PUBLIC_DOG_STATS_LOADED=false;
+
+function dogStatsFormatDate(value){
+  const s=String(value||'').trim();
+  if(!s) return 'Not specified';
+
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)){
+    const [y,m,d]=s.split('-').map(Number);
+    return new Intl.DateTimeFormat('en-US',{month:'long',day:'numeric',year:'numeric'})
+      .format(new Date(y,m-1,d));
+  }
+
+  const dt=new Date(s);
+  if(isNaN(dt)) return s;
+  return new Intl.DateTimeFormat('en-US',{month:'long',day:'numeric',year:'numeric'}).format(dt);
+}
+
+function dogStatsColor(index,total){
+  const count=Math.max(total,1);
+  const hue=Math.round((index*360/count+352)%360);
+  return `hsl(${hue} 72% 51%)`;
+}
+
+async function loadPublicDogStats(force=false){
+  if(BTO_PUBLIC_DOG_STATS_LOADING) return;
+  if(BTO_PUBLIC_DOG_STATS_LOADED&&!force) return;
+
+  const error=document.getElementById('dogStatsError');
+  if(error){error.classList.add('hidden');error.textContent='';}
+
+  BTO_PUBLIC_DOG_STATS_LOADING=true;
+
+  try{
+    const base=BTO_PUBLIC_API.split('?')[0];
+    const res=await fetch(base+'?action=dogStatsPublic&_ts='+Date.now(),{cache:'no-store'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+
+    const data=await res.json();
+    if(!data||!data.success) throw new Error(data?.message||'Dog statistics are currently unavailable.');
+
+    renderPublicDogStats(data);
+    BTO_PUBLIC_DOG_STATS_LOADED=true;
+
+  }catch(err){
+    if(error){
+      error.textContent=err?.message||'Unable to load dog statistics.';
+      error.classList.remove('hidden');
+    }
+  }finally{
+    BTO_PUBLIC_DOG_STATS_LOADING=false;
+  }
+}
+
+function renderPublicDogStats(data){
+  const total=Number(data.totalRegisteredDogs||0)||0;
+  const male=Number(data.maleDogs||0)||0;
+  const female=Number(data.femaleDogs||0)||0;
+  const puppies=Number(data.totalPuppies||0)||0;
+  const vaccinated=Number(data.vaccinatedDogs||0)||0;
+  const unvaccinated=Number(data.unvaccinatedDogs||0)||0;
+  const rate=Number(data.vaccinationRate||0)||0;
+
+  const setText=(id,value)=>{
+    const el=document.getElementById(id);
+    if(el) el.textContent=value;
+  };
+
+  setText('dogStatsAsOf',dogStatsFormatDate(data.asOfDate));
+  setText('dogStatRegistered',total.toLocaleString());
+  setText('dogStatMale',male.toLocaleString());
+  setText('dogStatFemale',female.toLocaleString());
+  setText('dogStatPuppies',puppies.toLocaleString());
+  setText('dogStatVaccinationRate',rate.toFixed(1)+'%');
+  setText('dogStatVaccinated',vaccinated.toLocaleString());
+  setText('dogStatUnvaccinated',unvaccinated.toLocaleString());
+  setText('dogStatMalePct',total?`${(male/total*100).toFixed(1)}% of total dogs`:'0% of total dogs');
+  setText('dogStatFemalePct',total?`${(female/total*100).toFixed(1)}% of total dogs`:'0% of total dogs');
+  setText('dogSitioTotal',total.toLocaleString());
+  setText('dogVaxTotal',total.toLocaleString());
+  setText('dogVaxLegendVaccinated',vaccinated.toLocaleString());
+  setText('dogVaxLegendUnvaccinated',unvaccinated.toLocaleString());
+
+  const vaccinatedPct=total?Math.min(100,Math.max(0,vaccinated/total*100)):0;
+  const gradient=`conic-gradient(#31c955 0 ${vaccinatedPct}%, #ff3b22 ${vaccinatedPct}% 100%)`;
+
+  const vaxDonut=document.getElementById('dogVaxDonut');
+  const mini=document.getElementById('dogVaxMiniDonut');
+  if(vaxDonut) vaxDonut.style.background=gradient;
+  if(mini) mini.style.background=gradient;
+
+  const sitios=Array.isArray(data.dogsPerSitio)?data.dogsPerSitio:[];
+  const sitioTotal=sitios.reduce((sum,x)=>sum+(Number(x.count||0)||0),0);
+  const donut=document.getElementById('dogSitioDonut');
+  const legend=document.getElementById('dogSitioLegend');
+
+  if(!sitios.length||sitioTotal<=0){
+    if(donut) donut.style.background='#eceff2';
+    if(legend) legend.innerHTML='<div class="live-empty">No Sitio dog distribution available yet.</div>';
+    return;
+  }
+
+  let running=0;
+  const segments=sitios.map((x,i)=>{
+    const count=Number(x.count||0)||0;
+    const start=(running/sitioTotal)*100;
+    running+=count;
+    const finish=(running/sitioTotal)*100;
+    return `${dogStatsColor(i,sitios.length)} ${start.toFixed(4)}% ${finish.toFixed(4)}%`;
+  });
+
+  if(donut) donut.style.background=`conic-gradient(${segments.join(',')})`;
+
+  if(legend){
+    legend.innerHTML=`
+      <div class="dog-sitio-legend-head"><span>Sitio</span><span>Number</span><span>Percentage</span></div>
+      ${sitios.map((x,i)=>{
+        const count=Number(x.count||0)||0;
+        const pct=sitioTotal?count/sitioTotal*100:0;
+        return `
+          <div class="dog-sitio-legend-row">
+            <span><i style="background:${dogStatsColor(i,sitios.length)}"></i>${publicEsc(x.sitio||'Sitio')}</span>
+            <strong>${count.toLocaleString()}</strong>
+            <small>${pct.toFixed(1)}%</small>
+          </div>`;
+      }).join('')}`;
+  }
+}
+
 </script>
 
 <div class="public-gallery-viewer" id="public-gallery-viewer" onclick="closePublicGallery(event)">
