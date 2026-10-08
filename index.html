@@ -4130,6 +4130,8 @@ function showView(name){
   if(navLinks) navLinks.classList.remove('show');
   window.scrollTo({top:0,behavior:'instant'});
   history.replaceState(null,'','#'+name);
+
+  if(typeof btoLoadDataForView==='function') btoLoadDataForView(name);
 }
 
 function switchTab(scope,panelId,btn){
@@ -4143,7 +4145,7 @@ function switchTab(scope,panelId,btn){
 }
 
 
-const BTO_PUBLIC_API = "https://script.google.com/macros/s/AKfycbwM6bagjlHKao-NCB3d_nDwX29zO4EFKcoj50vABCQP7bKJuSI4j7772Zam9LwNiLCqNg/exec?action=publicData";
+const BTO_PUBLIC_API_BASE = "https://script.google.com/macros/s/AKfycbwM6bagjlHKao-NCB3d_nDwX29zO4EFKcoj50vABCQP7bKJuSI4j7772Zam9LwNiLCqNg/exec";
 const BTO_PUBLIC_CACHE_KEY = 'bto_public_data_v10';
 const BTO_PUBLIC_CACHE_MS = 5 * 60 * 1000;
 
@@ -6174,47 +6176,176 @@ function applyPublicData(data){
   renderCommitteePublic(data,'COM-003');
 }
 
-async function loadPublicData(){
-  const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),15000);
 
-  try{
-    const freshUrl=BTO_PUBLIC_API +
-      (BTO_PUBLIC_API.includes('?')?'&':'?') +
-      '_ts=' + Date.now();
+const BTO_PUBLIC_ENDPOINT_CACHE={};
+const BTO_PUBLIC_ENDPOINT_PENDING={};
 
-    const res=await fetch(freshUrl,{
-      cache:'no-store',
-      signal:controller.signal
-    });
+function btoMergePublicData(partial){
+  const current=publicCacheGet({allowStale:true}) || {success:true};
+  const merged={...current,...partial,success:true};
+  publicCacheSet(merged);
+  return merged;
+}
 
-    if(!res.ok) throw new Error('HTTP '+res.status);
+async function btoFetchPublicEndpoint(action,timeoutMs=10000){
+  if(BTO_PUBLIC_ENDPOINT_CACHE[action]) return BTO_PUBLIC_ENDPOINT_CACHE[action];
+  if(BTO_PUBLIC_ENDPOINT_PENDING[action]) return BTO_PUBLIC_ENDPOINT_PENDING[action];
 
-    const data=await res.json();
+  const promise=(async()=>{
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),timeoutMs);
 
-    if(data && data.success){
-      publicCacheSet(data);
-      applyPublicData(data);
+    try{
+      const url=BTO_PUBLIC_API_BASE+
+        '?action='+encodeURIComponent(action)+
+        '&_ts='+Date.now();
+
+      const res=await fetch(url,{
+        cache:'no-store',
+        signal:controller.signal
+      });
+
+      if(!res.ok) throw new Error('HTTP '+res.status);
+
+      const data=await res.json();
+
+      if(data && data.success){
+        BTO_PUBLIC_ENDPOINT_CACHE[action]=data;
+        return data;
+      }
+    }catch(err){
+      if(err?.name!=='AbortError'){
+        console.warn('[BTO Public] '+action+' failed:',err);
+      }
+    }finally{
+      clearTimeout(timer);
+      delete BTO_PUBLIC_ENDPOINT_PENDING[action];
     }
-  }catch(err){
-    if(err?.name!=='AbortError'){
-      console.warn('Public data refresh failed:',err);
-    }
-  }finally{
-    clearTimeout(timer);
+
+    return null;
+  })();
+
+  BTO_PUBLIC_ENDPOINT_PENDING[action]=promise;
+  return promise;
+}
+
+async function loadPublicHome(){
+  const data=await btoFetchPublicEndpoint('publicHome',10000);
+  if(!data) return;
+
+  const merged=btoMergePublicData(data);
+  renderAnnouncementTicker(merged);
+  renderHomepageSiteMedia(merged);
+  renderHeroActivityCarousel(merged);
+  renderHighlightsLive(merged);
+  renderHighlightsActivityGallery(merged);
+  renderHomeAnnouncements(merged);
+  renderHomeRecentActivities(merged);
+  renderAllAnnouncements(merged);
+}
+
+async function loadPublicOfficials(){
+  const data=await btoFetchPublicEndpoint('publicOfficials',10000);
+  if(!data) return;
+  const merged=btoMergePublicData(data);
+  renderOfficialsPersonnel(merged);
+}
+
+async function loadPublicStats(){
+  const data=await btoFetchPublicEndpoint('publicStats',10000);
+  if(!data) return;
+  const merged=btoMergePublicData(data);
+  renderAboutBarangay(merged);
+  renderEnhancedBarangayStats(merged);
+}
+
+async function loadPublicPrograms(){
+  const data=await btoFetchPublicEndpoint('publicPrograms',10000);
+  if(!data) return;
+  renderPublicPrograms(btoMergePublicData(data));
+}
+
+async function loadPublicContact(){
+  const data=await btoFetchPublicEndpoint('publicContact',10000);
+  if(!data) return;
+  const merged=btoMergePublicData(data);
+  renderPublicServiceLinks(merged);
+  renderPublicOfficersOfTheDay(merged);
+  renderPublicContactInformation(merged);
+}
+
+async function loadPublicDocuments(){
+  const data=await btoFetchPublicEndpoint('publicDocuments',10000);
+  if(!data) return;
+  const merged=btoMergePublicData(data);
+  renderPublicLegislative(merged);
+  renderPublicDisclosure(merged);
+}
+
+async function loadPublicCommittee(){
+  const data=await btoFetchPublicEndpoint('publicCommittee',10000);
+  if(!data) return;
+  const merged=btoMergePublicData(data);
+  renderCommitteePublic(merged,'COM-001');
+  renderCommitteePublic(merged,'COM-003');
+}
+
+function btoLoadDataForView(viewName){
+  switch(viewName){
+    case 'home':
+    case 'updates':
+    case 'announcements':
+      loadPublicHome();
+      break;
+
+    case 'officials':
+    case 'governance':
+      loadPublicOfficials();
+      loadPublicDocuments();
+      break;
+
+    case 'about':
+    case 'statistics':
+    case 'livestock-statistics':
+    case 'barangay':
+      loadPublicStats();
+      break;
+
+    case 'programs':
+      loadPublicPrograms();
+      break;
+
+    case 'services-resources':
+    case 'services':
+      loadPublicContact();
+      break;
+
+    case 'contact':
+      loadPublicContact();
+      break;
+
+    case 'ordinances-resolutions':
+    case 'full-disclosure':
+      loadPublicDocuments();
+      break;
+
+    default:
+      if(String(viewName||'').startsWith('committee-')){
+        loadPublicCommittee();
+      }
   }
 }
 
 function btoStartBackgroundRefresh(){
-  // Let the first screen paint before contacting Apps Script.
-  const run=()=>loadPublicData();
+  const run=()=>loadPublicHome();
 
   if('requestIdleCallback' in window){
-    requestIdleCallback(run,{timeout:1200});
+    requestIdleCallback(run,{timeout:600});
   }else{
-    setTimeout(run,80);
+    setTimeout(run,20);
   }
 }
+
 
 document.getElementById('year').textContent=new Date().getFullYear();
 
@@ -6241,6 +6372,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
 
   btoStartBackgroundRefresh();
+  btoLoadDataForView(requested);
 });
 </script>
 
