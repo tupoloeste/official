@@ -4335,6 +4335,7 @@ function switchTab(scope,panelId,btn){
 
 
 const BTO_PUBLIC_SNAPSHOT_API = "https://script.google.com/macros/s/AKfycbwM6bagjlHKao-NCB3d_nDwX29zO4EFKcoj50vABCQP7bKJuSI4j7772Zam9LwNiLCqNg/exec?action=publicSnapshot";
+const BTO_PUBLIC_FULL_API = "https://script.google.com/macros/s/AKfycbwM6bagjlHKao-NCB3d_nDwX29zO4EFKcoj50vABCQP7bKJuSI4j7772Zam9LwNiLCqNg/exec?action=publicData";
 const BTO_PUBLIC_CACHE_KEY = 'bto_public_snapshot_v1';
 const BTO_PUBLIC_CACHE_MS = 5 * 60 * 1000;
 
@@ -6404,52 +6405,114 @@ async function loadPublicSnapshot(force=false){
   btoSetLoaderStatus('Loading official barangay information...');
 
   BTO_PUBLIC_SNAPSHOT_REQUEST=(async()=>{
-    const controller=new AbortController();
-    const timer=setTimeout(()=>controller.abort(),30000);
+    let data=null;
 
+    // --------------------------------------------------
+    // 1) FAST PATH: PREBUILT PUBLIC SNAPSHOT
+    // --------------------------------------------------
     try{
-      const url=BTO_PUBLIC_SNAPSHOT_API+'&_ts='+Date.now();
+      const controller=new AbortController();
+      const timer=setTimeout(()=>controller.abort(),12000);
 
-      const res=await fetch(url,{
-        cache:'no-store',
-        signal:controller.signal
-      });
+      try{
+        const url=BTO_PUBLIC_SNAPSHOT_API+'&_ts='+Date.now();
 
-      if(!res.ok) throw new Error('HTTP '+res.status);
+        const res=await fetch(url,{
+          cache:'no-store',
+          signal:controller.signal
+        });
 
-      btoSetLoaderStatus('Preparing website content...');
+        if(res.ok){
+          const snapshot=await res.json();
 
-      const data=await res.json();
-
-      if(!data || !data.success){
-        throw new Error(data?.message || 'Public data is not ready.');
+          if(snapshot && snapshot.success){
+            data=snapshot;
+          }
+        }
+      }finally{
+        clearTimeout(timer);
       }
-
-      // Render everything before letting the user enter the site.
-      applyPublicData(data);
-      publicCacheSet(data);
-
-      btoSetLoaderStatus('Welcome to Barangay Tupol Oeste');
-
-      // Short reveal delay so the transition looks intentional.
-      await new Promise(resolve=>setTimeout(resolve,350));
-
-      btoUnlockWebsite();
-      return data;
-
     }catch(err){
-      console.warn('Public snapshot load failed:',err);
-
-      const message=err?.name==='AbortError'
-        ? 'The site is taking longer than expected to load.'
-        : 'Unable to load the latest barangay information.';
-
-      btoSetLoaderStatus(message+' Please try again.',true);
-      return null;
-
-    }finally{
-      clearTimeout(timer);
+      console.warn('Public snapshot unavailable:',err);
     }
+
+    // --------------------------------------------------
+    // 2) FALLBACK: COMPLETE PUBLIC DATA
+    // If snapshot is missing/not initialized, do not trap
+    // the visitor in a Retry loop.
+    // --------------------------------------------------
+    if(!data){
+      btoSetLoaderStatus('Preparing latest barangay data...');
+
+      try{
+        const controller=new AbortController();
+        const timer=setTimeout(()=>controller.abort(),90000);
+
+        try{
+          const url=BTO_PUBLIC_FULL_API+'&_ts='+Date.now();
+
+          const res=await fetch(url,{
+            cache:'no-store',
+            signal:controller.signal
+          });
+
+          if(!res.ok) throw new Error('HTTP '+res.status);
+
+          const full=await res.json();
+
+          if(full && full.success){
+            data=full;
+          }else{
+            throw new Error(full?.message || 'Public data is unavailable.');
+          }
+        }finally{
+          clearTimeout(timer);
+        }
+      }catch(err){
+        console.warn('Full public data fallback failed:',err);
+      }
+    }
+
+    // --------------------------------------------------
+    // 3) LAST RESORT: VALID BROWSER CACHE
+    // Use only if a complete cache exists.
+    // --------------------------------------------------
+    if(!data){
+      const cached=publicCacheGet({allowStale:true});
+
+      if(cached && cached.success){
+        btoSetLoaderStatus('Using previously loaded barangay information...');
+        data=cached;
+      }
+    }
+
+    // --------------------------------------------------
+    // 4) READY OR RETRY
+    // --------------------------------------------------
+    if(data && data.success){
+      try{
+        btoSetLoaderStatus('Preparing website content...');
+
+        applyPublicData(data);
+        publicCacheSet(data);
+
+        btoSetLoaderStatus('Welcome to Barangay Tupol Oeste');
+
+        await new Promise(resolve=>setTimeout(resolve,300));
+        btoUnlockWebsite();
+
+        return data;
+      }catch(err){
+        console.warn('Public data render failed:',err);
+      }
+    }
+
+    btoSetLoaderStatus(
+      'Unable to load the barangay website data. Please check your internet connection and try again.',
+      true
+    );
+
+    return null;
   })();
 
   return BTO_PUBLIC_SNAPSHOT_REQUEST;
@@ -6457,7 +6520,9 @@ async function loadPublicSnapshot(force=false){
 
 function btoRetryPublicLoad(){
   BTO_PUBLIC_SNAPSHOT_REQUEST=null;
-  loadPublicSnapshot(true);
+  BTO_PUBLIC_DATA_READY=false;
+  btoSetLoaderStatus('Retrying connection...');
+  setTimeout(()=>loadPublicSnapshot(true),150);
 }
 
 document.getElementById('year').textContent=new Date().getFullYear();
