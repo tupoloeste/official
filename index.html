@@ -3809,6 +3809,16 @@ body.bto-site-loading{overflow:hidden!important}
   animation:btoDogStatsCachePulse .9s ease-in-out infinite;
 }
 
+.dog-stats-retry-btn{
+  margin-left:10px;
+  border:0;
+  border-radius:8px;
+  padding:6px 10px;
+  background:var(--red);
+  color:#fff;
+  font-weight:900;
+  cursor:pointer;
+}
 
 @keyframes btoDogStatsCachePulse{
   0%,100%{opacity:.35;transform:scale(.8)}
@@ -4164,7 +4174,7 @@ body.bto-site-loading{overflow:hidden!important}
     <div class="container">
       <div class="dog-stats-asof">As of: <strong id="dogStatsAsOf">—</strong></div>
       <div id="dogStatsMiniLoading" class="dog-stats-mini-loading">
-        Loading dog statistics...
+        Loading latest BRCC-DMS statistics...
       </div>
       <div id="dogStatsError" class="dog-stats-error hidden"></div>
 
@@ -7300,7 +7310,7 @@ async function loadPublicDogStats(force=false){
     mini.style.display='inline-flex';
     mini.textContent=cached
       ? 'Checking latest BRCC-DMS statistics...'
-      : 'Loading dog statistics...';
+      : 'Loading latest BRCC-DMS statistics...';
   }
 
   try{
@@ -7313,12 +7323,19 @@ async function loadPublicDogStats(force=false){
   }catch(err){
     // If cached data is already visible, keep it and only show a small warning.
     if(error){
-      // Public-facing fallback: no retry button or technical controls.
-      // Keep cached data visible when available.
-      if(!BTO_PUBLIC_DOG_STATS_LOADED){
-        error.textContent='Dog statistics are temporarily unavailable.';
-        error.classList.remove('hidden');
-      }
+      const message=(err && err.name==='AbortError')
+        ? 'Dog statistics request timed out.'
+        : (err?.message||'Unable to load dog statistics.');
+
+      error.innerHTML=`
+        <span>${publicEsc(message)}</span>
+        <button type="button"
+                class="dog-stats-retry-btn"
+                onclick="loadPublicDogStats(true)">
+          Retry
+        </button>`;
+
+      error.classList.remove('hidden');
     }
 
   }finally{
