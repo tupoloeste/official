@@ -5095,6 +5095,15 @@ function renderAboutBarangay(data){
   }
 }
 
+
+function btoFormatDateMDY(value){
+  const s=String(value||'').trim();
+  if(!s) return '';
+  const m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(m) return `${m[2]}/${m[3]}/${m[1]}`;
+  return s;
+}
+
 function renderEnhancedBarangayStats(data){
   const s=data?.enhancedBarangayStats||{};
   const basic=Array.isArray(s.basic)?s.basic:[];
@@ -5106,7 +5115,7 @@ function renderEnhancedBarangayStats(data){
 
   if(asOf){
     asOf.textContent=s.asOfDate
-      ? `As of ${s.asOfDate}`
+      ? `As of ${btoFormatDateMDY(s.asOfDate)}`
       : 'Validated figures will appear once encoded.';
   }
 
