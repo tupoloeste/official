@@ -629,6 +629,12 @@ button[onclick*="Save"]:hover{background:#d91e37}
   }
 }
 
+
+/* ===== Programs & Projects admin ===== */
+#ppGallery{
+  min-height:44px;
+}
+
 </style>
 </head>
 <body>
@@ -1042,6 +1048,9 @@ function renderApp(){
   if(hasModule('CONTENT') || (me.assignedModules||'').includes('COM-'))
     items.push(['Announcements & Activities','content']);
 
+  if(hasModule('PROGRAMS_PROJECTS'))
+    items.push(['Programs & Projects','programsProjects']);
+
   if(hasModule('LEGISLATIVE'))
     items.push(['Ordinances & Resolutions','legislative']);
 
@@ -1129,6 +1138,7 @@ async function openModule(name,title='Module'){
   if(name==='stats') return loadStats();
   if(name==='livestock') return loadLivestock();
   if(name==='content') return contentForm();
+  if(name==='programsProjects') return programsProjectsForm();
   if(name==='legislative') return legislativeForm();
   if(name==='fullDisclosure') return fullDisclosureForm();
   if(name==='officials') return officialsForm();
@@ -1546,6 +1556,238 @@ async function saveContent(){
   alert(r.success?'Published':r.message);
 }
 
+
+/* ===== PROGRAMS & PROJECTS ===== */
+window.BTO_PROGRAMS_ROWS=[];
+window.BTO_EDIT_PROGRAM=null;
+
+async function programsProjectsForm(){
+  const r=await api('getProgramsProjects');
+  if(!r.success){showModuleError(r.message);return}
+
+  window.BTO_PROGRAMS_ROWS=r.data||[];
+  window.BTO_EDIT_PROGRAM=null;
+  renderProgramsProjectsAdmin();
+}
+
+function programDateInput(v){
+  const s=String(v||'').trim();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  return '';
+}
+
+function renderProgramsProjectsAdmin(){
+  const rows=window.BTO_PROGRAMS_ROWS||[];
+
+  document.getElementById('moduleArea').innerHTML=`
+    <div class="card">
+      <h2>Programs & Projects</h2>
+      <div class="help">Public-facing barangay programs and projects. Budget is intentionally not included here.</div>
+
+      <input id="ppId" type="hidden">
+      <input id="ppExistingFeatured" type="hidden">
+      <input id="ppExistingGallery" type="hidden">
+      <input id="ppExistingPdf" type="hidden">
+
+      <div class="grid">
+        <div>
+          <label>Type</label>
+          <select id="ppType">
+            <option value="PROGRAM">Program</option>
+            <option value="PROJECT">Project</option>
+          </select>
+        </div>
+        <div>
+          <label>Year</label>
+          <input id="ppYear" type="number" min="1900" max="2200" value="${new Date().getFullYear()}">
+        </div>
+      </div>
+
+      <label>Title</label>
+      <input id="ppTitle" placeholder="Official program or project title">
+
+      <label>Status</label>
+      <select id="ppStatus">
+        <option value="PLANNED">Planned</option>
+        <option value="ONGOING">Ongoing</option>
+        <option value="COMPLETED">Completed</option>
+        <option value="INACTIVE">Inactive</option>
+      </select>
+
+      <label>Short Description</label>
+      <textarea id="ppDescription" rows="5" placeholder="Short public description"></textarea>
+
+      <label>Implementing Committee / Office (optional)</label>
+      <input id="ppOffice" placeholder="Example: Committee on Agriculture">
+
+      <div class="grid">
+        <div>
+          <label>Start Date (optional)</label>
+          <input id="ppStartDate" type="date">
+        </div>
+        <div>
+          <label>Completion Date (optional)</label>
+          <input id="ppCompletionDate" type="date">
+        </div>
+      </div>
+
+      <label>Featured Photo (optional)</label>
+      <input id="ppFeatured" type="file" accept="image/*">
+      <div id="ppFeaturedCurrent" class="doc-file-current hidden"></div>
+
+      <label>Gallery Photos (optional, multiple)</label>
+      <input id="ppGallery" type="file" accept="image/*" multiple>
+      <div class="help">You may select several photos at once.</div>
+      <div id="ppGalleryCurrent" class="doc-file-current hidden"></div>
+
+      <label>PDF / Supporting Document (optional)</label>
+      <input id="ppPdf" type="file" accept="application/pdf,.pdf">
+      <div id="ppPdfCurrent" class="doc-file-current hidden"></div>
+
+      <div class="grid">
+        <button onclick="saveProgramProject(this)">Save Program / Project</button>
+        <button class="secondary" onclick="clearProgramProjectForm()">Clear</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Existing Programs & Projects</h2>
+      <div class="doc-list">
+        ${rows.length ? rows.map(x=>`
+          <div class="doc-row">
+            <div class="doc-row-main">
+              <div class="doc-row-title">${esc(x.title||'Untitled')}</div>
+              <div class="doc-row-meta">${esc(x.type||'')} • ${esc(x.year||'')} • ${esc(x.status||'')}</div>
+            </div>
+            <div class="doc-row-actions">
+              <button onclick='editProgramProject(${JSON.stringify(JSON.stringify(x))})'>Edit</button>
+            </div>
+          </div>
+        `).join('') : '<div class="help">No programs or projects encoded yet.</div>'}
+      </div>
+    </div>`;
+}
+
+function editProgramProject(json){
+  const x=JSON.parse(json);
+  window.BTO_EDIT_PROGRAM=x;
+
+  document.getElementById('ppId').value=x.id||'';
+  document.getElementById('ppType').value=x.type||'PROGRAM';
+  document.getElementById('ppYear').value=x.year||new Date().getFullYear();
+  document.getElementById('ppTitle').value=x.title||'';
+  document.getElementById('ppStatus').value=x.status||'PLANNED';
+  document.getElementById('ppDescription').value=x.description||'';
+  document.getElementById('ppOffice').value=x.implementingOffice||'';
+  document.getElementById('ppStartDate').value=programDateInput(x.startDate);
+  document.getElementById('ppCompletionDate').value=programDateInput(x.completionDate);
+
+  document.getElementById('ppExistingFeatured').value=x.featuredPhotoUrl||'';
+  document.getElementById('ppExistingGallery').value=JSON.stringify(x.galleryUrls||[]);
+  document.getElementById('ppExistingPdf').value=x.pdfUrl||'';
+
+  const fp=document.getElementById('ppFeaturedCurrent');
+  fp.classList.toggle('hidden',!x.featuredPhotoUrl);
+  fp.innerHTML=x.featuredPhotoUrl
+    ? `Current featured photo: <a href="${esc(x.featuredPhotoUrl)}" target="_blank" rel="noopener">Open</a>`
+    : '';
+
+  const gp=document.getElementById('ppGalleryCurrent');
+  gp.classList.toggle('hidden',!(x.galleryUrls||[]).length);
+  gp.textContent=(x.galleryUrls||[]).length
+    ? `Current gallery photos: ${(x.galleryUrls||[]).length}`
+    : '';
+
+  const pdf=document.getElementById('ppPdfCurrent');
+  pdf.classList.toggle('hidden',!x.pdfUrl);
+  pdf.innerHTML=x.pdfUrl
+    ? `Current PDF: <a href="${esc(x.pdfUrl)}" target="_blank" rel="noopener">Open</a>`
+    : '';
+
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function clearProgramProjectForm(){
+  window.BTO_EDIT_PROGRAM=null;
+  programsProjectsForm();
+}
+
+async function ppUploadFile(file,kind){
+  if(!file) return '';
+
+  if(kind==='pdf'){
+    const ok=file.type==='application/pdf' || /\.pdf$/i.test(file.name||'');
+    if(!ok) throw new Error('Supporting document must be a PDF.');
+  }
+
+  const base64=await fileToBase64(file);
+  const u=await api('uploadBase64',{
+    fileName:file.name,
+    mimeType:file.type || (kind==='pdf'?'application/pdf':'image/jpeg'),
+    base64
+  });
+
+  if(!u.success) throw new Error(u.message||'Upload failed.');
+  return u.url||'';
+}
+
+async function saveProgramProject(btn){
+  return withButtonSpinner(btn,'Saving...',async()=>{
+    const featuredFile=document.getElementById('ppFeatured').files[0];
+    const galleryFiles=Array.from(document.getElementById('ppGallery').files||[]);
+    const pdfFile=document.getElementById('ppPdf').files[0];
+
+    let featuredPhotoUrl=document.getElementById('ppExistingFeatured').value||'';
+    let galleryUrls=[];
+    let pdfUrl=document.getElementById('ppExistingPdf').value||'';
+
+    try{
+      galleryUrls=JSON.parse(document.getElementById('ppExistingGallery').value||'[]');
+      if(!Array.isArray(galleryUrls)) galleryUrls=[];
+    }catch(e){
+      galleryUrls=[];
+    }
+
+    if(featuredFile){
+      featuredPhotoUrl=await ppUploadFile(featuredFile,'image');
+    }
+
+    if(galleryFiles.length){
+      const uploaded=[];
+      for(let i=0;i<galleryFiles.length;i++){
+        uploaded.push(await ppUploadFile(galleryFiles[i],'image'));
+      }
+      galleryUrls=uploaded.filter(Boolean);
+    }
+
+    if(pdfFile){
+      pdfUrl=await ppUploadFile(pdfFile,'pdf');
+    }
+
+    const r=await api('saveProgramProject',{
+      id:document.getElementById('ppId').value,
+      type:document.getElementById('ppType').value,
+      title:document.getElementById('ppTitle').value,
+      year:document.getElementById('ppYear').value,
+      status:document.getElementById('ppStatus').value,
+      description:document.getElementById('ppDescription').value,
+      implementingOffice:document.getElementById('ppOffice').value,
+      startDate:document.getElementById('ppStartDate').value,
+      completionDate:document.getElementById('ppCompletionDate').value,
+      featuredPhotoUrl,
+      galleryUrls,
+      pdfUrl
+    });
+
+    if(!r.success) throw new Error(r.message||'Save failed.');
+
+    await programsProjectsForm();
+    return r;
+  },'Program / Project saved.');
+}
+
+
+
 async function officialsForm(){
   document.getElementById('moduleArea').innerHTML=
     '<div class="bto-loading"><span class="bto-spinner"></span><span>Loading officials...</span></div>';
@@ -1933,6 +2175,7 @@ function renderUsersBundle(bundle){
     ['BARANGAY_STATISTICS','Barangay Statistics'],
     ['LIVESTOCK','Livestock Statistics'],
     ['CONTENT','Announcements & Activities'],
+    ['PROGRAMS_PROJECTS','Programs & Projects'],
     ['LEGISLATIVE','Ordinances & Resolutions'],
     ['FULL_DISCLOSURE','Barangay Full Disclosure']
   ];
