@@ -561,6 +561,30 @@ button[onclick*="Save"]:hover{background:#d91e37}
   margin-top:6px;
 }
 
+
+/* ===== About Barangay + Enhanced Statistics ===== */
+.stats-admin-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  margin-top:12px;
+}
+.stats-admin-item{
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  padding:12px;
+  background:#fafafa;
+}
+.stats-admin-item label{
+  margin-top:0;
+}
+.stats-admin-item button{
+  margin-top:8px;
+}
+@media(max-width:720px){
+  .stats-admin-grid{grid-template-columns:1fr}
+}
+
 </style>
 </head>
 <body>
@@ -967,6 +991,7 @@ function renderApp(){
   if(['SUPER_ADMIN','ADMIN'].includes(me.role))
     items.push(['Committee Assignments','assignments']);
 
+  if(hasModule('ABOUT_BARANGAY')) items.push(['About Barangay','aboutBarangay']);
   if(hasModule('BARANGAY_STATISTICS')) items.push(['Barangay Statistics','stats']);
   if(hasModule('LIVESTOCK')) items.push(['Livestock Statistics','livestock']);
 
@@ -1056,6 +1081,7 @@ async function openModule(name,title='Module'){
   document.getElementById('moduleArea').innerHTML='<div class="bto-loading"><span class="bto-spinner"></span><span>Loading...</span></div>';
   window.scrollTo({top:0,behavior:'smooth'});
 
+  if(name==='aboutBarangay') return aboutBarangayForm();
   if(name==='stats') return loadStats();
   if(name==='livestock') return loadLivestock();
   if(name==='content') return contentForm();
@@ -1070,26 +1096,221 @@ async function openModule(name,title='Module'){
   if(name.startsWith('committee:')) return openCommittee(name.split(':')[1]);
 }
 
-async function loadStats(){
-  const r=await api('getBarangayStats');
+
+async function aboutBarangayForm(){
+  const r=await api('getAboutBarangay');
   if(!r.success){showModuleError(r.message);return}
 
-  document.getElementById('moduleArea').innerHTML=
-    `<div class="card"><h2>Barangay Statistics</h2>${r.data.map(x=>`
-      <label>${esc(x.Label)}</label>
-      <input id="s_${x['Stat Key']}" value="${esc(x.Value)}" type="number">
-      <button onclick="saveStat('${x['Stat Key']}')">Save ${esc(x.Label)}</button>
-      <hr>`).join('')}</div>`;
+  const d=r.data||{};
+
+  document.getElementById('moduleArea').innerHTML=`
+    <div class="card">
+      <h2>About Barangay</h2>
+      <div class="help">Edit the official public profile of Barangay Tupol Oeste. Blank fields are simply hidden or shown as unavailable on the public site.</div>
+
+      <label>Barangay Overview</label>
+      <textarea id="abOverview" rows="5" placeholder="Short introduction / overview">${esc(d.overview||'')}</textarea>
+
+      <label>History</label>
+      <textarea id="abHistory" rows="7" placeholder="Historical background of the barangay">${esc(d.history||'')}</textarea>
+
+      <div class="grid">
+        <div>
+          <label>Vision</label>
+          <textarea id="abVision" rows="6">${esc(d.vision||'')}</textarea>
+        </div>
+        <div>
+          <label>Mission</label>
+          <textarea id="abMission" rows="6">${esc(d.mission||'')}</textarea>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div>
+          <label>Land Area</label>
+          <input id="abLandArea" value="${esc(d.landArea||'')}" placeholder="Example: 123.45 hectares">
+        </div>
+        <div>
+          <label>Number of Sitios / Puroks</label>
+          <input id="abSitios" value="${esc(d.sitiosPuroks||'')}" placeholder="Enter actual number or description">
+        </div>
+      </div>
+
+      <label>Map Image (optional)</label>
+      ${d.mapImageUrl?`<div class="doc-file-current">Current map image: <a href="${esc(d.mapImageUrl)}" target="_blank" rel="noopener">Open</a></div>`:''}
+      <input id="abMapImage" type="file" accept="image/*">
+
+      <button onclick="saveAboutBarangay(this)">Save About Barangay</button>
+    </div>`;
 }
 
-async function saveStat(key){
-  const value=document.getElementById('s_'+key).value;
-  const r=await api('saveBarangayStat',{
-    statKey:key,
-    value,
-    asOfDate:new Date().toISOString().slice(0,10)
-  });
-  alert(r.success?'Saved':r.message);
+async function saveAboutBarangay(btn){
+  return withButtonSpinner(btn,'Saving...',async()=>{
+    let mapImageUrl='';
+    const file=document.getElementById('abMapImage').files[0];
+
+    if(file){
+      const base64=await fileToBase64(file);
+      const u=await api('uploadBase64',{
+        fileName:file.name,
+        mimeType:file.type||'image/jpeg',
+        base64
+      });
+      if(!u.success) throw new Error(u.message||'Map image upload failed.');
+      mapImageUrl=u.url||'';
+    }
+
+    const current=await api('getAboutBarangay');
+    if(!current.success) throw new Error(current.message||'Unable to read current About Barangay data.');
+
+    const r=await api('saveAboutBarangay',{
+      overview:document.getElementById('abOverview').value,
+      history:document.getElementById('abHistory').value,
+      vision:document.getElementById('abVision').value,
+      mission:document.getElementById('abMission').value,
+      landArea:document.getElementById('abLandArea').value,
+      sitiosPuroks:document.getElementById('abSitios').value,
+      mapImageUrl:mapImageUrl || current.data.mapImageUrl || ''
+    });
+
+    if(!r.success) throw new Error(r.message||'Unable to save About Barangay.');
+    await aboutBarangayForm();
+    return r;
+  },'About Barangay saved.');
+}
+
+window.BTO_ENHANCED_STATS={basic:[],demographics:[],asOfDate:''};
+
+async function loadStats(){
+  const r=await api('getEnhancedBarangayStats');
+  if(!r.success){showModuleError(r.message);return}
+
+  window.BTO_ENHANCED_STATS=r;
+  renderEnhancedStatsAdmin();
+}
+
+function renderEnhancedStatsAdmin(){
+  const d=window.BTO_ENHANCED_STATS||{};
+  const basic=d.basic||[];
+  const demographics=d.demographics||[];
+  const defaultDate=d.asOfDate||new Date().toISOString().slice(0,10);
+
+  document.getElementById('moduleArea').innerHTML=`
+    <div class="card">
+      <h2>Barangay Statistics</h2>
+      <div class="help">General barangay population and demographic data only. Farmers and livestock are intentionally excluded from this module.</div>
+
+      <label>As of Date</label>
+      <input id="statsAsOfDate" type="date" value="${esc(defaultDate)}">
+
+      <div class="stats-admin-grid">
+        ${basic.map(x=>`
+          <div class="stats-admin-item">
+            <label>${esc(x.label)}</label>
+            <input id="bs_${esc(x.key)}" type="number" min="0" step="1" value="${esc(x.value||'')}" placeholder="Leave blank until validated">
+            <button onclick="saveEnhancedBasicStat('${esc(x.key)}',this)">Save</button>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Demographic / Age Groups</h2>
+      <div class="help">Flexible entries. Add any age bracket or demographic group only when actual validated numbers are available.</div>
+
+      <input id="demoId" type="hidden">
+
+      <div class="grid">
+        <div>
+          <label>Label</label>
+          <input id="demoLabel" placeholder="Example: 0–5 years old">
+        </div>
+        <div>
+          <label>Value</label>
+          <input id="demoValue" type="number" min="0" step="1" placeholder="Actual count">
+        </div>
+      </div>
+
+      <div class="grid">
+        <div>
+          <label>Display Order</label>
+          <input id="demoOrder" type="number" min="0" step="1" value="1">
+        </div>
+        <div>
+          <label>Status</label>
+          <select id="demoStatus">
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="INACTIVE">INACTIVE</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid">
+        <button onclick="saveDemographicStat(this)">Save Statistic / Age Group</button>
+        <button class="secondary" onclick="clearDemographicForm()">Clear</button>
+      </div>
+
+      <div class="doc-list">
+        ${demographics.length?demographics.map(x=>`
+          <div class="doc-row">
+            <div class="doc-row-main">
+              <div class="doc-row-title">${esc(x.label)}</div>
+              <div class="doc-row-meta">Value: ${esc(x.value||'—')} • Order: ${esc(x.displayOrder)} • ${esc(x.status)}</div>
+            </div>
+            <div class="doc-row-actions">
+              <button onclick='editDemographicStat(${JSON.stringify(JSON.stringify(x))})'>Edit</button>
+            </div>
+          </div>
+        `).join(''):'<div class="help">No demographic or age-group data encoded yet.</div>'}
+      </div>
+    </div>`;
+}
+
+async function saveEnhancedBasicStat(key,btn){
+  return withButtonSpinner(btn,'Saving...',async()=>{
+    const r=await api('saveEnhancedBasicStat',{
+      statKey:key,
+      value:document.getElementById('bs_'+key).value,
+      asOfDate:document.getElementById('statsAsOfDate').value
+    });
+    if(!r.success) throw new Error(r.message||'Save failed.');
+    await loadStats();
+    return r;
+  },'Statistic saved.');
+}
+
+function editDemographicStat(json){
+  const x=JSON.parse(json);
+  document.getElementById('demoId').value=x.id||'';
+  document.getElementById('demoLabel').value=x.label||'';
+  document.getElementById('demoValue').value=x.value||'';
+  document.getElementById('demoOrder').value=x.displayOrder||1;
+  document.getElementById('demoStatus').value=x.status||'ACTIVE';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function clearDemographicForm(){
+  document.getElementById('demoId').value='';
+  document.getElementById('demoLabel').value='';
+  document.getElementById('demoValue').value='';
+  document.getElementById('demoOrder').value='1';
+  document.getElementById('demoStatus').value='ACTIVE';
+}
+
+async function saveDemographicStat(btn){
+  return withButtonSpinner(btn,'Saving...',async()=>{
+    const r=await api('saveDemographic',{
+      id:document.getElementById('demoId').value,
+      label:document.getElementById('demoLabel').value,
+      value:document.getElementById('demoValue').value,
+      displayOrder:document.getElementById('demoOrder').value,
+      status:document.getElementById('demoStatus').value,
+      asOfDate:document.getElementById('statsAsOfDate').value
+    });
+    if(!r.success) throw new Error(r.message||'Save failed.');
+    await loadStats();
+    return r;
+  },'Demographic statistic saved.');
 }
 
 async function loadLivestock(){
@@ -1552,6 +1773,7 @@ function renderUsersBundle(bundle){
 
   const systemModules=[
     ['OFFICIALS','Officials Management'],
+    ['ABOUT_BARANGAY','About Barangay'],
     ['BARANGAY_STATISTICS','Barangay Statistics'],
     ['LIVESTOCK','Livestock Statistics'],
     ['CONTENT','Announcements & Activities'],
