@@ -527,6 +527,40 @@ button[onclick*="Save"]:hover{background:#d91e37}
   .disclosure-category-add button{width:100%}
 }
 
+
+/* ===== Legislative / Disclosure UI polish ===== */
+.card .help{
+  line-height:1.45;
+}
+.disclosure-category-box strong{
+  display:block;
+  margin-bottom:4px;
+  font-size:15px;
+}
+.disclosure-category-box .help{
+  display:block;
+  margin:0 0 10px;
+}
+.doc-file-note{
+  margin-top:6px;
+  font-size:12px;
+  color:#667085;
+  line-height:1.4;
+}
+.file-type-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  padding:4px 8px;
+  border-radius:999px;
+  background:#fff1f3;
+  color:#c5162e;
+  border:1px solid #ffc7d0;
+  font-size:11px;
+  font-weight:800;
+  margin-top:6px;
+}
+
 </style>
 </head>
 <body>
@@ -2239,7 +2273,7 @@ function renderLegislativeModule(){
   document.getElementById('moduleArea').innerHTML=`
     <div class="card">
       <h2>Ordinances & Resolutions</h2>
-      <div class="help">Simple setup: select type, enter year and document name, then upload the PDF.</div>
+      <div class="help">Select the document type, enter the year and official document name, then upload the PDF.</div><div class="file-type-badge">PDF only • Published files appear on the public website</div>
 
       <input id="legId" type="hidden">
 
@@ -2262,6 +2296,7 @@ function renderLegislativeModule(){
 
       <label>Upload PDF</label>
       <input id="legPdf" type="file" accept="application/pdf,.pdf">
+      <div class="doc-file-note">Accepted file: PDF only. Leave blank when editing if you want to keep the current PDF.</div>
       <div id="legCurrentFile" class="doc-file-current hidden"></div>
 
       <label>Status</label>
@@ -2386,11 +2421,11 @@ function renderFullDisclosureModule(){
   document.getElementById('moduleArea').innerHTML=`
     <div class="card">
       <h2>Barangay Full Disclosure</h2>
-      <div class="help">Upload an image, PDF, or both. Only Published records appear on the public website.</div>
+      <div class="help">Upload an image, a PDF, or both. Only records marked <strong>Published</strong> will appear on the public website.</div>
 
       <div class="disclosure-category-box">
         <strong>Disclosure Items / Categories</strong>
-        <div class="help">Add a new item here anytime. No website code change is needed.</div>
+        <div class="help">Add a new item here anytime. Once added, it will automatically become available in the category dropdown and public filter.</div>
         <div class="disclosure-category-add">
           <div>
             <label>New Item / Category Name</label>
