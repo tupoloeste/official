@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>document.documentElement.classList.add('bto-site-loading');</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#f8324b">
@@ -3006,6 +3007,163 @@ a.back-btn:focus{
   animation:none !important;
 }
 
+
+/* ===== Welcome / Full Site Loading Screen ===== */
+html.bto-site-loading,
+body.bto-site-loading{
+  overflow:hidden !important;
+}
+
+.bto-welcome-loader{
+  position:fixed;
+  inset:0;
+  z-index:999999;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+  background:
+    radial-gradient(circle at 50% 36%, rgba(255,255,255,.96) 0 22%, rgba(255,247,248,.97) 45%, rgba(246,248,250,.99) 100%);
+  opacity:1;
+  visibility:visible;
+  transition:opacity .55s ease, visibility .55s ease;
+}
+
+.bto-welcome-loader.is-ready{
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+}
+
+.bto-welcome-card{
+  width:min(520px,100%);
+  text-align:center;
+  animation:btoWelcomeRise .65s ease both;
+}
+
+.bto-logo-orbit{
+  position:relative;
+  width:168px;
+  height:168px;
+  margin:0 auto 24px;
+  display:grid;
+  place-items:center;
+}
+
+.bto-logo-ring{
+  position:absolute;
+  inset:0;
+  border-radius:50%;
+  border:4px solid rgba(240,42,67,.14);
+  border-top-color:#f02a43;
+  border-right-color:#f02a43;
+  animation:btoWelcomeSpin 1.05s linear infinite;
+  box-shadow:0 10px 35px rgba(240,42,67,.14);
+}
+
+.bto-welcome-logo{
+  width:132px;
+  height:132px;
+  object-fit:contain;
+  border-radius:50%;
+  background:#fff;
+  box-shadow:0 12px 34px rgba(0,0,0,.12);
+  animation:btoWelcomePulse 1.8s ease-in-out infinite;
+}
+
+.bto-welcome-copy small{
+  display:block;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:1.7px;
+  color:#707784;
+  margin-bottom:9px;
+}
+
+.bto-welcome-copy h1{
+  margin:0;
+  font-size:30px;
+  line-height:1.1;
+  color:#d91f37;
+  letter-spacing:.3px;
+}
+
+.bto-welcome-copy p{
+  margin:8px 0 0;
+  color:#667085;
+  font-size:14px;
+}
+
+.bto-loader-progress{
+  width:min(320px,82%);
+  height:5px;
+  margin:28px auto 12px;
+  background:#e9edf1;
+  border-radius:999px;
+  overflow:hidden;
+}
+
+.bto-loader-progress span{
+  display:block;
+  height:100%;
+  width:38%;
+  border-radius:999px;
+  background:#f02a43;
+  animation:btoLoaderSweep 1.15s ease-in-out infinite;
+}
+
+.bto-loader-status{
+  min-height:20px;
+  color:#667085;
+  font-size:12px;
+  font-weight:700;
+}
+
+.bto-loader-retry{
+  margin-top:16px;
+  border:0;
+  border-radius:10px;
+  padding:10px 20px;
+  background:#242424;
+  color:#fff;
+  font-weight:800;
+  cursor:pointer;
+}
+
+@keyframes btoWelcomeSpin{
+  to{transform:rotate(360deg)}
+}
+
+@keyframes btoWelcomePulse{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.045)}
+}
+
+@keyframes btoLoaderSweep{
+  0%{transform:translateX(-135%)}
+  50%{transform:translateX(80%)}
+  100%{transform:translateX(265%)}
+}
+
+@keyframes btoWelcomeRise{
+  from{opacity:0;transform:translateY(15px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+@media(max-width:600px){
+  .bto-logo-orbit{
+    width:148px;
+    height:148px;
+  }
+  .bto-welcome-logo{
+    width:116px;
+    height:116px;
+  }
+  .bto-welcome-copy h1{
+    font-size:25px;
+  }
+}
+
 </style>
 
 <link rel="preconnect" href="https://script.google.com">
@@ -3015,6 +3173,38 @@ a.back-btn:focus{
 
 </head>
 <body>
+
+<div id="btoWelcomeLoader" class="bto-welcome-loader" aria-live="polite">
+  <div class="bto-welcome-card">
+    <div class="bto-logo-orbit">
+      <div class="bto-logo-ring"></div>
+      <img src="barangay-logo.png" alt="Barangay Tupol Oeste Logo" class="bto-welcome-logo">
+    </div>
+
+    <div class="bto-welcome-copy">
+      <small>WELCOME TO THE OFFICIAL WEBSITE OF</small>
+      <h1>BARANGAY TUPOL OESTE</h1>
+      <p>Municipality of Cabatuan, Province of Iloilo</p>
+    </div>
+
+    <div id="btoLoaderProgress" class="bto-loader-progress">
+      <span></span>
+    </div>
+
+    <div id="btoLoaderStatus" class="bto-loader-status">
+      Loading official barangay information...
+    </div>
+
+    <button id="btoLoaderRetry"
+            class="bto-loader-retry"
+            type="button"
+            style="display:none"
+            onclick="btoRetryPublicLoad()">
+      Retry
+    </button>
+  </div>
+</div>
+
 
 <div class="topbar">
   <div class="container">
@@ -4131,7 +4321,6 @@ function showView(name){
   window.scrollTo({top:0,behavior:'instant'});
   history.replaceState(null,'','#'+name);
 
-  if(typeof btoLoadDataForView==='function') btoLoadDataForView(name);
 }
 
 function switchTab(scope,panelId,btn){
@@ -4145,15 +4334,11 @@ function switchTab(scope,panelId,btn){
 }
 
 
-const BTO_PUBLIC_API_BASE = "https://script.google.com/macros/s/AKfycbwM6bagjlHKao-NCB3d_nDwX29zO4EFKcoj50vABCQP7bKJuSI4j7772Zam9LwNiLCqNg/exec";
-const BTO_PUBLIC_CACHE_KEY = 'bto_public_data_v10';
+const BTO_PUBLIC_SNAPSHOT_API = "https://script.google.com/macros/s/AKfycbwM6bagjlHKao-NCB3d_nDwX29zO4EFKcoj50vABCQP7bKJuSI4j7772Zam9LwNiLCqNg/exec?action=publicSnapshot";
+const BTO_PUBLIC_CACHE_KEY = 'bto_public_snapshot_v1';
 const BTO_PUBLIC_CACHE_MS = 5 * 60 * 1000;
 
-const BTO_PUBLIC_CACHE_FALLBACK_KEYS=[
-  'bto_public_data_v9',
-  'bto_public_data_v8',
-  'bto_public_data_v7'
-];
+const BTO_PUBLIC_CACHE_FALLBACK_KEYS=[];
 
 
 function publicEsc(v){
@@ -6177,28 +6362,53 @@ function applyPublicData(data){
 }
 
 
-const BTO_PUBLIC_ENDPOINT_CACHE={};
-const BTO_PUBLIC_ENDPOINT_PENDING={};
 
-function btoMergePublicData(partial){
-  const current=publicCacheGet({allowStale:true}) || {success:true};
-  const merged={...current,...partial,success:true};
-  publicCacheSet(merged);
-  return merged;
+
+let BTO_PUBLIC_SNAPSHOT_REQUEST=null;
+let BTO_PUBLIC_DATA_READY=false;
+
+function btoSetLoaderStatus(message,error=false){
+  const status=document.getElementById('btoLoaderStatus');
+  const retry=document.getElementById('btoLoaderRetry');
+  const progress=document.getElementById('btoLoaderProgress');
+
+  if(status){
+    status.textContent=message||'';
+    status.style.color=error ? '#c5162e' : '#667085';
+  }
+
+  if(retry) retry.style.display=error ? 'inline-block' : 'none';
+  if(progress) progress.style.display=error ? 'none' : 'block';
 }
 
-async function btoFetchPublicEndpoint(action,timeoutMs=10000){
-  if(BTO_PUBLIC_ENDPOINT_CACHE[action]) return BTO_PUBLIC_ENDPOINT_CACHE[action];
-  if(BTO_PUBLIC_ENDPOINT_PENDING[action]) return BTO_PUBLIC_ENDPOINT_PENDING[action];
+function btoUnlockWebsite(){
+  if(BTO_PUBLIC_DATA_READY) return;
+  BTO_PUBLIC_DATA_READY=true;
 
-  const promise=(async()=>{
+  const loader=document.getElementById('btoWelcomeLoader');
+
+  document.documentElement.classList.remove('bto-site-loading');
+  document.body.classList.remove('bto-site-loading');
+
+  if(loader){
+    loader.classList.add('is-ready');
+    setTimeout(()=>{
+      if(loader && loader.parentNode) loader.parentNode.removeChild(loader);
+    },650);
+  }
+}
+
+async function loadPublicSnapshot(force=false){
+  if(BTO_PUBLIC_SNAPSHOT_REQUEST && !force) return BTO_PUBLIC_SNAPSHOT_REQUEST;
+
+  btoSetLoaderStatus('Loading official barangay information...');
+
+  BTO_PUBLIC_SNAPSHOT_REQUEST=(async()=>{
     const controller=new AbortController();
-    const timer=setTimeout(()=>controller.abort(),timeoutMs);
+    const timer=setTimeout(()=>controller.abort(),30000);
 
     try{
-      const url=BTO_PUBLIC_API_BASE+
-        '?action='+encodeURIComponent(action)+
-        '&_ts='+Date.now();
+      const url=BTO_PUBLIC_SNAPSHOT_API+'&_ts='+Date.now();
 
       const res=await fetch(url,{
         cache:'no-store',
@@ -6207,145 +6417,48 @@ async function btoFetchPublicEndpoint(action,timeoutMs=10000){
 
       if(!res.ok) throw new Error('HTTP '+res.status);
 
+      btoSetLoaderStatus('Preparing website content...');
+
       const data=await res.json();
 
-      if(data && data.success){
-        BTO_PUBLIC_ENDPOINT_CACHE[action]=data;
-        return data;
+      if(!data || !data.success){
+        throw new Error(data?.message || 'Public data is not ready.');
       }
+
+      // Render everything before letting the user enter the site.
+      applyPublicData(data);
+      publicCacheSet(data);
+
+      btoSetLoaderStatus('Welcome to Barangay Tupol Oeste');
+
+      // Short reveal delay so the transition looks intentional.
+      await new Promise(resolve=>setTimeout(resolve,350));
+
+      btoUnlockWebsite();
+      return data;
+
     }catch(err){
-      if(err?.name!=='AbortError'){
-        console.warn('[BTO Public] '+action+' failed:',err);
-      }
+      console.warn('Public snapshot load failed:',err);
+
+      const message=err?.name==='AbortError'
+        ? 'The site is taking longer than expected to load.'
+        : 'Unable to load the latest barangay information.';
+
+      btoSetLoaderStatus(message+' Please try again.',true);
+      return null;
+
     }finally{
       clearTimeout(timer);
-      delete BTO_PUBLIC_ENDPOINT_PENDING[action];
     }
-
-    return null;
   })();
 
-  BTO_PUBLIC_ENDPOINT_PENDING[action]=promise;
-  return promise;
+  return BTO_PUBLIC_SNAPSHOT_REQUEST;
 }
 
-async function loadPublicHome(){
-  const data=await btoFetchPublicEndpoint('publicHome',10000);
-  if(!data) return;
-
-  const merged=btoMergePublicData(data);
-  renderAnnouncementTicker(merged);
-  renderHomepageSiteMedia(merged);
-  renderHeroActivityCarousel(merged);
-  renderHighlightsLive(merged);
-  renderHighlightsActivityGallery(merged);
-  renderHomeAnnouncements(merged);
-  renderHomeRecentActivities(merged);
-  renderAllAnnouncements(merged);
+function btoRetryPublicLoad(){
+  BTO_PUBLIC_SNAPSHOT_REQUEST=null;
+  loadPublicSnapshot(true);
 }
-
-async function loadPublicOfficials(){
-  const data=await btoFetchPublicEndpoint('publicOfficials',10000);
-  if(!data) return;
-  const merged=btoMergePublicData(data);
-  renderOfficialsPersonnel(merged);
-}
-
-async function loadPublicStats(){
-  const data=await btoFetchPublicEndpoint('publicStats',10000);
-  if(!data) return;
-  const merged=btoMergePublicData(data);
-  renderAboutBarangay(merged);
-  renderEnhancedBarangayStats(merged);
-}
-
-async function loadPublicPrograms(){
-  const data=await btoFetchPublicEndpoint('publicPrograms',10000);
-  if(!data) return;
-  renderPublicPrograms(btoMergePublicData(data));
-}
-
-async function loadPublicContact(){
-  const data=await btoFetchPublicEndpoint('publicContact',10000);
-  if(!data) return;
-  const merged=btoMergePublicData(data);
-  renderPublicServiceLinks(merged);
-  renderPublicOfficersOfTheDay(merged);
-  renderPublicContactInformation(merged);
-}
-
-async function loadPublicDocuments(){
-  const data=await btoFetchPublicEndpoint('publicDocuments',10000);
-  if(!data) return;
-  const merged=btoMergePublicData(data);
-  renderPublicLegislative(merged);
-  renderPublicDisclosure(merged);
-}
-
-async function loadPublicCommittee(){
-  const data=await btoFetchPublicEndpoint('publicCommittee',10000);
-  if(!data) return;
-  const merged=btoMergePublicData(data);
-  renderCommitteePublic(merged,'COM-001');
-  renderCommitteePublic(merged,'COM-003');
-}
-
-const BTO_VIEW_DATA_REQUESTED=new Set();
-
-function btoLoadDataForView(viewName){
-  const key=String(viewName||'home');
-
-  // Avoid repeatedly triggering the same page loader during one visit.
-  if(BTO_VIEW_DATA_REQUESTED.has(key)) return;
-  BTO_VIEW_DATA_REQUESTED.add(key);
-
-  switch(key){
-    case 'home':
-    case 'updates':
-    case 'announcements':
-      loadPublicHome();
-      break;
-
-    case 'officials':
-    case 'governance':
-      loadPublicOfficials();
-      loadPublicDocuments();
-      break;
-
-    case 'about':
-    case 'statistics':
-    case 'livestock-statistics':
-    case 'barangay':
-      loadPublicStats();
-      break;
-
-    case 'programs':
-      loadPublicPrograms();
-      break;
-
-    case 'services-resources':
-    case 'services':
-    case 'contact':
-      loadPublicContact();
-      break;
-
-    case 'ordinances-resolutions':
-    case 'full-disclosure':
-      loadPublicDocuments();
-      break;
-
-    default:
-      if(key.startsWith('committee-')){
-        loadPublicCommittee();
-      }
-  }
-}
-
-function btoStartBackgroundRefresh(){
-  // Retained for compatibility. Startup loading is handled by showView().
-  // This intentionally does not trigger another request.
-}
-
 
 document.getElementById('year').textContent=new Date().getFullYear();
 
@@ -6356,23 +6469,16 @@ document.getElementById('year').textContent=new Date().getFullYear();
  * visitors feel that the site itself was loading slowly.
  */
 document.addEventListener('DOMContentLoaded',()=>{
+  document.body.classList.add('bto-site-loading');
+
   const hash=location.hash.replace('#','');
   const requested=(hash && document.getElementById('view-'+hash)) ? hash : 'home';
 
-  // Show the requested page immediately.
+  // Prepare the correct page behind the welcome screen.
   showView(requested);
 
-  // Stale-while-revalidate:
-  // even an older cache renders instantly, then current data refreshes silently.
-  const cached=publicCacheGet({allowStale:true});
-  if(cached){
-    try{ applyPublicData(cached); }catch(err){
-      console.warn('Cached public data render failed:',err);
-    }
-  }
-
-  // showView(requested) already triggers the correct lazy data request.
-  // Do not fire duplicate Home requests during startup.
+  // Do not expose the site until all current public data has loaded and rendered.
+  loadPublicSnapshot();
 });
 </script>
 
