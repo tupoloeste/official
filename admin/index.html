@@ -1665,6 +1665,20 @@ button.danger,
   }
 }
 
+
+.dog-connection-status{margin-top:13px;padding:12px 13px;border-radius:10px;display:grid;gap:3px}
+.dog-connection-status.ok{background:#ecfdf3;border:1px solid #b7e4c7;color:#166534}
+.dog-connection-status.err{background:#fff0f3;border:1px solid #fac8d0;color:#9f1239}
+.dog-connection-status span{font-size:12px}
+.dog-sitio-admin-list{display:grid;gap:8px}
+.dog-sitio-admin-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--border);border-radius:11px;background:#fff}
+.dog-sitio-admin-row strong{display:block}
+.dog-sitio-admin-row small{display:block;color:var(--muted);margin-top:2px}
+.dog-unmatched-warning{margin-top:14px;padding:12px;border:1px solid #f1d397;background:#fff9e8;border-radius:10px;display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.dog-unmatched-warning strong,.dog-unmatched-warning small{width:100%}
+.dog-unmatched-warning span{padding:5px 8px;background:#fff;border:1px solid #ecd9aa;border-radius:999px;font-size:11px;font-weight:800}
+@media(max-width:700px){.dog-sitio-admin-row{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
@@ -2004,6 +2018,10 @@ async function api(action,data={}){
     action==='uploadBase64' ? 120000 :
     action==='login' ? 60000 :
     (
+      action==='getDogStatsAdmin' ||
+      action==='saveDogStatsEndpoint' ||
+      action==='saveDogStatsSitio' ||
+      action==='deleteDogStatsSitio' ||
       action==='saveLivestockStat' ||
       action==='saveLivestockBatch' ||
       action==='deleteLivestockStat' ||
@@ -2253,6 +2271,7 @@ function renderApp(){
   if(hasModule('ABOUT_BARANGAY')) items.push(['About Barangay','aboutBarangay']);
   if(hasModule('BARANGAY_STATISTICS')) items.push(['Barangay Statistics','stats']);
   if(hasModule('LIVESTOCK')) items.push(['Livestock Statistics','livestock']);
+  if(hasModule('DOG_STATS')) items.push(['Dog / Rabies Statistics','dogStats']);
   if(hasModule('ORGANIZATIONS')) items.push(['Barangay Organizations','organizations']);
 
   if(hasModule('CONTENT') || (me.assignedModules||'').includes('COM-'))
@@ -2346,6 +2365,7 @@ async function btoOpenModuleRaw(name,title='Module'){
   if(name==='aboutBarangay') return aboutBarangayForm();
   if(name==='stats') return loadStats();
   if(name==='livestock') return loadLivestock();
+  if(name==='dogStats') return dogStatsForm();
   if(name==='organizations') return organizationsForm();
   if(name==='content') return contentForm();
   if(name==='programsProjects') return programsProjectsForm();
@@ -2934,6 +2954,152 @@ async function saveAllLivestock(btn){
       return r;
     },'Livestock population saved.');
   });
+}
+
+
+window.BTO_DOG_STATS_ADMIN=null;
+window.BTO_EDIT_DOG_SITIO=null;
+
+async function dogStatsForm(){
+  const r=await api('getDogStatsAdmin');
+  if(!r.success){showModuleError(r.message);return}
+  window.BTO_DOG_STATS_ADMIN=r;
+  window.BTO_EDIT_DOG_SITIO=null;
+  renderDogStatsAdmin();
+}
+
+function renderDogStatsAdmin(){
+  const d=window.BTO_DOG_STATS_ADMIN||{};
+  const sitios=d.sitios||[];
+  const e=window.BTO_EDIT_DOG_SITIO||{};
+  const c=d.connection||{};
+
+  document.getElementById('moduleArea').innerHTML=`
+    <div class="card">
+      <h2>BRCC-DMS Connection</h2>
+      <div class="help">
+        Only aggregate public statistics are read from BRCC-DMS. Owner names,
+        addresses, contact numbers and individual dog records are not published.
+      </div>
+
+      <label>BRCC Public Statistics Web App URL</label>
+      <input id="dogStatsEndpoint" value="${esc(d.endpointUrl||'')}"
+        placeholder="https://script.google.com/macros/s/.../exec">
+
+      <div class="admin-actions">
+        <button onclick="saveDogStatsEndpoint(this)">Save Connection</button>
+        <button class="secondary" onclick="dogStatsForm()">Test / Refresh Connection</button>
+      </div>
+
+      <div class="dog-connection-status ${c.success?'ok':'err'}">
+        <strong>${c.success?'Connected to BRCC-DMS':'Connection not ready'}</strong>
+        <span>${esc(c.success
+          ? `Registered Dogs: ${c.totalRegisteredDogs||0} • Vaccination Rate: ${Number(c.vaccinationRate||0).toFixed(1)}%`
+          : (c.message||'Configure the BRCC public statistics endpoint.'))}</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>${e.id?'Edit':'Add'} Official Sitio</h2>
+      <div class="help">
+        Only Sitios you add here will appear in the public Dogs per Sitio color wheel.
+      </div>
+
+      <input id="dogSitioId" type="hidden" value="${esc(e.id||'')}">
+
+      <div class="grid">
+        <div>
+          <label>Sitio Name</label>
+          <input id="dogSitioName" value="${esc(e.name||'')}" placeholder="Official Sitio name">
+        </div>
+        <div>
+          <label>Display Order</label>
+          <input id="dogSitioOrder" type="number" min="0" value="${esc(e.displayOrder??sitios.length+1)}">
+        </div>
+      </div>
+
+      <label>Status</label>
+      <select id="dogSitioStatus">
+        <option value="ACTIVE" ${String(e.status||'ACTIVE').toUpperCase()==='ACTIVE'?'selected':''}>ACTIVE</option>
+        <option value="INACTIVE" ${String(e.status||'').toUpperCase()==='INACTIVE'?'selected':''}>INACTIVE</option>
+      </select>
+
+      <div class="admin-actions">
+        <button onclick="saveDogStatsSitio(this)">${e.id?'Update Sitio':'Add Sitio'}</button>
+        ${e.id?`<button class="secondary" onclick="window.BTO_EDIT_DOG_SITIO=null;renderDogStatsAdmin()">Cancel Edit</button>`:''}
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Official Sitio List</h2>
+      <div class="dog-sitio-admin-list">
+        ${sitios.length?sitios.map((s,i)=>`
+          <div class="dog-sitio-admin-row">
+            <div>
+              <strong>${esc(s.name||'')}</strong>
+              <small>Order ${esc(String(s.displayOrder||0))} • ${esc(s.status||'ACTIVE')}</small>
+            </div>
+            <div class="admin-actions">
+              <button class="secondary" onclick="editDogStatsSitio(${i})">Edit</button>
+              <button class="danger" onclick="deleteDogStatsSitio('${esc(s.id||'')}','${esc(s.name||'Sitio')}')">Delete</button>
+            </div>
+          </div>`).join(''):'<div class="help">No official Sitio names encoded yet.</div>'}
+      </div>
+
+      ${c.success&&(c.unmatchedSitios||[]).length?`
+        <div class="dog-unmatched-warning">
+          <strong>BRCC Sitio names not yet mapped:</strong>
+          ${(c.unmatchedSitios||[]).map(x=>`
+            <span>${esc(x.sitio)} (${esc(String(x.count||0))})</span>`).join('')}
+          <small>Add the correct official Sitio name above if it should appear publicly.</small>
+        </div>`:''}
+    </div>`;
+}
+
+async function saveDogStatsEndpoint(btn){
+  return withButtonSpinner(btn,'Saving...',async()=>{
+    const r=await api('saveDogStatsEndpoint',{
+      url:document.getElementById('dogStatsEndpoint').value.trim()
+    });
+    if(!r.success) throw new Error(r.message||'Unable to save BRCC connection.');
+    await dogStatsForm();
+    return r;
+  },'BRCC connection saved.');
+}
+
+function editDogStatsSitio(index){
+  window.BTO_EDIT_DOG_SITIO=(window.BTO_DOG_STATS_ADMIN?.sitios||[])[index]||null;
+  renderDogStatsAdmin();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+async function saveDogStatsSitio(btn){
+  return withButtonSpinner(btn,'Saving...',async()=>{
+    const payload={
+      id:document.getElementById('dogSitioId').value,
+      name:document.getElementById('dogSitioName').value.trim(),
+      displayOrder:document.getElementById('dogSitioOrder').value,
+      status:document.getElementById('dogSitioStatus').value
+    };
+
+    if(!payload.name) throw new Error('Sitio Name is required.');
+
+    const r=await api('saveDogStatsSitio',payload);
+    if(!r.success) throw new Error(r.message||'Unable to save Sitio.');
+    await dogStatsForm();
+    return r;
+  },'Sitio saved.');
+}
+
+async function deleteDogStatsSitio(id,name){
+  if(!confirm(`Delete ${name||'this Sitio'} from the official Dog Statistics Sitio list?`)) return;
+  const r=await api('deleteDogStatsSitio',{id});
+  if(!r.success){
+    showGlobalActionStatus(r.message||'Delete failed.','err');
+    return;
+  }
+  showGlobalActionStatus(r.message||'Sitio deleted.','ok');
+  await dogStatsForm();
 }
 
 window.BTO_CONTENT_ADMIN_ROWS=[];
@@ -4708,6 +4874,7 @@ function renderUsersBundle(bundle){
     ['ABOUT_BARANGAY','About Barangay'],
     ['BARANGAY_STATISTICS','Barangay Statistics'],
     ['LIVESTOCK','Livestock Statistics'],
+    ['DOG_STATS','Dog / Rabies Statistics'],
     ['ORGANIZATIONS','Barangay Organizations'],
     ['CONTENT','Announcements & Activities'],
     ['PROGRAMS_PROJECTS','Programs & Projects'],
