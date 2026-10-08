@@ -3173,6 +3173,224 @@ body.bto-site-loading{overflow:hidden!important}
   }
 }
 
+
+/* ===== Dynamic Barangay Organizations ===== */
+.organizations-public-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:16px;
+}
+.organization-public-card{
+  display:block;
+  width:100%;
+  padding:0;
+  text-align:left;
+  overflow:hidden;
+  border:1px solid var(--border);
+  border-radius:16px;
+  background:#fff;
+  color:var(--text);
+  box-shadow:var(--shadow);
+  cursor:pointer;
+}
+.organization-public-card:hover{
+  transform:translateY(-3px);
+  border-color:#efb6be;
+}
+.organization-public-media{
+  position:relative;
+  height:155px;
+  background:#f4f5f7;
+}
+.organization-public-cover{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+.organization-public-cover.placeholder{
+  display:grid;
+  place-items:center;
+  background:linear-gradient(135deg,#f7f8fa,#eceff2);
+  color:#89919a;
+  font-weight:900;
+  font-size:12px;
+}
+.organization-public-logo{
+  position:absolute;
+  left:16px;
+  bottom:-28px;
+  width:64px;
+  height:64px;
+  border-radius:50%;
+  background:#fff;
+  border:4px solid #fff;
+  box-shadow:0 6px 16px rgba(0,0,0,.14);
+  overflow:hidden;
+  display:grid;
+  place-items:center;
+}
+.organization-public-logo img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+.organization-public-logo span{
+  width:100%;
+  height:100%;
+  display:grid;
+  place-items:center;
+  background:var(--red-soft);
+  color:var(--red-dark);
+  font-size:24px;
+  font-weight:900;
+}
+.organization-public-content{
+  padding:38px 16px 17px;
+}
+.organization-public-content small{
+  color:var(--red-dark);
+  font-weight:900;
+  text-transform:uppercase;
+  font-size:10px;
+}
+.organization-public-content h3{
+  margin:5px 0 3px;
+  font-size:18px;
+}
+.organization-public-acronym{
+  color:var(--muted);
+  font-size:12px;
+  font-weight:800;
+  margin-bottom:7px;
+}
+.organization-public-content p{
+  margin:0 0 11px;
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.45;
+  display:-webkit-box;
+  -webkit-line-clamp:3;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+
+.organization-detail-body{
+  max-width:900px;
+  margin:0 auto;
+}
+.organization-detail-cover{
+  height:310px;
+  border-radius:18px;
+  overflow:hidden;
+  background:#f3f4f6;
+  box-shadow:var(--shadow);
+}
+.organization-detail-cover img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+.organization-detail-profile{
+  display:flex;
+  align-items:center;
+  gap:17px;
+  margin:-38px 18px 18px;
+  position:relative;
+}
+.organization-detail-logo{
+  width:92px;
+  height:92px;
+  border-radius:50%;
+  background:#fff;
+  border:5px solid #fff;
+  box-shadow:0 8px 22px rgba(0,0,0,.15);
+  overflow:hidden;
+  display:grid;
+  place-items:center;
+  flex:0 0 92px;
+}
+.organization-detail-logo img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+.organization-detail-logo span{
+  width:100%;
+  height:100%;
+  display:grid;
+  place-items:center;
+  background:var(--red-soft);
+  color:var(--red-dark);
+  font-size:32px;
+  font-weight:900;
+}
+.organization-detail-heading{
+  padding-top:36px;
+}
+.organization-detail-heading h2{
+  margin:0 0 3px;
+  font-size:27px;
+}
+.organization-detail-heading strong,
+.organization-detail-heading span{
+  display:block;
+  color:var(--muted);
+  margin-top:2px;
+}
+.organization-detail-card{
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:15px;
+  padding:17px;
+  box-shadow:var(--shadow);
+  margin-bottom:14px;
+}
+.organization-detail-card h3{margin:0 0 9px}
+.organization-detail-card p{
+  margin:0;
+  line-height:1.65;
+  color:#4f5660;
+  white-space:pre-line;
+}
+.organization-detail-card small{
+  display:block;
+  color:var(--muted);
+  font-size:11px;
+  font-weight:900;
+  text-transform:uppercase;
+  margin-bottom:5px;
+}
+.organization-detail-card strong{
+  display:block;
+  font-size:15px;
+}
+.organization-detail-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+.organization-detail-grid .organization-detail-card{
+  margin:0;
+}
+@media(max-width:850px){
+  .organizations-public-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:620px){
+  .organizations-public-grid{grid-template-columns:1fr}
+  .organization-detail-cover{height:220px}
+  .organization-detail-profile{
+    align-items:flex-start;
+    margin:-34px 10px 15px;
+  }
+  .organization-detail-heading{padding-top:35px}
+  .organization-detail-heading h2{font-size:21px}
+  .organization-detail-logo{
+    width:76px;height:76px;flex-basis:76px;
+  }
+  .organization-detail-grid{grid-template-columns:1fr}
+}
+
 </style>
 </head>
 <body>
@@ -3331,6 +3549,16 @@ body.bto-site-loading{overflow:hidden!important}
       <button class="module-card" onclick="showView('statistics')">
         <div class="icon">📊</div><h3>Barangay Statistics</h3>
         <p>Population, households, families, voters, sex distribution, and demographic age groups.</p>
+        <span class="module-link">Open</span>
+      </button>
+      <button class="module-card" onclick="showView('livestock-statistics')">
+        <div class="icon">🐃</div><h3>Livestock Statistics</h3>
+        <p>Validated barangay livestock population and latest census figures.</p>
+        <span class="module-link">Open</span>
+      </button>
+      <button class="module-card" onclick="showView('organizations')">
+        <div class="icon">👥</div><h3>Barangay Organizations</h3>
+        <p>Farmers, women, senior citizens, youth, and other community organizations.</p>
         <span class="module-link">Open</span>
       </button>
     </div>
@@ -3658,7 +3886,7 @@ body.bto-site-loading{overflow:hidden!important}
     <div class="container page-head-row">
       <div>
         <h1>Livestock Statistics</h1>
-        <p>Barangay-wide livestock population breakdown. Official counts will be added once validated.</p>
+        <p>Validated barangay-wide livestock population information.</p>
       </div>
       <button class="back-btn" onclick="showView('barangay')">← Back to Barangay</button>
     </div>
@@ -3669,70 +3897,53 @@ body.bto-site-loading{overflow:hidden!important}
       <div class="section-head">
         <div>
           <h2>Livestock <span>Population</span></h2>
-          <p>As of: <span class="coming">Coming Soon</span></p>
+          <p>As of: <strong id="publicLivestockAsOf">—</strong></p>
         </div>
       </div>
 
-      <div class="livestock-grid">
-        <div class="livestock-card">
-          <div class="animal">🐕</div>
-          <small>Dogs</small>
-          <strong>—</strong>
-          <span class="coming">Coming Soon</span>
-        </div>
-        <div class="livestock-card">
-          <div class="animal">🐃</div>
-          <small>Carabao</small>
-          <strong>—</strong>
-          <span class="coming">Coming Soon</span>
-        </div>
-        <div class="livestock-card">
-          <div class="animal">🐄</div>
-          <small>Cattle</small>
-          <strong>—</strong>
-          <span class="coming">Coming Soon</span>
-        </div>
-        <div class="livestock-card">
-          <div class="animal">🐖</div>
-          <small>Swine</small>
-          <strong>—</strong>
-          <span class="coming">Coming Soon</span>
-        </div>
-        <div class="livestock-card">
-          <div class="animal">🐐</div>
-          <small>Goats</small>
-          <strong>—</strong>
-          <span class="coming">Coming Soon</span>
-        </div>
-        <div class="livestock-card">
-          <div class="animal">🐓</div>
-          <small>Chicken / Poultry</small>
-          <strong>—</strong>
-          <span class="coming">Coming Soon</span>
-        </div>
-        <div class="livestock-card">
-          <div class="animal">🦆</div>
-          <small>Ducks</small>
-          <strong>—</strong>
-          <span class="coming">Coming Soon</span>
-        </div>
-        <div class="livestock-card">
-          <div class="animal">🐾</div>
-          <small>Other Livestock</small>
-          <strong>—</strong>
-          <span class="coming">Coming Soon</span>
-        </div>
+      <div id="publicLivestockGrid" class="livestock-grid">
+        <div class="live-empty">Loading livestock statistics...</div>
       </div>
+    </div>
+  </div>
+</div>
 
-      <div class="info-block">
-        <h3>Additional Livestock Information</h3>
-        <ul class="clean-list">
-          <li>Total livestock raisers: <span class="coming">Coming Soon</span></li>
-          <li>Vaccinated animals: <span class="coming">Coming Soon</span></li>
-          <li>Livestock vaccination activities: <span class="coming">Coming Soon</span></li>
-          <li>Latest livestock census / validation date: <span class="coming">Coming Soon</span></li>
-        </ul>
+<!-- BARANGAY ORGANIZATIONS -->
+<div class="view" id="view-organizations">
+  <div class="page-head">
+    <div class="container page-head-row">
+      <div>
+        <h1>Barangay Organizations</h1>
+        <p>Community organizations serving residents of Barangay Tupol Oeste.</p>
       </div>
+      <button class="back-btn" onclick="showView('barangay')">← Back to Barangay</button>
+    </div>
+  </div>
+
+  <div class="page-content">
+    <div class="container">
+      <div id="publicOrganizationsGrid" class="organizations-public-grid">
+        <div class="live-empty">Loading barangay organizations...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DYNAMIC ORGANIZATION PROFILE -->
+<div class="view" id="view-organization-detail">
+  <div class="page-head">
+    <div class="container page-head-row">
+      <div>
+        <h1 id="organizationDetailPageTitle">Organization Profile</h1>
+        <p id="organizationDetailPageSubtitle">Barangay Tupol Oeste</p>
+      </div>
+      <button class="back-btn" onclick="showView('organizations')">← Back to Organizations</button>
+    </div>
+  </div>
+
+  <div class="page-content">
+    <div class="container">
+      <div id="organizationDetailBody" class="organization-detail-body"></div>
     </div>
   </div>
 </div>
@@ -5996,6 +6207,187 @@ function renderPublicContactInformation(data){
 }
 
 
+
+/* ===== Dynamic Livestock + Barangay Organizations ===== */
+
+function publicLivestockIcon(animal){
+  const s=String(animal||'').toLowerCase();
+  if(s.includes('dog')) return '🐕';
+  if(s.includes('carabao')) return '🐃';
+  if(s.includes('cattle') || s.includes('cow')) return '🐄';
+  if(s.includes('swine') || s.includes('pig')) return '🐖';
+  if(s.includes('goat')) return '🐐';
+  if(s.includes('chicken') || s.includes('poultry')) return '🐓';
+  if(s.includes('duck')) return '🦆';
+  return '🐾';
+}
+
+function renderPublicLivestock(data){
+  const grid=document.getElementById('publicLivestockGrid');
+  const asOf=document.getElementById('publicLivestockAsOf');
+  if(!grid) return;
+
+  const rows=Array.isArray(data.livestockStats)
+    ? data.livestockStats
+    : (Array.isArray(data.livestockStats?.data) ? data.livestockStats.data : []);
+
+  const active=rows.filter(x=>{
+    const status=String(x.Status||x.status||'ACTIVE').toUpperCase();
+    return status!=='DELETED' && status!=='INACTIVE';
+  });
+
+  if(!active.length){
+    grid.innerHTML='<div class="live-empty">No livestock statistics have been encoded yet.</div>';
+    if(asOf) asOf.textContent='Not yet available';
+    return;
+  }
+
+  const dates=active
+    .map(x=>String(x['As of Date']||x['As Of Date']||x.asOfDate||'').trim())
+    .filter(Boolean)
+    .sort();
+
+  if(asOf){
+    asOf.textContent=dates.length ? dates[dates.length-1] : 'Not specified';
+  }
+
+  grid.innerHTML=active.map(x=>{
+    const animal=String(x.Animal||x.animal||x['Livestock Type']||'Livestock');
+    const count=x.Count ?? x.count ?? x.Value ?? x.value ?? '—';
+
+    return `
+      <div class="livestock-card">
+        <div class="animal">${publicLivestockIcon(animal)}</div>
+        <small>${publicEsc(animal)}</small>
+        <strong>${publicEsc(String(count))}</strong>
+        <span>Recorded livestock</span>
+      </div>`;
+  }).join('');
+}
+
+let BTO_PUBLIC_ORGANIZATIONS=[];
+
+function renderPublicOrganizations(data){
+  const root=document.getElementById('publicOrganizationsGrid');
+  if(!root) return;
+
+  BTO_PUBLIC_ORGANIZATIONS=Array.isArray(data.organizations)
+    ? data.organizations.slice()
+    : [];
+
+  if(!BTO_PUBLIC_ORGANIZATIONS.length){
+    root.innerHTML='<div class="live-empty">No barangay organizations have been published yet.</div>';
+    return;
+  }
+
+  root.innerHTML=BTO_PUBLIC_ORGANIZATIONS.map(x=>`
+    <button class="organization-public-card" onclick="openPublicOrganization('${publicEsc(x.id||'')}')">
+      <div class="organization-public-media">
+        ${x.featuredPhotoUrl
+          ? `<img class="organization-public-cover" src="${publicEsc(normalizePublicImageUrl(x.featuredPhotoUrl))}"
+               alt="${publicEsc(x.name||'Organization')}" loading="lazy" referrerpolicy="no-referrer">`
+          : '<div class="organization-public-cover placeholder">Barangay Organization</div>'}
+        <div class="organization-public-logo">
+          ${x.logoUrl
+            ? `<img src="${publicEsc(normalizePublicImageUrl(x.logoUrl))}" alt="${publicEsc(x.name||'Organization')} logo" loading="lazy" referrerpolicy="no-referrer">`
+            : `<span>${publicEsc((x.acronym||x.name||'O').charAt(0).toUpperCase())}</span>`}
+        </div>
+      </div>
+      <div class="organization-public-content">
+        ${x.category?`<small>${publicEsc(x.category)}</small>`:''}
+        <h3>${publicEsc(x.name||'Organization')}</h3>
+        ${x.acronym?`<div class="organization-public-acronym">${publicEsc(x.acronym)}</div>`:''}
+        <p>${publicEsc(x.description||'View organization profile and contact information.')}</p>
+        <span class="module-link">View Organization</span>
+      </div>
+    </button>`).join('');
+}
+
+function openPublicOrganization(id){
+  const x=(BTO_PUBLIC_ORGANIZATIONS||[]).find(o=>String(o.id)===String(id));
+  if(!x) return;
+
+  const title=document.getElementById('organizationDetailPageTitle');
+  const subtitle=document.getElementById('organizationDetailPageSubtitle');
+  const body=document.getElementById('organizationDetailBody');
+
+  if(title) title.textContent=x.name||'Organization Profile';
+  if(subtitle){
+    subtitle.textContent=[
+      x.category||'',
+      x.yearEstablished ? 'Established '+x.yearEstablished : ''
+    ].filter(Boolean).join(' • ') || 'Barangay Tupol Oeste';
+  }
+
+  if(body){
+    body.innerHTML=`
+      ${x.featuredPhotoUrl?`
+        <div class="organization-detail-cover">
+          <img src="${publicEsc(normalizePublicImageUrl(x.featuredPhotoUrl))}"
+               alt="${publicEsc(x.name||'Organization')}"
+               referrerpolicy="no-referrer">
+        </div>`:''}
+
+      <section class="organization-detail-profile">
+        <div class="organization-detail-logo">
+          ${x.logoUrl
+            ? `<img src="${publicEsc(normalizePublicImageUrl(x.logoUrl))}"
+                    alt="${publicEsc(x.name||'Organization')} logo"
+                    referrerpolicy="no-referrer">`
+            : `<span>${publicEsc((x.acronym||x.name||'O').charAt(0).toUpperCase())}</span>`}
+        </div>
+
+        <div class="organization-detail-heading">
+          <h2>${publicEsc(x.name||'Organization')}</h2>
+          ${x.acronym?`<strong>${publicEsc(x.acronym)}</strong>`:''}
+          ${x.category?`<span>${publicEsc(x.category)}</span>`:''}
+        </div>
+      </section>
+
+      ${x.description?`
+        <section class="organization-detail-card">
+          <h3>About the Organization</h3>
+          <p>${publicEsc(x.description)}</p>
+        </section>`:''}
+
+      <div class="organization-detail-grid">
+        ${x.yearEstablished?`
+          <div class="organization-detail-card">
+            <small>Year Established</small>
+            <strong>${publicEsc(x.yearEstablished)}</strong>
+          </div>`:''}
+
+        ${x.meetingSchedule?`
+          <div class="organization-detail-card">
+            <small>Meeting Schedule</small>
+            <strong>${publicEsc(x.meetingSchedule)}</strong>
+          </div>`:''}
+
+        ${x.contactPerson?`
+          <div class="organization-detail-card">
+            <small>Contact Person</small>
+            <strong>${publicEsc(x.contactPerson)}</strong>
+          </div>`:''}
+
+        ${x.contactNumber?`
+          <div class="organization-detail-card">
+            <small>Contact Number</small>
+            <strong>${publicEsc(x.contactNumber)}</strong>
+          </div>`:''}
+
+        ${x.email?`
+          <div class="organization-detail-card">
+            <small>Email</small>
+            <strong>${publicEsc(x.email)}</strong>
+          </div>`:''}
+      </div>
+    `;
+  }
+
+  showView('organization-detail');
+}
+
+
 function applyPublicData(data){
   if(!data || !data.success) return;
   renderOfficialsPersonnel(data);
@@ -6007,6 +6399,8 @@ function applyPublicData(data){
   renderPublicContactInformation(data);
   renderAboutBarangay(data);
   renderEnhancedBarangayStats(data);
+  renderPublicLivestock(data);
+  renderPublicOrganizations(data);
   renderHighlightsLive(data);
   renderHighlightsActivityGallery(data);
   renderAnnouncementTicker(data);
