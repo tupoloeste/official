@@ -4556,6 +4556,16 @@ function renderOfficialsPersonnel(data){
 
 
 /* ===== PUBLIC ORDINANCES / RESOLUTIONS / FULL DISCLOSURE ===== */
+
+function btoEsc(value){
+  return String(value ?? '')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#039;');
+}
+
 window.BTO_PUBLIC_LEGISLATIVE={ordinances:[],resolutions:[]};
 window.BTO_PUBLIC_LEG_TYPE='ORDINANCE';
 window.BTO_PUBLIC_DISCLOSURE=[];
@@ -4638,7 +4648,7 @@ function populateLegislativeYears(){
     .sort((a,b)=>Number(b)-Number(a));
 
   sel.innerHTML='<option value="ALL">All Years</option>'+
-    years.map(y=>`<option value="${esc(y)}">${esc(y)}</option>`).join('');
+    years.map(y=>`<option value="${btoEsc(y)}">${btoEsc(y)}</option>`).join('');
 
   if(Array.from(sel.options).some(o=>o.value===current)) sel.value=current;
 }
@@ -4666,7 +4676,7 @@ function renderPublicLegislativeFiltered(){
   const filtered=rows.filter(x=>year==='ALL'||String(x.year)===year);
 
   if(!filtered.length){
-    root.innerHTML=`<div class="public-doc-empty">No published ${type==='ORDINANCE'?'ordinances':'resolutions'}${year==='ALL'?'':' for '+esc(year)}.</div>`;
+    root.innerHTML=`<div class="public-doc-empty">No published ${type==='ORDINANCE'?'ordinances':'resolutions'}${year==='ALL'?'':' for '+btoEsc(year)}.</div>`;
     return;
   }
 
@@ -4675,12 +4685,12 @@ function renderPublicLegislativeFiltered(){
     const down=publicDownloadUrl(x.pdfUrl);
     return `<div class="public-legislative-row">
       <div>
-        <div class="public-legislative-title">${esc(x.title||'Untitled')}</div>
-        <div class="public-legislative-year">Year ${esc(x.year||'')}</div>
+        <div class="public-legislative-title">${btoEsc(x.title||'Untitled')}</div>
+        <div class="public-legislative-year">Year ${btoEsc(x.year||'')}</div>
       </div>
       <div class="public-doc-actions">
-        <a class="outline" href="${esc(view)}" target="_blank" rel="noopener">View</a>
-        <a href="${esc(down)}" target="_blank" rel="noopener">Download</a>
+        <a class="outline" href="${btoEsc(view)}" target="_blank" rel="noopener">View</a>
+        <a href="${btoEsc(down)}" target="_blank" rel="noopener">Download</a>
         <button onclick='publicPrintFile(${JSON.stringify(x.pdfUrl)},${JSON.stringify(x.title||"Document")})'>Print</button>
       </div>
     </div>`;
@@ -4705,10 +4715,10 @@ function populateDisclosureFilters(){
   cats=[...new Set(cats)].sort((a,b)=>a.localeCompare(b));
 
   y.innerHTML='<option value="ALL">All Years</option>'+
-    years.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
+    years.map(v=>`<option value="${btoEsc(v)}">${btoEsc(v)}</option>`).join('');
 
   c.innerHTML='<option value="ALL">All Items</option>'+
-    cats.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
+    cats.map(v=>`<option value="${btoEsc(v)}">${btoEsc(v)}</option>`).join('');
 
   if(Array.from(y.options).some(o=>o.value===oldY)) y.value=oldY;
   if(Array.from(c.options).some(o=>o.value===oldC)) c.value=oldC;
@@ -4745,17 +4755,17 @@ function renderPublicDisclosureFiltered(){
 
     return `<article class="public-disclosure-card">
       <div class="public-disclosure-preview ${img?'':'no-image'}">
-        ${img?`<img src="${esc(img)}" alt="${esc(x.title||'Disclosure document')}" loading="lazy">`:'<span aria-hidden="true">📄</span>'}
+        ${img?`<img src="${btoEsc(img)}" alt="${btoEsc(x.title||'Disclosure document')}" loading="lazy">`:'<span aria-hidden="true">📄</span>'}
       </div>
       <div class="public-disclosure-body">
-        <span class="public-disclosure-category">${esc(x.category||'Disclosure')}</span>
-        <div class="public-disclosure-title">${esc(x.title||'Untitled')}</div>
-        <div class="public-disclosure-year">Year ${esc(x.year||'')}</div>
+        <span class="public-disclosure-category">${btoEsc(x.category||'Disclosure')}</span>
+        <div class="public-disclosure-title">${btoEsc(x.title||'Untitled')}</div>
+        <div class="public-disclosure-year">Year ${btoEsc(x.year||'')}</div>
 
         <div class="public-doc-actions">
-          ${img?`<a class="outline" href="${esc(publicViewUrl(img))}" target="_blank" rel="noopener">View Image</a>`:''}
-          ${pdf?`<a class="outline" href="${esc(publicViewUrl(pdf))}" target="_blank" rel="noopener">View</a>`:''}
-          ${preferred?`<a href="${esc(publicDownloadUrl(preferred))}" target="_blank" rel="noopener">Download</a>`:''}
+          ${img?`<a class="outline" href="${btoEsc(publicViewUrl(img))}" target="_blank" rel="noopener">View Image</a>`:''}
+          ${pdf?`<a class="outline" href="${btoEsc(publicViewUrl(pdf))}" target="_blank" rel="noopener">View</a>`:''}
+          ${preferred?`<a href="${btoEsc(publicDownloadUrl(preferred))}" target="_blank" rel="noopener">Download</a>`:''}
           ${preferred?`<button onclick='publicPrintFile(${JSON.stringify(preferred)},${JSON.stringify(x.title||"Document")})'>Print</button>`:''}
         </div>
       </div>
