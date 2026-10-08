@@ -2275,6 +2275,40 @@ a.back-btn:focus{
   .public-doc-toolbar > div{min-width:0;width:100%}
 }
 
+
+/* ===== Public documents polish ===== */
+.public-doc-toolbar{
+  box-shadow:0 4px 14px rgba(0,0,0,.03);
+}
+.public-legislative-row:hover,
+.public-disclosure-card:hover{
+  border-color:#f8324b;
+  box-shadow:0 8px 24px rgba(248,50,75,.08);
+}
+.public-doc-actions a,
+.public-doc-actions button{
+  transition:transform .15s ease, opacity .15s ease;
+}
+.public-doc-actions a:hover,
+.public-doc-actions button:hover{
+  transform:translateY(-1px);
+  opacity:.92;
+}
+.public-disclosure-preview.no-image{
+  background:linear-gradient(135deg,#fff5f6,#f2f4f7);
+  color:#f8324b;
+  font-size:54px;
+}
+.public-doc-hint{
+  margin:0 0 14px;
+  padding:10px 12px;
+  border-left:4px solid #f8324b;
+  background:#fff7f8;
+  border-radius:8px;
+  font-size:13px;
+  color:#475467;
+}
+
 </style>
 </head>
 <body>
@@ -3065,6 +3099,7 @@ a.back-btn:focus{
         </div>
       </div>
 
+      <div class="public-doc-hint">Choose a year and disclosure item. You may view the image or PDF first, then download or print if needed.</div>
       <div class="public-doc-toolbar">
         <div>
           <label for="fdPublicYear">Year</label>
@@ -3106,6 +3141,7 @@ a.back-btn:focus{
         <button id="publicResTab" onclick="setLegislativeTab('RESOLUTION')">Resolutions</button>
       </div>
 
+      <div class="public-doc-hint">Select a year, then open the document to view it online, download a copy, or print it.</div>
       <div class="public-doc-toolbar">
         <div>
           <label for="legPublicYear">Year</label>
@@ -4643,7 +4679,7 @@ function renderPublicLegislativeFiltered(){
         <div class="public-legislative-year">Year ${esc(x.year||'')}</div>
       </div>
       <div class="public-doc-actions">
-        <a class="outline" href="${esc(view)}" target="_blank" rel="noopener">View PDF</a>
+        <a class="outline" href="${esc(view)}" target="_blank" rel="noopener">View</a>
         <a href="${esc(down)}" target="_blank" rel="noopener">Download</a>
         <button onclick='publicPrintFile(${JSON.stringify(x.pdfUrl)},${JSON.stringify(x.title||"Document")})'>Print</button>
       </div>
@@ -4708,8 +4744,8 @@ function renderPublicDisclosureFiltered(){
     const preferred=pdf||img;
 
     return `<article class="public-disclosure-card">
-      <div class="public-disclosure-preview">
-        ${img?`<img src="${esc(img)}" alt="${esc(x.title||'Disclosure document')}" loading="lazy">`:'📄'}
+      <div class="public-disclosure-preview ${img?'':'no-image'}">
+        ${img?`<img src="${esc(img)}" alt="${esc(x.title||'Disclosure document')}" loading="lazy">`:'<span aria-hidden="true">📄</span>'}
       </div>
       <div class="public-disclosure-body">
         <span class="public-disclosure-category">${esc(x.category||'Disclosure')}</span>
@@ -4718,7 +4754,7 @@ function renderPublicDisclosureFiltered(){
 
         <div class="public-doc-actions">
           ${img?`<a class="outline" href="${esc(publicViewUrl(img))}" target="_blank" rel="noopener">View Image</a>`:''}
-          ${pdf?`<a class="outline" href="${esc(publicViewUrl(pdf))}" target="_blank" rel="noopener">View PDF</a>`:''}
+          ${pdf?`<a class="outline" href="${esc(publicViewUrl(pdf))}" target="_blank" rel="noopener">View</a>`:''}
           ${preferred?`<a href="${esc(publicDownloadUrl(preferred))}" target="_blank" rel="noopener">Download</a>`:''}
           ${preferred?`<button onclick='publicPrintFile(${JSON.stringify(preferred)},${JSON.stringify(x.title||"Document")})'>Print</button>`:''}
         </div>
