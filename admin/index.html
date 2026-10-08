@@ -1054,6 +1054,9 @@ function renderApp(){
   if(hasModule('SERVICE_LINKS'))
     items.push(['Service Links','serviceLinks']);
 
+  if(hasModule('CONTACT_OFFICERS'))
+    items.push(['Officers of the Day','contactOfficers']);
+
   if(hasModule('LEGISLATIVE'))
     items.push(['Ordinances & Resolutions','legislative']);
 
@@ -1143,6 +1146,7 @@ async function openModule(name,title='Module'){
   if(name==='content') return contentForm();
   if(name==='programsProjects') return programsProjectsForm();
   if(name==='serviceLinks') return serviceLinksForm();
+  if(name==='contactOfficers') return contactOfficersForm();
   if(name==='legislative') return legislativeForm();
   if(name==='fullDisclosure') return fullDisclosureForm();
   if(name==='officials') return officialsForm();
@@ -1831,6 +1835,125 @@ async function saveServiceLinks(btn){
 }
 
 
+
+/* ===== OFFICERS OF THE DAY ===== */
+window.BTO_CONTACT_OFFICERS=[];
+
+async function contactOfficersForm(){
+  const r=await api('getOfficersOfTheDay');
+  if(!r.success){showModuleError(r.message);return}
+
+  window.BTO_CONTACT_OFFICERS=r.data||[];
+  renderContactOfficersAdmin();
+}
+
+function renderContactOfficersAdmin(){
+  const rows=window.BTO_CONTACT_OFFICERS||[];
+
+  document.getElementById('moduleArea').innerHTML=`
+    <div class="card">
+      <h2>Officers of the Day</h2>
+      <div class="help">These names appear in the red panel of the public Contact page.</div>
+
+      <input id="odId" type="hidden">
+
+      <label>Officer Name</label>
+      <input id="odName" placeholder="Full name">
+
+      <label>Position</label>
+      <input id="odPosition" placeholder="Example: Barangay Kagawad">
+
+      <label>Contact Number (optional)</label>
+      <input id="odContact" placeholder="09XXXXXXXXX">
+
+      <label>Duty / Remarks (optional)</label>
+      <textarea id="odRemarks" rows="3" placeholder="Example: Public Assistance Desk"></textarea>
+
+      <div class="grid">
+        <div>
+          <label>Display Order</label>
+          <input id="odOrder" type="number" min="0" step="1" value="1">
+        </div>
+        <div>
+          <label>Status</label>
+          <select id="odStatus">
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="INACTIVE">INACTIVE</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid">
+        <button onclick="saveOfficerOfTheDay(this)">Save Officer</button>
+        <button class="secondary" onclick="clearOfficerOfTheDayForm()">Clear</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Current List</h2>
+      <div class="doc-list">
+        ${rows.length ? rows.map(x=>`
+          <div class="doc-row">
+            <div class="doc-row-main">
+              <div class="doc-row-title">${esc(x.officerName||'')}</div>
+              <div class="doc-row-meta">
+                ${esc(x.position||'No position')}
+                ${x.contactNumber?` • ${esc(x.contactNumber)}`:''}
+                • ${esc(x.status||'ACTIVE')}
+              </div>
+            </div>
+            <div class="doc-row-actions">
+              <button onclick='editOfficerOfTheDay(${JSON.stringify(JSON.stringify(x))})'>Edit</button>
+            </div>
+          </div>
+        `).join('') : '<div class="help">No Officers of the Day encoded yet.</div>'}
+      </div>
+    </div>`;
+}
+
+function editOfficerOfTheDay(json){
+  const x=JSON.parse(json);
+
+  document.getElementById('odId').value=x.id||'';
+  document.getElementById('odName').value=x.officerName||'';
+  document.getElementById('odPosition').value=x.position||'';
+  document.getElementById('odContact').value=x.contactNumber||'';
+  document.getElementById('odRemarks').value=x.remarks||'';
+  document.getElementById('odOrder').value=x.displayOrder||1;
+  document.getElementById('odStatus').value=x.status||'ACTIVE';
+
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function clearOfficerOfTheDayForm(){
+  document.getElementById('odId').value='';
+  document.getElementById('odName').value='';
+  document.getElementById('odPosition').value='';
+  document.getElementById('odContact').value='';
+  document.getElementById('odRemarks').value='';
+  document.getElementById('odOrder').value='1';
+  document.getElementById('odStatus').value='ACTIVE';
+}
+
+async function saveOfficerOfTheDay(btn){
+  return withButtonSpinner(btn,'Saving...',async()=>{
+    const r=await api('saveOfficerOfTheDay',{
+      id:document.getElementById('odId').value,
+      officerName:document.getElementById('odName').value,
+      position:document.getElementById('odPosition').value,
+      contactNumber:document.getElementById('odContact').value,
+      remarks:document.getElementById('odRemarks').value,
+      displayOrder:document.getElementById('odOrder').value,
+      status:document.getElementById('odStatus').value
+    });
+
+    if(!r.success) throw new Error(r.message||'Save failed.');
+    await contactOfficersForm();
+    return r;
+  },'Officer of the Day saved.');
+}
+
+
 async function officialsForm(){
   document.getElementById('moduleArea').innerHTML=
     '<div class="bto-loading"><span class="bto-spinner"></span><span>Loading officials...</span></div>';
@@ -2220,6 +2343,7 @@ function renderUsersBundle(bundle){
     ['CONTENT','Announcements & Activities'],
     ['PROGRAMS_PROJECTS','Programs & Projects'],
     ['SERVICE_LINKS','Service Links'],
+    ['CONTACT_OFFICERS','Officers of the Day'],
     ['LEGISLATIVE','Ordinances & Resolutions'],
     ['FULL_DISCLOSURE','Barangay Full Disclosure']
   ];
