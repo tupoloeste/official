@@ -2554,20 +2554,172 @@ a.back-btn:focus{
 }
 
 
-/* ===== Organizational Chart header/back-button alignment ===== */
-#view-organizational-chart .page-head-row{
+/* ===== Programs & Projects public ===== */
+.program-public-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px;
+}
+.program-card{
+  background:#fff;
+  border:1px solid #e4e7ec;
+  border-radius:14px;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+}
+.program-card-photo{
+  height:190px;
+  background:#f4f5f7;
   display:flex;
   align-items:center;
-  justify-content:space-between;
-  gap:16px;
+  justify-content:center;
+  overflow:hidden;
+  font-size:44px;
 }
-#view-organizational-chart .back-btn{
-  flex:0 0 auto;
+.program-card-photo img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
 }
-@media(max-width:700px){
-  #view-organizational-chart .page-head-row{
-    align-items:flex-start;
-  }
+.program-card-body{
+  padding:14px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  flex:1;
+}
+.program-card-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+}
+.program-badge{
+  display:inline-flex;
+  border-radius:999px;
+  padding:4px 8px;
+  font-size:10px;
+  font-weight:800;
+  background:#f2f4f7;
+  color:#475467;
+}
+.program-badge.status{
+  background:#fff1f3;
+  color:#c5162e;
+  border:1px solid #ffc7d0;
+}
+.program-card-title{
+  font-weight:800;
+  font-size:16px;
+  line-height:1.3;
+}
+.program-card-desc{
+  color:#667085;
+  font-size:13px;
+  line-height:1.5;
+  display:-webkit-box;
+  -webkit-line-clamp:3;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+.program-card-body button{
+  margin-top:auto;
+  border:0;
+  background:#242424;
+  color:#fff;
+  border-radius:9px;
+  padding:9px 12px;
+  font-weight:800;
+  cursor:pointer;
+}
+.program-detail-modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.66);
+  z-index:99999;
+  display:none;
+  padding:24px;
+  overflow:auto;
+}
+.program-detail-modal.open{
+  display:block;
+}
+.program-detail-dialog{
+  width:min(900px,100%);
+  margin:20px auto;
+  background:#fff;
+  border-radius:18px;
+  position:relative;
+  padding:22px;
+}
+.program-detail-close{
+  position:absolute;
+  top:10px;
+  right:12px;
+  width:36px;
+  height:36px;
+  border:0;
+  border-radius:50%;
+  background:#222;
+  color:#fff;
+  font-size:22px;
+  cursor:pointer;
+}
+.program-detail-hero{
+  width:100%;
+  max-height:440px;
+  object-fit:contain;
+  background:#f8fafc;
+  border-radius:12px;
+  margin-bottom:16px;
+}
+.program-detail-title{
+  font-size:25px;
+  font-weight:900;
+  margin:0 46px 8px 0;
+}
+.program-detail-text{
+  white-space:pre-line;
+  line-height:1.7;
+  color:#475467;
+}
+.program-detail-info{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:9px;
+  margin:14px 0;
+}
+.program-detail-info > div{
+  border:1px solid #e4e7ec;
+  border-radius:10px;
+  padding:10px 12px;
+}
+.program-detail-info small{
+  display:block;
+  color:#667085;
+  margin-bottom:3px;
+}
+.program-detail-gallery{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:8px;
+  margin-top:10px;
+}
+.program-detail-gallery img{
+  width:100%;
+  aspect-ratio:1/1;
+  object-fit:cover;
+  border-radius:10px;
+  cursor:pointer;
+}
+@media(max-width:900px){
+  .program-public-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:620px){
+  .program-public-grid{grid-template-columns:1fr}
+  .program-detail-info{grid-template-columns:1fr}
+  .program-detail-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
 </style>
@@ -3215,13 +3367,45 @@ a.back-btn:focus{
 
 <!-- PROGRAMS -->
 <div class="view" id="view-programs">
-  <div class="page-head"><div class="container page-head-row"><div><h1>Programs & Projects</h1><p>Barangay-wide programs and projects.</p></div><button class="back-btn" onclick="showView('updates')">← Back to Updates</button></div></div>
-  <div class="page-content"><div class="container"><div class="grid grid-4">
-    <div class="card"><div class="icon">🐕</div><h3>Anti-Rabies Program</h3><p>Dog registration, vaccination and responsible pet ownership.</p></div>
-    <div class="card"><div class="icon">🌾</div><h3>Agriculture</h3><p>Farmer support, trainings and agricultural activities.</p></div>
-    <div class="card"><div class="icon">♻️</div><h3>Environment</h3><p>Clean-up drives, waste management and environmental projects.</p></div>
-    <div class="card"><div class="icon">❤️</div><h3>Health & Social Services</h3><p>Health, senior citizens and community assistance.</p></div>
-  </div></div></div>
+  <div class="page-head">
+    <div class="container page-head-row">
+      <div>
+        <h1>Programs & Projects</h1>
+        <p>Barangay-wide programs and projects of Barangay Tupol Oeste.</p>
+      </div>
+      <button class="back-btn" onclick="showView('updates')">← Back to Updates</button>
+    </div>
+  </div>
+
+  <div class="page-content">
+    <div class="container">
+      <div class="public-doc-tabs">
+        <button id="ppTabOngoing" class="active" onclick="setProgramsStatus('ONGOING')">Ongoing</button>
+        <button id="ppTabCompleted" onclick="setProgramsStatus('COMPLETED')">Completed</button>
+        <button id="ppTabPlanned" onclick="setProgramsStatus('PLANNED')">Planned</button>
+      </div>
+
+      <div class="public-doc-toolbar">
+        <div>
+          <label for="ppPublicYear">Year</label>
+          <select id="ppPublicYear" onchange="renderPublicProgramsFiltered()">
+            <option value="ALL">All Years</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="publicProgramsGrid" class="program-public-grid">
+        <div class="public-doc-empty">No programs or projects published yet.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="program-detail-modal" id="programDetailModal" onclick="closeProgramDetail(event)">
+  <div class="program-detail-dialog" onclick="event.stopPropagation()">
+    <button class="program-detail-close" onclick="closeProgramDetail(event)">×</button>
+    <div id="programDetailBody"></div>
+  </div>
 </div>
 
 <!-- STATISTICS -->
@@ -3551,7 +3735,7 @@ a.back-btn:focus{
 
   <div class="page-content">
     <div class="container">
-    <div class="org-chart-photo-card">
+      <div class="org-chart-photo-card">
       <img id="public-org-chart-photo"
            alt="Barangay Tupol Oeste Organizational Chart"
            style="display:none">
@@ -3611,7 +3795,7 @@ function switchTab(scope,panelId,btn){
 
 
 const BTO_PUBLIC_API = "https://script.google.com/macros/s/AKfycbwM6bagjlHKao-NCB3d_nDwX29zO4EFKcoj50vABCQP7bKJuSI4j7772Zam9LwNiLCqNg/exec?action=publicData";
-const BTO_PUBLIC_CACHE_KEY = 'bto_public_data_v5';
+const BTO_PUBLIC_CACHE_KEY = 'bto_public_data_v6';
 const BTO_PUBLIC_CACHE_MS = 5 * 60 * 1000;
 
 function publicEsc(v){
@@ -5325,11 +5509,169 @@ function renderEnhancedBarangayStats(data){
 }
 
 
+
+/* ===== PUBLIC PROGRAMS & PROJECTS ===== */
+window.BTO_PUBLIC_PROGRAMS=[];
+window.BTO_PROGRAM_STATUS='ONGOING';
+
+function programPublicDate(v){
+  const s=String(v||'').trim();
+  const m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? `${m[2]}/${m[3]}/${m[1]}` : s;
+}
+
+function setProgramsStatus(status){
+  window.BTO_PROGRAM_STATUS=status;
+
+  const map={
+    ONGOING:'ppTabOngoing',
+    COMPLETED:'ppTabCompleted',
+    PLANNED:'ppTabPlanned'
+  };
+
+  Object.entries(map).forEach(([s,id])=>{
+    const el=document.getElementById(id);
+    if(el) el.classList.toggle('active',s===status);
+  });
+
+  populateProgramsYears();
+  renderPublicProgramsFiltered();
+}
+
+function populateProgramsYears(){
+  const sel=document.getElementById('ppPublicYear');
+  if(!sel) return;
+
+  const status=window.BTO_PROGRAM_STATUS||'ONGOING';
+  const rows=(window.BTO_PUBLIC_PROGRAMS||[]).filter(x=>x.status===status);
+  const old=sel.value||'ALL';
+
+  const years=[...new Set(rows.map(x=>String(x.year||'')).filter(Boolean))]
+    .sort((a,b)=>Number(b)-Number(a));
+
+  sel.innerHTML='<option value="ALL">All Years</option>'+
+    years.map(y=>`<option value="${btoEsc(y)}">${btoEsc(y)}</option>`).join('');
+
+  if(Array.from(sel.options).some(o=>o.value===old)) sel.value=old;
+}
+
+function renderPublicPrograms(data){
+  window.BTO_PUBLIC_PROGRAMS=Array.isArray(data?.programsProjects)
+    ? data.programsProjects
+    : [];
+
+  populateProgramsYears();
+  renderPublicProgramsFiltered();
+}
+
+function renderPublicProgramsFiltered(){
+  const root=document.getElementById('publicProgramsGrid');
+  if(!root) return;
+
+  const status=window.BTO_PROGRAM_STATUS||'ONGOING';
+  const year=document.getElementById('ppPublicYear')?.value||'ALL';
+
+  const rows=(window.BTO_PUBLIC_PROGRAMS||[]).filter(x=>
+    x.status===status &&
+    (year==='ALL'||String(x.year)===year)
+  );
+
+  if(!rows.length){
+    root.innerHTML=`<div class="public-doc-empty">No ${status.toLowerCase()} programs or projects${year==='ALL'?'':' for '+btoEsc(year)}.</div>`;
+    return;
+  }
+
+  root.innerHTML=rows.map(x=>`
+    <article class="program-card">
+      <div class="program-card-photo">
+        ${x.featuredPhotoUrl
+          ? `<img src="${btoEsc(publicImageUrl(x.featuredPhotoUrl))}" alt="${btoEsc(x.title)}" loading="lazy">`
+          : '<span aria-hidden="true">🤝</span>'}
+      </div>
+      <div class="program-card-body">
+        <div class="program-card-meta">
+          <span class="program-badge">${btoEsc(x.type==='PROJECT'?'Project':'Program')}</span>
+          <span class="program-badge status">${btoEsc(x.status)}</span>
+          <span class="program-badge">${btoEsc(x.year||'')}</span>
+        </div>
+        <div class="program-card-title">${btoEsc(x.title||'Untitled')}</div>
+        ${x.description?`<div class="program-card-desc">${btoEsc(x.description)}</div>`:''}
+        <button onclick='openProgramDetail(${JSON.stringify(x.id)})'>View Details</button>
+      </div>
+    </article>
+  `).join('');
+}
+
+function openProgramDetail(id){
+  const x=(window.BTO_PUBLIC_PROGRAMS||[]).find(r=>r.id===id);
+  if(!x) return;
+
+  const modal=document.getElementById('programDetailModal');
+  const body=document.getElementById('programDetailBody');
+  if(!modal||!body) return;
+
+  const gallery=Array.isArray(x.galleryUrls)?x.galleryUrls:[];
+
+  body.innerHTML=`
+    ${x.featuredPhotoUrl
+      ? `<img class="program-detail-hero" src="${btoEsc(publicImageUrl(x.featuredPhotoUrl))}" alt="${btoEsc(x.title)}">`
+      : ''}
+
+    <h2 class="program-detail-title">${btoEsc(x.title||'Untitled')}</h2>
+
+    <div class="program-card-meta">
+      <span class="program-badge">${btoEsc(x.type==='PROJECT'?'Project':'Program')}</span>
+      <span class="program-badge status">${btoEsc(x.status||'')}</span>
+      <span class="program-badge">${btoEsc(x.year||'')}</span>
+    </div>
+
+    <div class="program-detail-info">
+      ${x.implementingOffice?`
+        <div><small>Implementing Committee / Office</small><strong>${btoEsc(x.implementingOffice)}</strong></div>`:''}
+      ${x.startDate?`
+        <div><small>Start Date</small><strong>${btoEsc(programPublicDate(x.startDate))}</strong></div>`:''}
+      ${x.completionDate?`
+        <div><small>Completion Date</small><strong>${btoEsc(programPublicDate(x.completionDate))}</strong></div>`:''}
+    </div>
+
+    ${x.description?`<p class="program-detail-text">${btoEsc(x.description)}</p>`:''}
+
+    ${gallery.length?`
+      <h3>Photo Gallery</h3>
+      <div class="program-detail-gallery">
+        ${gallery.map(url=>`
+          <img src="${btoEsc(publicImageUrl(url))}"
+               alt="${btoEsc(x.title)}"
+               onclick="openPublicGallery('${btoEsc(publicImageUrl(url))}')">
+        `).join('')}
+      </div>`:''}
+
+    ${x.pdfUrl?`
+      <div class="public-doc-actions" style="margin-top:18px">
+        <a class="outline" href="${btoEsc(publicViewUrl(x.pdfUrl))}" target="_blank" rel="noopener">View PDF</a>
+        <a href="${btoEsc(publicDownloadUrl(x.pdfUrl))}" target="_blank" rel="noopener">Download PDF</a>
+        <button onclick='publicPrintFile(${JSON.stringify(x.pdfUrl)},${JSON.stringify(x.title||"Program Document")})'>Print PDF</button>
+      </div>`:''}
+  `;
+
+  modal.classList.add('open');
+  document.body.style.overflow='hidden';
+}
+
+function closeProgramDetail(event){
+  if(event) event.preventDefault();
+  const modal=document.getElementById('programDetailModal');
+  if(modal) modal.classList.remove('open');
+  document.body.style.overflow='';
+}
+
+
 function applyPublicData(data){
   if(!data || !data.success) return;
   renderOfficialsPersonnel(data);
   renderPublicLegislative(data);
   renderPublicDisclosure(data);
+  renderPublicPrograms(data);
   renderAboutBarangay(data);
   renderEnhancedBarangayStats(data);
   renderHighlightsLive(data);
