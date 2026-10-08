@@ -2099,6 +2099,182 @@ a.back-btn:focus{
   }
 }
 
+
+/* ===== PUBLIC LEGISLATIVE + FULL DISCLOSURE ===== */
+.public-doc-tabs{
+  display:flex;
+  gap:8px;
+  margin-bottom:16px;
+  flex-wrap:wrap;
+}
+.public-doc-tabs button{
+  border:1px solid #d8dde5;
+  background:#fff;
+  color:#222;
+  border-radius:10px;
+  padding:10px 16px;
+  font-weight:800;
+  cursor:pointer;
+}
+.public-doc-tabs button.active{
+  background:#242424;
+  color:#fff;
+  border-color:#242424;
+}
+.public-doc-toolbar{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  align-items:end;
+  margin:0 0 18px;
+  padding:13px;
+  border:1px solid #e4e7ec;
+  border-radius:12px;
+  background:#fff;
+}
+.public-doc-toolbar > div{
+  min-width:180px;
+}
+.public-doc-toolbar label{
+  display:block;
+  font-size:12px;
+  font-weight:800;
+  margin-bottom:5px;
+  color:#475467;
+}
+.public-doc-toolbar select{
+  width:100%;
+  min-height:40px;
+  border:1px solid #d0d5dd;
+  border-radius:9px;
+  padding:8px 10px;
+  background:#fff;
+}
+.public-legislative-list{
+  display:grid;
+  gap:10px;
+}
+.public-legislative-row{
+  background:#fff;
+  border:1px solid #e4e7ec;
+  border-radius:12px;
+  padding:13px 15px;
+  display:flex;
+  gap:14px;
+  align-items:center;
+  justify-content:space-between;
+}
+.public-legislative-title{
+  font-weight:800;
+  line-height:1.35;
+}
+.public-legislative-year{
+  font-size:12px;
+  color:#667085;
+  margin-top:4px;
+}
+.public-doc-actions{
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+}
+.public-doc-actions a,
+.public-doc-actions button{
+  appearance:none;
+  border:0;
+  border-radius:8px;
+  padding:8px 10px;
+  background:#242424;
+  color:#fff;
+  text-decoration:none;
+  font-size:12px;
+  font-weight:800;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.public-doc-actions .outline{
+  background:#fff;
+  color:#242424;
+  border:1px solid #cfd4dc;
+}
+.public-doc-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px;
+}
+.public-disclosure-card{
+  background:#fff;
+  border:1px solid #e4e7ec;
+  border-radius:14px;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+}
+.public-disclosure-preview{
+  width:100%;
+  height:190px;
+  background:#f2f4f7;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  font-size:42px;
+}
+.public-disclosure-preview img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+.public-disclosure-body{
+  padding:13px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  flex:1;
+}
+.public-disclosure-category{
+  display:inline-block;
+  width:max-content;
+  max-width:100%;
+  border-radius:999px;
+  padding:4px 8px;
+  background:#f2f4f7;
+  color:#475467;
+  font-size:10px;
+  font-weight:800;
+}
+.public-disclosure-title{
+  font-weight:800;
+  line-height:1.35;
+}
+.public-disclosure-year{
+  color:#667085;
+  font-size:12px;
+}
+.public-disclosure-body .public-doc-actions{
+  margin-top:auto;
+  padding-top:5px;
+}
+.public-doc-empty{
+  grid-column:1/-1;
+  padding:24px;
+  text-align:center;
+  border:1px dashed #d0d5dd;
+  border-radius:12px;
+  background:#fff;
+  color:#667085;
+}
+@media(max-width:950px){
+  .public-doc-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:650px){
+  .public-doc-grid{grid-template-columns:1fr}
+  .public-legislative-row{align-items:flex-start;flex-direction:column}
+  .public-doc-toolbar > div{min-width:0;width:100%}
+}
+
 </style>
 </head>
 <body>
@@ -2867,13 +3043,14 @@ a.back-btn:focus{
 </div>
 
 
+
 <!-- BARANGAY FULL DISCLOSURE -->
 <div class="view" id="view-full-disclosure">
   <div class="page-head">
     <div class="container page-head-row">
       <div>
         <h1>Barangay Full Disclosure</h1>
-        <p>Public access to barangay financial, budget, procurement, project, and transparency documents.</p>
+        <p>Public access to official barangay disclosure documents.</p>
       </div>
       <button class="back-btn" onclick="showView('governance')">← Back to Governance</button>
     </div>
@@ -2884,68 +3061,27 @@ a.back-btn:focus{
       <div class="section-head">
         <div>
           <h2>Full Disclosure <span>Documents</span></h2>
-          <p>Select a year and document category. Actual files will appear here once uploaded by the authorized personnel.</p>
+          <p>Select a year and item/category, then view, download, or print the available public files.</p>
         </div>
       </div>
 
-      <div class="disclosure-toolbar">
-        <strong>Year:</strong>
-        <select aria-label="Disclosure year">
-          <option>2026</option>
-          <option>2025</option>
-          <option>2024</option>
-        </select>
-      </div>
-
-      <div class="disclosure-grid">
-        <div class="disclosure-card">
-          <div class="doc-icon">💰</div>
-          <h3>Barangay Budget</h3>
-          <p>Approved budget and related budget documents.</p>
-          <span class="coming">Coming Soon</span>
+      <div class="public-doc-toolbar">
+        <div>
+          <label for="fdPublicYear">Year</label>
+          <select id="fdPublicYear" onchange="renderPublicDisclosureFiltered()">
+            <option value="ALL">All Years</option>
+          </select>
         </div>
-
-        <div class="disclosure-card">
-          <div class="doc-icon">📈</div>
-          <h3>Financial Reports</h3>
-          <p>Financial statements, receipts, expenditures, and other public financial reports.</p>
-          <span class="coming">Coming Soon</span>
-        </div>
-
-        <div class="disclosure-card">
-          <div class="doc-icon">🧾</div>
-          <h3>Procurement / BAC</h3>
-          <p>Public procurement-related notices, awards, and supporting documents.</p>
-          <span class="coming">Coming Soon</span>
-        </div>
-
-        <div class="disclosure-card">
-          <div class="doc-icon">🏗️</div>
-          <h3>Projects & Implementation</h3>
-          <p>Barangay projects, implementation information, and project-related disclosures.</p>
-          <span class="coming">Coming Soon</span>
-        </div>
-
-        <div class="disclosure-card">
-          <div class="doc-icon">📋</div>
-          <h3>Plans & Programs</h3>
-          <p>Development plans, investment programs, and other approved planning documents.</p>
-          <span class="coming">Coming Soon</span>
-        </div>
-
-        <div class="disclosure-card">
-          <div class="doc-icon">📂</div>
-          <h3>Other Disclosure Documents</h3>
-          <p>Other public documents required or authorized for disclosure.</p>
-          <span class="coming">Coming Soon</span>
+        <div>
+          <label for="fdPublicCategory">Item / Category</label>
+          <select id="fdPublicCategory" onchange="renderPublicDisclosureFiltered()">
+            <option value="ALL">All Items</option>
+          </select>
         </div>
       </div>
 
-      <div class="info-block">
-        <h3>Document Updates</h3>
-        <p style="margin:0;color:var(--muted)">
-          Authorized barangay personnel will be able to upload and update disclosure documents through the future Admin/Encoder Portal without editing the public website.
-        </p>
+      <div id="publicDisclosureList" class="public-doc-grid">
+        <div class="public-doc-empty">No Full Disclosure documents published yet.</div>
       </div>
     </div>
   </div>
@@ -2953,11 +3089,37 @@ a.back-btn:focus{
 
 <!-- ORDINANCES -->
 <div class="view" id="view-ordinances">
-  <div class="page-head"><div class="container page-head-row"><div><h1>Ordinances & Resolutions</h1><p>Official barangay legislative documents.</p></div><button class="back-btn" onclick="showView('governance')">← Back to Governance</button></div></div>
-  <div class="page-content"><div class="container">
-    <div class="info-block"><h3>Barangay Ordinances</h3><p><span class="coming">Coming Soon</span></p></div>
-    <div class="info-block"><h3>Barangay Resolutions</h3><p><span class="coming">Coming Soon</span></p></div>
-  </div></div>
+  <div class="page-head">
+    <div class="container page-head-row">
+      <div>
+        <h1>Ordinances & Resolutions</h1>
+        <p>Official barangay legislative documents available for public viewing.</p>
+      </div>
+      <button class="back-btn" onclick="showView('governance')">← Back to Governance</button>
+    </div>
+  </div>
+
+  <div class="page-content">
+    <div class="container">
+      <div class="public-doc-tabs">
+        <button id="publicOrdTab" class="active" onclick="setLegislativeTab('ORDINANCE')">Ordinances</button>
+        <button id="publicResTab" onclick="setLegislativeTab('RESOLUTION')">Resolutions</button>
+      </div>
+
+      <div class="public-doc-toolbar">
+        <div>
+          <label for="legPublicYear">Year</label>
+          <select id="legPublicYear" onchange="renderPublicLegislativeFiltered()">
+            <option value="ALL">All Years</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="publicLegislativeList" class="public-legislative-list">
+        <div class="public-doc-empty">No published ordinances yet.</div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- DOWNLOADS -->
@@ -3063,7 +3225,7 @@ function switchTab(scope,panelId,btn){
 
 
 const BTO_PUBLIC_API = "https://script.google.com/macros/s/AKfycbwM6bagjlHKao-NCB3d_nDwX29zO4EFKcoj50vABCQP7bKJuSI4j7772Zam9LwNiLCqNg/exec?action=publicData";
-const BTO_PUBLIC_CACHE_KEY = 'bto_public_data_v3';
+const BTO_PUBLIC_CACHE_KEY = 'bto_public_data_v4';
 const BTO_PUBLIC_CACHE_MS = 5 * 60 * 1000;
 
 function publicEsc(v){
@@ -4356,9 +4518,221 @@ function renderOfficialsPersonnel(data){
   }
 }
 
+
+/* ===== PUBLIC ORDINANCES / RESOLUTIONS / FULL DISCLOSURE ===== */
+window.BTO_PUBLIC_LEGISLATIVE={ordinances:[],resolutions:[]};
+window.BTO_PUBLIC_LEG_TYPE='ORDINANCE';
+window.BTO_PUBLIC_DISCLOSURE=[];
+window.BTO_PUBLIC_DISCLOSURE_CATEGORIES=[];
+
+function publicDriveId(url){
+  const s=String(url||'');
+  let m=s.match(/[?&]id=([^&]+)/);
+  if(m) return decodeURIComponent(m[1]);
+  m=s.match(/\/d\/([^/]+)/);
+  return m ? m[1] : '';
+}
+
+function publicViewUrl(url){
+  const id=publicDriveId(url);
+  return id ? `https://drive.google.com/file/d/${encodeURIComponent(id)}/view` : String(url||'');
+}
+
+function publicPreviewUrl(url){
+  const id=publicDriveId(url);
+  return id ? `https://drive.google.com/file/d/${encodeURIComponent(id)}/preview` : String(url||'');
+}
+
+function publicDownloadUrl(url){
+  const id=publicDriveId(url);
+  return id ? `https://drive.google.com/uc?export=download&id=${encodeURIComponent(id)}` : String(url||'');
+}
+
+function publicPrintFile(url,title){
+  const preview=publicPreviewUrl(url);
+  const w=window.open('','_blank');
+  if(!w) {
+    window.open(publicViewUrl(url),'_blank');
+    return;
+  }
+
+  const safeTitle=String(title||'Document').replace(/[<>&"]/g,'');
+  w.document.write(`<!doctype html>
+    <html>
+    <head>
+      <title>${safeTitle}</title>
+      <style>
+        html,body{margin:0;width:100%;height:100%;font-family:Arial,sans-serif}
+        .bar{height:52px;display:flex;align-items:center;justify-content:center;gap:10px;border-bottom:1px solid #ddd}
+        button{border:0;background:#222;color:#fff;padding:9px 16px;border-radius:7px;font-weight:700;cursor:pointer}
+        iframe{width:100%;height:calc(100% - 53px);border:0}
+        @media print{.bar{display:none}iframe{height:100vh}}
+      </style>
+    </head>
+    <body>
+      <div class="bar">
+        <button onclick="window.print()">Print</button>
+        <span>${safeTitle}</span>
+      </div>
+      <iframe src="${preview}"></iframe>
+    </body></html>`);
+  w.document.close();
+}
+
+function setLegislativeTab(type){
+  window.BTO_PUBLIC_LEG_TYPE=type;
+  const o=document.getElementById('publicOrdTab');
+  const r=document.getElementById('publicResTab');
+  if(o) o.classList.toggle('active',type==='ORDINANCE');
+  if(r) r.classList.toggle('active',type==='RESOLUTION');
+  populateLegislativeYears();
+  renderPublicLegislativeFiltered();
+}
+
+function populateLegislativeYears(){
+  const sel=document.getElementById('legPublicYear');
+  if(!sel) return;
+
+  const rows=window.BTO_PUBLIC_LEG_TYPE==='ORDINANCE'
+    ? window.BTO_PUBLIC_LEGISLATIVE.ordinances||[]
+    : window.BTO_PUBLIC_LEGISLATIVE.resolutions||[];
+
+  const current=sel.value||'ALL';
+  const years=[...new Set(rows.map(x=>String(x.year||'')).filter(Boolean))]
+    .sort((a,b)=>Number(b)-Number(a));
+
+  sel.innerHTML='<option value="ALL">All Years</option>'+
+    years.map(y=>`<option value="${esc(y)}">${esc(y)}</option>`).join('');
+
+  if(Array.from(sel.options).some(o=>o.value===current)) sel.value=current;
+}
+
+function renderPublicLegislative(data){
+  const leg=(data&&data.legislative)||{};
+  window.BTO_PUBLIC_LEGISLATIVE={
+    ordinances:Array.isArray(leg.ordinances)?leg.ordinances:[],
+    resolutions:Array.isArray(leg.resolutions)?leg.resolutions:[]
+  };
+  populateLegislativeYears();
+  renderPublicLegislativeFiltered();
+}
+
+function renderPublicLegislativeFiltered(){
+  const root=document.getElementById('publicLegislativeList');
+  if(!root) return;
+
+  const type=window.BTO_PUBLIC_LEG_TYPE||'ORDINANCE';
+  const rows=(type==='ORDINANCE'
+    ? window.BTO_PUBLIC_LEGISLATIVE.ordinances
+    : window.BTO_PUBLIC_LEGISLATIVE.resolutions)||[];
+
+  const year=document.getElementById('legPublicYear')?.value||'ALL';
+  const filtered=rows.filter(x=>year==='ALL'||String(x.year)===year);
+
+  if(!filtered.length){
+    root.innerHTML=`<div class="public-doc-empty">No published ${type==='ORDINANCE'?'ordinances':'resolutions'}${year==='ALL'?'':' for '+esc(year)}.</div>`;
+    return;
+  }
+
+  root.innerHTML=filtered.map(x=>{
+    const view=publicViewUrl(x.pdfUrl);
+    const down=publicDownloadUrl(x.pdfUrl);
+    return `<div class="public-legislative-row">
+      <div>
+        <div class="public-legislative-title">${esc(x.title||'Untitled')}</div>
+        <div class="public-legislative-year">Year ${esc(x.year||'')}</div>
+      </div>
+      <div class="public-doc-actions">
+        <a class="outline" href="${esc(view)}" target="_blank" rel="noopener">View PDF</a>
+        <a href="${esc(down)}" target="_blank" rel="noopener">Download</a>
+        <button onclick='publicPrintFile(${JSON.stringify(x.pdfUrl)},${JSON.stringify(x.title||"Document")})'>Print</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function populateDisclosureFilters(){
+  const y=document.getElementById('fdPublicYear');
+  const c=document.getElementById('fdPublicCategory');
+  if(!y||!c) return;
+
+  const oldY=y.value||'ALL';
+  const oldC=c.value||'ALL';
+
+  const years=[...new Set(window.BTO_PUBLIC_DISCLOSURE.map(x=>String(x.year||'')).filter(Boolean))]
+    .sort((a,b)=>Number(b)-Number(a));
+
+  let cats=(window.BTO_PUBLIC_DISCLOSURE_CATEGORIES||[]).map(x=>x.name).filter(Boolean);
+  window.BTO_PUBLIC_DISCLOSURE.forEach(x=>{
+    if(x.category&&!cats.includes(x.category)) cats.push(x.category);
+  });
+  cats=[...new Set(cats)].sort((a,b)=>a.localeCompare(b));
+
+  y.innerHTML='<option value="ALL">All Years</option>'+
+    years.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
+
+  c.innerHTML='<option value="ALL">All Items</option>'+
+    cats.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
+
+  if(Array.from(y.options).some(o=>o.value===oldY)) y.value=oldY;
+  if(Array.from(c.options).some(o=>o.value===oldC)) c.value=oldC;
+}
+
+function renderPublicDisclosure(data){
+  window.BTO_PUBLIC_DISCLOSURE=Array.isArray(data?.fullDisclosure)?data.fullDisclosure:[];
+  window.BTO_PUBLIC_DISCLOSURE_CATEGORIES=Array.isArray(data?.disclosureCategories)?data.disclosureCategories:[];
+  populateDisclosureFilters();
+  renderPublicDisclosureFiltered();
+}
+
+function renderPublicDisclosureFiltered(){
+  const root=document.getElementById('publicDisclosureList');
+  if(!root) return;
+
+  const year=document.getElementById('fdPublicYear')?.value||'ALL';
+  const cat=document.getElementById('fdPublicCategory')?.value||'ALL';
+
+  const rows=(window.BTO_PUBLIC_DISCLOSURE||[]).filter(x=>
+    (year==='ALL'||String(x.year)===year) &&
+    (cat==='ALL'||String(x.category)===cat)
+  );
+
+  if(!rows.length){
+    root.innerHTML='<div class="public-doc-empty">No published Full Disclosure documents match this filter.</div>';
+    return;
+  }
+
+  root.innerHTML=rows.map(x=>{
+    const img=x.imageUrl||'';
+    const pdf=x.pdfUrl||'';
+    const preferred=pdf||img;
+
+    return `<article class="public-disclosure-card">
+      <div class="public-disclosure-preview">
+        ${img?`<img src="${esc(img)}" alt="${esc(x.title||'Disclosure document')}" loading="lazy">`:'📄'}
+      </div>
+      <div class="public-disclosure-body">
+        <span class="public-disclosure-category">${esc(x.category||'Disclosure')}</span>
+        <div class="public-disclosure-title">${esc(x.title||'Untitled')}</div>
+        <div class="public-disclosure-year">Year ${esc(x.year||'')}</div>
+
+        <div class="public-doc-actions">
+          ${img?`<a class="outline" href="${esc(publicViewUrl(img))}" target="_blank" rel="noopener">View Image</a>`:''}
+          ${pdf?`<a class="outline" href="${esc(publicViewUrl(pdf))}" target="_blank" rel="noopener">View PDF</a>`:''}
+          ${preferred?`<a href="${esc(publicDownloadUrl(preferred))}" target="_blank" rel="noopener">Download</a>`:''}
+          ${preferred?`<button onclick='publicPrintFile(${JSON.stringify(preferred)},${JSON.stringify(x.title||"Document")})'>Print</button>`:''}
+        </div>
+      </div>
+    </article>`;
+  }).join('');
+}
+
+
 function applyPublicData(data){
   if(!data || !data.success) return;
   renderOfficialsPersonnel(data);
+  renderPublicLegislative(data);
+  renderPublicDisclosure(data);
   renderHighlightsLive(data);
   renderHighlightsActivityGallery(data);
   renderAnnouncementTicker(data);
