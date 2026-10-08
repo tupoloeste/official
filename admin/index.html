@@ -1396,6 +1396,13 @@ button.danger,
   }
 }
 
+
+/* Login timeout/retry status polish */
+#loginMsg .msg{
+  margin-top:12px;
+  line-height:1.4;
+}
+
 </style>
 </head>
 <body>
@@ -1733,6 +1740,7 @@ async function api(action,data={}){
   const controller=new AbortController();
   const timeoutMs =
     action==='uploadBase64' ? 120000 :
+    action==='login' ? 60000 :
     (
       action==='saveLegislative' ||
       action==='saveFullDisclosure' ||
@@ -1787,7 +1795,10 @@ async function api(action,data={}){
       console.error('[BTO API] TIMEOUT',action,timeoutMs+'ms');
       return {
         success:false,
-        message:'Barangay backend did not respond within the allowed time. Check the Apps Script Web App deployment, then try again.'
+        timedOut:true,
+        action,
+        timeoutMs,
+        message:'Barangay backend did not respond within the allowed time. Please try again.'
       };
     }
 
@@ -1864,10 +1875,24 @@ async function login(triggerBtn){
   if(msg) msg.innerHTML='';
 
   try{
-    const r=await api('login',{
+    const credentials={
       username:document.getElementById('username').value.trim(),
       password:document.getElementById('password').value
-    });
+    };
+
+    let r=await api('login',credentials);
+
+    // Apps Script can occasionally cold-start slowly in Android WebView.
+    // Retry ONCE only when the first login request actually timed out.
+    if(!r.success && r.timedOut){
+      if(msg){
+        msg.innerHTML='<div class="msg ok">Backend is waking up. Retrying login automatically...</div>';
+      }
+      showGlobalActionStatus('Backend is waking up. Retrying login...','ok');
+
+      await new Promise(resolve=>setTimeout(resolve,1200));
+      r=await api('login',credentials);
+    }
 
     if(!r.success){
       if(msg) msg.innerHTML='<div class="msg err">'+esc(r.message)+'</div>';
