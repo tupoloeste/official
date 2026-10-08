@@ -1051,6 +1051,9 @@ function renderApp(){
   if(hasModule('PROGRAMS_PROJECTS'))
     items.push(['Programs & Projects','programsProjects']);
 
+  if(hasModule('SERVICE_LINKS'))
+    items.push(['Service Links','serviceLinks']);
+
   if(hasModule('LEGISLATIVE'))
     items.push(['Ordinances & Resolutions','legislative']);
 
@@ -1139,6 +1142,7 @@ async function openModule(name,title='Module'){
   if(name==='livestock') return loadLivestock();
   if(name==='content') return contentForm();
   if(name==='programsProjects') return programsProjectsForm();
+  if(name==='serviceLinks') return serviceLinksForm();
   if(name==='legislative') return legislativeForm();
   if(name==='fullDisclosure') return fullDisclosureForm();
   if(name==='officials') return officialsForm();
@@ -1788,6 +1792,45 @@ async function saveProgramProject(btn){
 
 
 
+
+/* ===== SERVICE LINKS ===== */
+async function serviceLinksForm(){
+  const r=await api('getServiceLinks');
+  if(!r.success){showModuleError(r.message);return}
+
+  const d=r.data||{};
+
+  document.getElementById('moduleArea').innerHTML=`
+    <div class="card">
+      <h2>Service Links</h2>
+      <div class="help">Update the existing BRCC-DMS Dog Registration portal and Android app links here. No code editing is needed when the links change.</div>
+
+      <label>Dog Registration Portal URL</label>
+      <input id="svcDogPortal" type="url" value="${esc(d.dogPortalUrl||'')}" placeholder="https://...">
+      <div class="help">Public button: Open Dog Registration Portal</div>
+
+      <label>Android App Download URL</label>
+      <input id="svcDogApp" type="url" value="${esc(d.dogAppUrl||'')}" placeholder="https://...">
+      <div class="help">Public button: Download Android App</div>
+
+      <button onclick="saveServiceLinks(this)">Save Service Links</button>
+    </div>`;
+}
+
+async function saveServiceLinks(btn){
+  return withButtonSpinner(btn,'Saving...',async()=>{
+    const r=await api('saveServiceLinks',{
+      dogPortalUrl:document.getElementById('svcDogPortal').value.trim(),
+      dogAppUrl:document.getElementById('svcDogApp').value.trim()
+    });
+
+    if(!r.success) throw new Error(r.message||'Unable to save service links.');
+    await serviceLinksForm();
+    return r;
+  },'Service links saved.');
+}
+
+
 async function officialsForm(){
   document.getElementById('moduleArea').innerHTML=
     '<div class="bto-loading"><span class="bto-spinner"></span><span>Loading officials...</span></div>';
@@ -2176,6 +2219,7 @@ function renderUsersBundle(bundle){
     ['LIVESTOCK','Livestock Statistics'],
     ['CONTENT','Announcements & Activities'],
     ['PROGRAMS_PROJECTS','Programs & Projects'],
+    ['SERVICE_LINKS','Service Links'],
     ['LEGISLATIVE','Ordinances & Resolutions'],
     ['FULL_DISCLOSURE','Barangay Full Disclosure']
   ];
