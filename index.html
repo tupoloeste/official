@@ -2494,6 +2494,65 @@ a.back-btn:focus{
   .age-bar-row{grid-template-columns:105px 1fr auto}
 }
 
+
+/* ===== Demographic color-wheel donut ===== */
+.demographic-chart{
+  display:grid;
+  grid-template-columns:180px 1fr;
+  gap:22px;
+  align-items:center;
+}
+.demographic-donut{
+  width:180px;
+  height:180px;
+  border-radius:50%;
+  position:relative;
+  margin:auto;
+}
+.demographic-donut::after{
+  content:'';
+  position:absolute;
+  inset:34px;
+  background:#fff;
+  border-radius:50%;
+}
+.demographic-legend{
+  display:grid;
+  gap:8px;
+}
+.demographic-legend-row{
+  display:grid;
+  grid-template-columns:14px 1fr auto;
+  gap:9px;
+  align-items:center;
+  padding-bottom:7px;
+  border-bottom:1px solid #f0f1f3;
+}
+.demographic-dot{
+  width:12px;
+  height:12px;
+  border-radius:50%;
+}
+.demographic-label{
+  font-size:12px;
+  font-weight:700;
+  line-height:1.25;
+}
+.demographic-value{
+  font-size:12px;
+  font-weight:800;
+  white-space:nowrap;
+  text-align:right;
+}
+@media(max-width:560px){
+  .demographic-chart{
+    grid-template-columns:1fr;
+  }
+  .demographic-legend{
+    width:100%;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -3182,8 +3241,8 @@ a.back-btn:focus{
 
         <section class="public-chart-card" id="ageChartCard" style="display:none">
           <h3>Population by Age Group / Demographic</h3>
-          <p>Only encoded categories with actual values are displayed.</p>
-          <div id="ageChartBody" class="age-bars"></div>
+          <p>Each age group is shown as a distinct color in the demographic distribution.</p>
+          <div id="ageChartBody"></div>
         </section>
       </div>
 
@@ -5163,24 +5222,84 @@ function renderEnhancedBarangayStats(data){
     sexCard.style.display='none';
   }
 
-  // Dynamic age / demographic horizontal bars.
+  // Dynamic age / demographic color-wheel donut chart.
   const ageCard=document.getElementById('ageChartCard');
   const ageBody=document.getElementById('ageChartBody');
+
+  const looksLikeDateLabel=(label)=>{
+    const s=String(label||'').trim();
+    return (
+      /^\d{4}-\d{1,2}-\d{1,2}/.test(s) ||
+      /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s/i.test(s) ||
+      /\bGMT[+-]?\d*/i.test(s) ||
+      /\b(Standard|Daylight)\s+Time\b/i.test(s)
+    );
+  };
+
   const demoRows=demographics
     .map(x=>({...x,num:btoNumberOrNull(x.value)}))
-    .filter(x=>x.num!==null);
+    .filter(x=>x.num!==null && x.num>=0 && !looksLikeDateLabel(x.label));
 
   if(ageCard && ageBody && demoRows.length){
-    const max=Math.max(...demoRows.map(x=>x.num),1);
-    ageBody.innerHTML=demoRows.map(x=>`
-      <div class="age-bar-row">
-        <div class="age-bar-label">${btoEsc(x.label)}</div>
-        <div class="age-bar-track">
-          <div class="age-bar-fill" style="width:${Math.max(2,(x.num/max)*100)}%"></div>
+    const total=demoRows.reduce((sum,x)=>sum+x.num,0);
+
+    // Color-wheel palette; repeats only if there are more categories.
+    const palette=[
+      '#ff3b30',
+      '#ff9500',
+      '#ffcc00',
+      '#34c759',
+      '#00c7be',
+      '#007aff',
+      '#5856d6',
+      '#af52de',
+      '#ff2d55',
+      '#a2845e'
+    ];
+
+    let cursor=0;
+    const segments=demoRows.map((x,i)=>{
+      const pct=total>0 ? (x.num/total)*100 : 0;
+      const start=cursor;
+      cursor+=pct;
+      return {
+        ...x,
+        pct,
+        start,
+        end:cursor,
+        color:palette[i % palette.length]
+      };
+    });
+
+    const gradient=segments.map(s=>
+      `${s.color} ${s.start.toFixed(4)}% ${s.end.toFixed(4)}%`
+    ).join(', ');
+
+    ageBody.innerHTML=`
+      <div class="demographic-chart">
+        <div class="demographic-donut"
+             style="background:conic-gradient(${gradient})"></div>
+
+        <div class="demographic-legend">
+          ${segments.map(s=>`
+            <div class="demographic-legend-row">
+              <span class="demographic-dot" style="background:${s.color}"></span>
+              <span class="demographic-label">${btoEsc(s.label)}</span>
+              <span class="demographic-value">
+                ${s.num.toLocaleString()}${total>0 ? ` (${s.pct.toFixed(1)}%)` : ''}
+              </span>
+            </div>
+          `).join('')}
+
+          ${total>0 ? `
+            <div class="demographic-legend-row">
+              <span></span>
+              <span class="demographic-label">Total represented</span>
+              <span class="demographic-value">${total.toLocaleString()}</span>
+            </div>
+          ` : ''}
         </div>
-        <div class="age-bar-value">${x.num.toLocaleString()}</div>
-      </div>
-    `).join('');
+      </div>`;
     ageCard.style.display='';
   }else if(ageCard){
     ageCard.style.display='none';
