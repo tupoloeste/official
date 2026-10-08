@@ -2995,7 +2995,24 @@ a.back-btn:focus{
   margin-top:2px;
 }
 
+
+/* ===== First-load performance ===== */
+.view:not(.active){
+  content-visibility:auto;
+  contain-intrinsic-size:1px 700px;
+}
+.hero-activity-placeholder,
+.highlights-gallery-empty{
+  animation:none !important;
+}
+
 </style>
+
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://script.googleusercontent.com">
+<link rel="dns-prefetch" href="//script.google.com">
+<link rel="dns-prefetch" href="//script.googleusercontent.com">
+
 </head>
 <body>
 
@@ -3028,7 +3045,7 @@ a.back-btn:focus{
     <div class="announcement-ticker-label">Announcements</div>
     <div class="announcement-ticker-window">
       <div class="announcement-ticker-track" id="announcement-ticker-track">
-        <div class="announcement-ticker-item"><span>Loading latest barangay announcements...</span></div>
+        <div class="announcement-ticker-item"><span>Barangay announcements will appear here.</span></div>
       </div>
     </div>
   </div>
@@ -3097,13 +3114,13 @@ a.back-btn:focus{
              id="highlights-live-slideshow"
              onmouseenter="pauseHighlightsSlideshow()"
              onmouseleave="resumeHighlightsSlideshow()">
-          <div class="highlights-gallery-empty">Loading latest activity photos...</div>
+          <div class="highlights-gallery-empty">Latest barangay activities will appear here.</div>
         </div>
 
         <div class="highlights-side-gallery">
           <h3>Barangay Activity Gallery</h3>
           <div class="highlights-side-grid" id="highlights-side-grid">
-            <div class="highlights-gallery-empty">Loading photos...</div>
+            <div class="highlights-gallery-empty">Activity photos will appear here.</div>
           </div>
           <div class="highlights-gallery-more" id="highlights-side-more"></div>
         </div>
@@ -4130,20 +4147,44 @@ const BTO_PUBLIC_API = "https://script.google.com/macros/s/AKfycbwM6bagjlHKao-NC
 const BTO_PUBLIC_CACHE_KEY = 'bto_public_data_v10';
 const BTO_PUBLIC_CACHE_MS = 5 * 60 * 1000;
 
+const BTO_PUBLIC_CACHE_FALLBACK_KEYS=[
+  'bto_public_data_v9',
+  'bto_public_data_v8',
+  'bto_public_data_v7'
+];
+
+
 function publicEsc(v){
   return String(v ?? '').replace(/[&<>"']/g,m=>({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   }[m]));
 }
 
-function publicCacheGet(){
+function publicCacheGet(options={}){
   try{
-    const raw=localStorage.getItem(BTO_PUBLIC_CACHE_KEY);
+    let raw=localStorage.getItem(BTO_PUBLIC_CACHE_KEY);
+
+    if(!raw){
+      for(const key of BTO_PUBLIC_CACHE_FALLBACK_KEYS){
+        raw=localStorage.getItem(key);
+        if(raw) break;
+      }
+    }
+
     if(!raw) return null;
+
     const obj=JSON.parse(raw);
-    if(!obj || Date.now()-obj.savedAt>BTO_PUBLIC_CACHE_MS) return null;
+    if(!obj || !obj.data) return null;
+
+    const age=Date.now()-(Number(obj.savedAt)||0);
+    const allowStale=options.allowStale===true;
+
+    if(!allowStale && age>BTO_PUBLIC_CACHE_MS) return null;
+
     return obj.data;
-  }catch(e){ return null; }
+  }catch(e){
+    return null;
+  }
 }
 
 function publicCacheSet(data){
@@ -6134,30 +6175,72 @@ function applyPublicData(data){
 }
 
 async function loadPublicData(){
-  const cached=publicCacheGet();
-  if(cached) applyPublicData(cached);
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),15000);
 
   try{
-    const freshUrl=BTO_PUBLIC_API + (BTO_PUBLIC_API.includes('?')?'&':'?') + '_ts=' + Date.now();
-    const res=await fetch(freshUrl,{cache:'no-store'});
+    const freshUrl=BTO_PUBLIC_API +
+      (BTO_PUBLIC_API.includes('?')?'&':'?') +
+      '_ts=' + Date.now();
+
+    const res=await fetch(freshUrl,{
+      cache:'no-store',
+      signal:controller.signal
+    });
+
+    if(!res.ok) throw new Error('HTTP '+res.status);
+
     const data=await res.json();
+
     if(data && data.success){
       publicCacheSet(data);
       applyPublicData(data);
     }
   }catch(err){
-    console.warn('Public data refresh failed:',err);
+    if(err?.name!=='AbortError'){
+      console.warn('Public data refresh failed:',err);
+    }
+  }finally{
+    clearTimeout(timer);
   }
 }
 
+function btoStartBackgroundRefresh(){
+  // Let the first screen paint before contacting Apps Script.
+  const run=()=>loadPublicData();
+
+  if('requestIdleCallback' in window){
+    requestIdleCallback(run,{timeout:1200});
+  }else{
+    setTimeout(run,80);
+  }
+}
 
 document.getElementById('year').textContent=new Date().getFullYear();
 
-window.addEventListener('load',()=>{
+/*
+ * IMPORTANT:
+ * Use DOMContentLoaded, not window.load.
+ * window.load waits for images and other assets, which made first-time
+ * visitors feel that the site itself was loading slowly.
+ */
+document.addEventListener('DOMContentLoaded',()=>{
   const hash=location.hash.replace('#','');
   const requested=(hash && document.getElementById('view-'+hash)) ? hash : 'home';
+
+  // Show the requested page immediately.
   showView(requested);
-  loadPublicData();
+
+  // Stale-while-revalidate:
+  // even an older cache renders instantly, then current data refreshes silently.
+  const cached=publicCacheGet({allowStale:true});
+  if(cached){
+    try{ applyPublicData(cached); }catch(err){
+      console.warn('Cached public data render failed:',err);
+    }
+  }
+
+  btoStartBackgroundRefresh();
 });
 </script>
 
