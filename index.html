@@ -174,12 +174,7 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
   padding:5px 9px;
   font-size:11px;
   font-weight:900;
-  cursor:pointer;
-}
-.committee-chip:hover{
-  background:var(--red);
-  color:#fff;
-  border-color:var(--red);
+  cursor:default;
 }
 .assignment-note{
   margin-top:8px;
@@ -2997,138 +2992,71 @@ a.back-btn:focus{
 }
 
 
-/* ===== Stable Welcome Loader (working publicData baseline) ===== */
+/* ===== SINGLE-REQUEST WELCOME LOADER ===== */
 html.bto-site-loading,
-body.bto-site-loading{
-  overflow:hidden !important;
-}
+body.bto-site-loading{overflow:hidden!important}
 
 .bto-welcome-loader{
-  position:fixed;
-  inset:0;
-  z-index:999999;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  position:fixed;inset:0;z-index:999999;
+  display:flex;align-items:center;justify-content:center;
   padding:24px;
-  background:
-    radial-gradient(circle at 50% 36%, #ffffff 0%, #fff7f8 45%, #f5f6f8 100%);
-  opacity:1;
-  visibility:visible;
-  transition:opacity .55s ease, visibility .55s ease;
+  background:radial-gradient(circle at 50% 36%,#fff 0%,#fff7f8 46%,#f5f6f8 100%);
+  opacity:1;visibility:visible;
+  transition:opacity .55s ease,visibility .55s ease;
 }
-
 .bto-welcome-loader.is-complete{
-  opacity:0;
-  visibility:hidden;
-  pointer-events:none;
+  opacity:0;visibility:hidden;pointer-events:none;
 }
-
-.bto-welcome-inner{
-  width:min(520px,100%);
-  text-align:center;
-  animation:btoWelcomeEnter .55s ease both;
-}
-
+.bto-welcome-inner{width:min(520px,100%);text-align:center}
 .bto-welcome-logo-wrap{
-  position:relative;
-  width:166px;
-  height:166px;
-  display:grid;
-  place-items:center;
-  margin:0 auto 22px;
+  position:relative;width:166px;height:166px;
+  display:grid;place-items:center;margin:0 auto 22px;
 }
-
 .bto-welcome-ring{
-  position:absolute;
-  inset:0;
-  border-radius:50%;
+  position:absolute;inset:0;border-radius:50%;
   border:4px solid rgba(239,43,67,.13);
-  border-top-color:#ef2b43;
-  border-right-color:#ef2b43;
+  border-top-color:#ef2b43;border-right-color:#ef2b43;
   animation:btoRingSpin 1.05s linear infinite;
 }
-
 .bto-welcome-logo{
-  width:130px;
-  height:130px;
-  object-fit:contain;
-  border-radius:50%;
-  background:#fff;
-  box-shadow:0 12px 34px rgba(0,0,0,.13);
+  width:130px;height:130px;object-fit:contain;border-radius:50%;
+  background:#fff;box-shadow:0 12px 34px rgba(0,0,0,.13);
   animation:btoLogoPulse 1.8s ease-in-out infinite;
 }
-
 .bto-welcome-eyebrow{
-  margin-bottom:8px;
-  font-size:11px;
-  font-weight:900;
-  letter-spacing:1.6px;
-  color:#747b87;
+  margin-bottom:8px;font-size:11px;font-weight:900;
+  letter-spacing:1.6px;color:#747b87;
 }
-
 .bto-welcome-inner h1{
-  margin:0;
-  color:#d91e37;
-  font-size:30px;
-  line-height:1.08;
+  margin:0;color:#d91e37;font-size:30px;line-height:1.08;
 }
-
-.bto-welcome-inner p{
-  margin:8px 0 0;
-  color:#667085;
-  font-size:14px;
-}
-
+.bto-welcome-inner p{margin:8px 0 0;color:#667085;font-size:14px}
 .bto-welcome-bar{
-  width:min(320px,82%);
-  height:5px;
-  margin:27px auto 12px;
-  border-radius:999px;
-  background:#e7eaee;
-  overflow:hidden;
+  width:min(320px,82%);height:5px;margin:27px auto 12px;
+  border-radius:999px;background:#e7eaee;overflow:hidden;
 }
-
 .bto-welcome-bar span{
-  display:block;
-  width:38%;
-  height:100%;
-  border-radius:999px;
-  background:#ef2b43;
+  display:block;width:38%;height:100%;border-radius:999px;background:#ef2b43;
   animation:btoBarMove 1.15s ease-in-out infinite;
 }
-
-.bto-welcome-status{
-  min-height:20px;
-  color:#667085;
-  font-size:12px;
-  font-weight:700;
+.bto-welcome-status{min-height:20px;color:#667085;font-size:12px;font-weight:700}
+.bto-welcome-error{
+  margin-top:14px;color:#c5162e;font-size:12px;font-weight:800;
 }
-
-@keyframes btoRingSpin{
-  to{transform:rotate(360deg)}
-}
-
-@keyframes btoLogoPulse{
-  0%,100%{transform:scale(1)}
-  50%{transform:scale(1.045)}
-}
-
+@keyframes btoRingSpin{to{transform:rotate(360deg)}}
+@keyframes btoLogoPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
 @keyframes btoBarMove{
-  0%{transform:translateX(-140%)}
-  50%{transform:translateX(85%)}
-  100%{transform:translateX(270%)}
+  0%{transform:translateX(-140%)}50%{transform:translateX(85%)}100%{transform:translateX(270%)}
 }
-
-@keyframes btoWelcomeEnter{
-  from{opacity:0;transform:translateY(12px)}
-  to{opacity:1;transform:translateY(0)}
-}
-
 @media(max-width:600px){
   .bto-welcome-logo-wrap{width:145px;height:145px}
   .bto-welcome-logo{width:114px;height:114px}
   .bto-welcome-inner h1{font-size:25px}
+}
+
+
+.official-live-committees .tag{
+  cursor:default;
 }
 
 </style>
@@ -3149,6 +3077,10 @@ body.bto-site-loading{
     <div class="bto-welcome-bar"><span></span></div>
     <div id="btoWelcomeStatus" class="bto-welcome-status">
       Loading official barangay information...
+    </div>
+
+    <div id="btoWelcomeError" class="bto-welcome-error" style="display:none">
+      Unable to load the website data. Please refresh the page.
     </div>
   </div>
 </div>
@@ -3492,355 +3424,11 @@ body.bto-site-loading{
   </div>
 </div>
 
-<!-- COMMITTEE PROFILE TEMPLATE SECTIONS -->
 
-<div class="view" id="view-committee-agriculture">
-  <div class="page-head"><div class="container page-head-row">
-    <div><h1>Committee on Agriculture</h1><p>Committee profile and sector information.</p><div class="live-status"><span class="live-dot"></span>Updated from the Barangay Encoder Portal</div></div>
-    <button class="back-btn" onclick="showView('officials')">← Back to Officials</button>
-  </div></div>
-  <div class="page-content"><div class="container">
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('committee-agriculture','agriculture-profile',this)">Profile</button>
-      <button class="tab-btn" onclick="switchTab('committee-agriculture','agriculture-services',this)">Services</button>
-      <button class="tab-btn" onclick="switchTab('committee-agriculture','agriculture-programs',this)">Programs & Projects</button>
-      <button class="tab-btn" onclick="switchTab('committee-agriculture','agriculture-activities',this)">Activities</button>
-      <button class="tab-btn" onclick="switchTab('committee-agriculture','agriculture-reports',this)">Reports</button>
-    </div>
-    <div class="tab-panel active" id="agriculture-profile">
-<div id="public-committee-info-COM-001" class="info-block">
-  <h3>Committee Information</h3><div class="public-loader">Loading official committee information...</div>
-</div>
-<h3 style="margin-top:24px">Sector Statistics</h3>
-<div id="public-stats-COM-001" class="stats-grid"><div class="live-empty">Coming Soon</div></div>
-<div id="public-organizations-COM-001" class="info-block"><h3>Organizations / Associations</h3><div class="live-empty">Coming Soon</div></div>
-</div>
-    <div class="tab-panel" id="agriculture-services">
-<div id="public-services-COM-001" class="info-block"><h3>Available Services</h3><div class="live-empty">Coming Soon</div></div>
-</div>
-    <div class="tab-panel" id="agriculture-programs">
-<div id="public-programs-COM-001" class="info-block"><h3>Programs & Projects</h3><div class="live-empty">Coming Soon</div></div>
-</div>
-    <div class="tab-panel" id="agriculture-activities">
-<div id="public-upcoming-COM-001" class="info-block"><h3>Upcoming Activities</h3><div class="live-empty">Coming Soon</div></div>
-<div id="public-recent-COM-001" class="info-block"><h3>Recent Activities</h3><div class="live-empty">Coming Soon</div></div>
-</div>
-    <div class="tab-panel" id="agriculture-reports">
-<div id="public-reports-COM-001" class="info-block"><h3>Reports & Documents</h3><div class="live-empty">Coming Soon</div></div>
-</div>
-  </div></div>
-</div>
+<!-- Committee profile pages removed.
+     Committee responsibilities remain visible under Officials.
+     Public committee activities are published under Barangay Updates. -->
 
-<div class="view" id="view-committee-health">
-  <div class="page-head"><div class="container page-head-row">
-    <div><h1>Committee on Health</h1><p>Committee profile and sector information.</p></div>
-    <button class="back-btn" onclick="showView('officials')">← Back to Officials</button>
-  </div></div>
-  <div class="page-content"><div class="container">
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('committee-health','health-profile',this)">Profile</button>
-      <button class="tab-btn" onclick="switchTab('committee-health','health-services',this)">Services</button>
-      <button class="tab-btn" onclick="switchTab('committee-health','health-programs',this)">Programs & Projects</button>
-      <button class="tab-btn" onclick="switchTab('committee-health','health-activities',this)">Activities</button>
-      <button class="tab-btn" onclick="switchTab('committee-health','health-reports',this)">Reports</button>
-    </div>
-    <div class="tab-panel active" id="health-profile">
-      <div class="info-block"><h3>Committee Information</h3><ul class="clean-list">
-        <li>Chairperson: <span class="coming">Coming Soon</span></li>
-        <li>Vice Chairperson: <span class="coming">Coming Soon</span></li>
-        <li>Members: <span class="coming">Coming Soon</span></li>
-        <li>Mandate / Responsibilities: <span class="coming">Coming Soon</span></li>
-      </ul></div>
-      <h3 style="margin-top:24px">Sector Statistics</h3>
-      <div class="stats-grid"><div class="stat"><small>Population Served</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Senior Citizens</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Children / Minors</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>BHW Coverage</small><strong>—</strong><span class="coming">Coming Soon</span></div></div>
-      <div class="info-block"><h3>Organizations / Associations</h3><ul class="clean-list"><li>Barangay Health Workers</li><li>Nutrition / health groups — Coming Soon</li></ul></div>
-    </div>
-    <div class="tab-panel" id="health-services"><div class="info-block"><h3>Available Services</h3><ul class="clean-list"><li>Health Consultation / Referral</li><li>Nutrition Activities</li><li>Blood Donation Activities</li><li>Public Health Information</li></ul></div></div>
-    <div class="tab-panel" id="health-programs"><div class="info-block"><h3>Programs & Projects</h3><span class="coming">Coming Soon</span></div></div>
-    <div class="tab-panel" id="health-activities">
-      <div class="info-block"><h3>Upcoming Activities</h3><span class="coming">Coming Soon</span></div>
-      <div class="info-block"><h3>Recent Activities</h3><span class="coming">Coming Soon</span></div>
-    </div>
-    <div class="tab-panel" id="health-reports"><div class="info-block"><h3>Reports & Documents</h3><span class="coming">Coming Soon</span></div></div>
-  </div></div>
-</div>
-
-<div class="view" id="view-committee-environment">
-  <div class="page-head"><div class="container page-head-row">
-    <div><h1>Committee on Environmental Protection</h1><p>Committee profile and sector information.</p><div class="live-status"><span class="live-dot"></span>Updated from the Barangay Encoder Portal</div></div>
-    <button class="back-btn" onclick="showView('officials')">← Back to Officials</button>
-  </div></div>
-  <div class="page-content"><div class="container">
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('committee-environment','environment-profile',this)">Profile</button>
-      <button class="tab-btn" onclick="switchTab('committee-environment','environment-services',this)">Services</button>
-      <button class="tab-btn" onclick="switchTab('committee-environment','environment-programs',this)">Programs & Projects</button>
-      <button class="tab-btn" onclick="switchTab('committee-environment','environment-activities',this)">Activities</button>
-      <button class="tab-btn" onclick="switchTab('committee-environment','environment-reports',this)">Reports</button>
-    </div>
-    <div class="tab-panel active" id="environment-profile">
-<div id="public-committee-info-COM-003" class="info-block">
-  <h3>Committee Information</h3><div class="public-loader">Loading official committee information...</div>
-</div>
-<h3 style="margin-top:24px">Sector Statistics</h3>
-<div id="public-stats-COM-003" class="stats-grid"><div class="live-empty">Coming Soon</div></div>
-<div id="public-organizations-COM-003" class="info-block"><h3>Organizations / Associations</h3><div class="live-empty">Coming Soon</div></div>
-</div>
-    <div class="tab-panel" id="environment-services">
-<div id="public-services-COM-003" class="info-block"><h3>Available Services</h3><div class="live-empty">Coming Soon</div></div>
-</div>
-    <div class="tab-panel" id="environment-programs">
-<div id="public-programs-COM-003" class="info-block"><h3>Programs & Projects</h3><div class="live-empty">Coming Soon</div></div>
-</div>
-    <div class="tab-panel" id="environment-activities">
-<div id="public-upcoming-COM-003" class="info-block"><h3>Upcoming Activities</h3><div class="live-empty">Coming Soon</div></div>
-<div id="public-recent-COM-003" class="info-block"><h3>Recent Activities</h3><div class="live-empty">Coming Soon</div></div>
-</div>
-    <div class="tab-panel" id="environment-reports">
-<div id="public-reports-COM-003" class="info-block"><h3>Reports & Documents</h3><div class="live-empty">Coming Soon</div></div>
-</div>
-  </div></div>
-</div>
-
-<div class="view" id="view-committee-peace">
-  <div class="page-head"><div class="container page-head-row">
-    <div><h1>Committee on Peace & Order</h1><p>Committee profile and sector information.</p></div>
-    <button class="back-btn" onclick="showView('officials')">← Back to Officials</button>
-  </div></div>
-  <div class="page-content"><div class="container">
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('committee-peace','peace-profile',this)">Profile</button>
-      <button class="tab-btn" onclick="switchTab('committee-peace','peace-services',this)">Services</button>
-      <button class="tab-btn" onclick="switchTab('committee-peace','peace-programs',this)">Programs & Projects</button>
-      <button class="tab-btn" onclick="switchTab('committee-peace','peace-activities',this)">Activities</button>
-      <button class="tab-btn" onclick="switchTab('committee-peace','peace-reports',this)">Reports</button>
-    </div>
-    <div class="tab-panel active" id="peace-profile">
-      <div class="info-block"><h3>Committee Information</h3><ul class="clean-list">
-        <li>Chairperson: <span class="coming">Coming Soon</span></li>
-        <li>Vice Chairperson: <span class="coming">Coming Soon</span></li>
-        <li>Members: <span class="coming">Coming Soon</span></li>
-        <li>Mandate / Responsibilities: <span class="coming">Coming Soon</span></li>
-      </ul></div>
-      <h3 style="margin-top:24px">Sector Statistics</h3>
-      <div class="stats-grid"><div class="stat"><small>Barangay Tanods</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Patrol Areas</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Incidents Recorded</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Peace & Order Activities</small><strong>—</strong><span class="coming">Coming Soon</span></div></div>
-      <div class="info-block"><h3>Organizations / Associations</h3><ul class="clean-list"><li>Barangay Tanods</li><li>Peace and order volunteers — Coming Soon</li></ul></div>
-    </div>
-    <div class="tab-panel" id="peace-services"><div class="info-block"><h3>Available Services</h3><ul class="clean-list"><li>Barangay Security Assistance</li><li>Incident Referral</li><li>Community Patrol Coordination</li><li>Emergency Coordination</li></ul></div></div>
-    <div class="tab-panel" id="peace-programs"><div class="info-block"><h3>Programs & Projects</h3><span class="coming">Coming Soon</span></div></div>
-    <div class="tab-panel" id="peace-activities">
-      <div class="info-block"><h3>Upcoming Activities</h3><span class="coming">Coming Soon</span></div>
-      <div class="info-block"><h3>Recent Activities</h3><span class="coming">Coming Soon</span></div>
-    </div>
-    <div class="tab-panel" id="peace-reports"><div class="info-block"><h3>Reports & Documents</h3><span class="coming">Coming Soon</span></div></div>
-  </div></div>
-</div>
-
-<div class="view" id="view-committee-women">
-  <div class="page-head"><div class="container page-head-row">
-    <div><h1>Committee on Women & Family</h1><p>Committee profile and sector information.</p></div>
-    <button class="back-btn" onclick="showView('officials')">← Back to Officials</button>
-  </div></div>
-  <div class="page-content"><div class="container">
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('committee-women','women-profile',this)">Profile</button>
-      <button class="tab-btn" onclick="switchTab('committee-women','women-services',this)">Services</button>
-      <button class="tab-btn" onclick="switchTab('committee-women','women-programs',this)">Programs & Projects</button>
-      <button class="tab-btn" onclick="switchTab('committee-women','women-activities',this)">Activities</button>
-      <button class="tab-btn" onclick="switchTab('committee-women','women-reports',this)">Reports</button>
-    </div>
-    <div class="tab-panel active" id="women-profile">
-      <div class="info-block"><h3>Committee Information</h3><ul class="clean-list">
-        <li>Chairperson: <span class="coming">Coming Soon</span></li>
-        <li>Vice Chairperson: <span class="coming">Coming Soon</span></li>
-        <li>Members: <span class="coming">Coming Soon</span></li>
-        <li>Mandate / Responsibilities: <span class="coming">Coming Soon</span></li>
-      </ul></div>
-      <h3 style="margin-top:24px">Sector Statistics</h3>
-      <div class="stats-grid"><div class="stat"><small>Women Population</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Households / Families</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Program Beneficiaries</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Activities Conducted</small><strong>—</strong><span class="coming">Coming Soon</span></div></div>
-      <div class="info-block"><h3>Organizations / Associations</h3><ul class="clean-list"><li>Women’s organization / groups — Coming Soon</li></ul></div>
-    </div>
-    <div class="tab-panel" id="women-services"><div class="info-block"><h3>Available Services</h3><ul class="clean-list"><li>Women & Family Programs</li><li>Referral / Assistance</li><li>Community Activities</li><li>Information Campaigns</li></ul></div></div>
-    <div class="tab-panel" id="women-programs"><div class="info-block"><h3>Programs & Projects</h3><span class="coming">Coming Soon</span></div></div>
-    <div class="tab-panel" id="women-activities">
-      <div class="info-block"><h3>Upcoming Activities</h3><span class="coming">Coming Soon</span></div>
-      <div class="info-block"><h3>Recent Activities</h3><span class="coming">Coming Soon</span></div>
-    </div>
-    <div class="tab-panel" id="women-reports"><div class="info-block"><h3>Reports & Documents</h3><span class="coming">Coming Soon</span></div></div>
-  </div></div>
-</div>
-
-<div class="view" id="view-committee-senior">
-  <div class="page-head"><div class="container page-head-row">
-    <div><h1>Committee on Senior Citizens</h1><p>Committee profile and sector information.</p></div>
-    <button class="back-btn" onclick="showView('officials')">← Back to Officials</button>
-  </div></div>
-  <div class="page-content"><div class="container">
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('committee-senior','senior-profile',this)">Profile</button>
-      <button class="tab-btn" onclick="switchTab('committee-senior','senior-services',this)">Services</button>
-      <button class="tab-btn" onclick="switchTab('committee-senior','senior-programs',this)">Programs & Projects</button>
-      <button class="tab-btn" onclick="switchTab('committee-senior','senior-activities',this)">Activities</button>
-      <button class="tab-btn" onclick="switchTab('committee-senior','senior-reports',this)">Reports</button>
-    </div>
-    <div class="tab-panel active" id="senior-profile">
-      <div class="info-block"><h3>Committee Information</h3><ul class="clean-list">
-        <li>Chairperson: <span class="coming">Coming Soon</span></li>
-        <li>Vice Chairperson: <span class="coming">Coming Soon</span></li>
-        <li>Members: <span class="coming">Coming Soon</span></li>
-        <li>Mandate / Responsibilities: <span class="coming">Coming Soon</span></li>
-      </ul></div>
-      <h3 style="margin-top:24px">Sector Statistics</h3>
-      <div class="stats-grid"><div class="stat"><small>Senior Citizens</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Validated Seniors</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Program Beneficiaries</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Activities Conducted</small><strong>—</strong><span class="coming">Coming Soon</span></div></div>
-      <div class="info-block"><h3>Organizations / Associations</h3><ul class="clean-list"><li>Senior citizens association — Coming Soon</li></ul></div>
-    </div>
-    <div class="tab-panel" id="senior-services"><div class="info-block"><h3>Available Services</h3><ul class="clean-list"><li>Validation Assistance</li><li>Social Pension Information</li><li>Referral Assistance</li><li>Senior Citizen Activities</li></ul></div></div>
-    <div class="tab-panel" id="senior-programs"><div class="info-block"><h3>Programs & Projects</h3><span class="coming">Coming Soon</span></div></div>
-    <div class="tab-panel" id="senior-activities">
-      <div class="info-block"><h3>Upcoming Activities</h3><span class="coming">Coming Soon</span></div>
-      <div class="info-block"><h3>Recent Activities</h3><span class="coming">Coming Soon</span></div>
-    </div>
-    <div class="tab-panel" id="senior-reports"><div class="info-block"><h3>Reports & Documents</h3><span class="coming">Coming Soon</span></div></div>
-  </div></div>
-</div>
-
-<div class="view" id="view-committee-youth">
-  <div class="page-head"><div class="container page-head-row">
-    <div><h1>Committee on Youth & Sports</h1><p>Committee profile and sector information.</p></div>
-    <button class="back-btn" onclick="showView('officials')">← Back to Officials</button>
-  </div></div>
-  <div class="page-content"><div class="container">
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('committee-youth','youth-profile',this)">Profile</button>
-      <button class="tab-btn" onclick="switchTab('committee-youth','youth-services',this)">Services</button>
-      <button class="tab-btn" onclick="switchTab('committee-youth','youth-programs',this)">Programs & Projects</button>
-      <button class="tab-btn" onclick="switchTab('committee-youth','youth-activities',this)">Activities</button>
-      <button class="tab-btn" onclick="switchTab('committee-youth','youth-reports',this)">Reports</button>
-    </div>
-    <div class="tab-panel active" id="youth-profile">
-      <div class="info-block"><h3>Committee Information</h3><ul class="clean-list">
-        <li>Chairperson: <span class="coming">Coming Soon</span></li>
-        <li>Vice Chairperson: <span class="coming">Coming Soon</span></li>
-        <li>Members: <span class="coming">Coming Soon</span></li>
-        <li>Mandate / Responsibilities: <span class="coming">Coming Soon</span></li>
-      </ul></div>
-      <h3 style="margin-top:24px">Sector Statistics</h3>
-      <div class="stats-grid"><div class="stat"><small>Youth Population</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Registered Youth</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Sports Participants</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Youth Programs</small><strong>—</strong><span class="coming">Coming Soon</span></div></div>
-      <div class="info-block"><h3>Organizations / Associations</h3><ul class="clean-list"><li>Sangguniang Kabataan</li><li>Youth organizations — Coming Soon</li></ul></div>
-    </div>
-    <div class="tab-panel" id="youth-services"><div class="info-block"><h3>Available Services</h3><ul class="clean-list"><li>Youth Programs</li><li>Sports Activities</li><li>Training / Seminar</li><li>Community Youth Engagement</li></ul></div></div>
-    <div class="tab-panel" id="youth-programs"><div class="info-block"><h3>Programs & Projects</h3><span class="coming">Coming Soon</span></div></div>
-    <div class="tab-panel" id="youth-activities">
-      <div class="info-block"><h3>Upcoming Activities</h3><span class="coming">Coming Soon</span></div>
-      <div class="info-block"><h3>Recent Activities</h3><span class="coming">Coming Soon</span></div>
-    </div>
-    <div class="tab-panel" id="youth-reports"><div class="info-block"><h3>Reports & Documents</h3><span class="coming">Coming Soon</span></div></div>
-  </div></div>
-</div>
-
-<div class="view" id="view-committee-infrastructure">
-  <div class="page-head"><div class="container page-head-row">
-    <div><h1>Committee on Infrastructure</h1><p>Committee profile and sector information.</p></div>
-    <button class="back-btn" onclick="showView('officials')">← Back to Officials</button>
-  </div></div>
-  <div class="page-content"><div class="container">
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('committee-infrastructure','infrastructure-profile',this)">Profile</button>
-      <button class="tab-btn" onclick="switchTab('committee-infrastructure','infrastructure-services',this)">Services</button>
-      <button class="tab-btn" onclick="switchTab('committee-infrastructure','infrastructure-programs',this)">Programs & Projects</button>
-      <button class="tab-btn" onclick="switchTab('committee-infrastructure','infrastructure-activities',this)">Activities</button>
-      <button class="tab-btn" onclick="switchTab('committee-infrastructure','infrastructure-reports',this)">Reports</button>
-    </div>
-    <div class="tab-panel active" id="infrastructure-profile">
-      <div class="info-block"><h3>Committee Information</h3><ul class="clean-list">
-        <li>Chairperson: <span class="coming">Coming Soon</span></li>
-        <li>Vice Chairperson: <span class="coming">Coming Soon</span></li>
-        <li>Members: <span class="coming">Coming Soon</span></li>
-        <li>Mandate / Responsibilities: <span class="coming">Coming Soon</span></li>
-      </ul></div>
-      <h3 style="margin-top:24px">Sector Statistics</h3>
-      <div class="stats-grid"><div class="stat"><small>Ongoing Projects</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Completed Projects</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Road / Facility Projects</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Project Beneficiaries</small><strong>—</strong><span class="coming">Coming Soon</span></div></div>
-      <div class="info-block"><h3>Organizations / Associations</h3><ul class="clean-list"><li>Partner agencies / groups — Coming Soon</li></ul></div>
-    </div>
-    <div class="tab-panel" id="infrastructure-services"><div class="info-block"><h3>Available Services</h3><ul class="clean-list"><li>Project Monitoring</li><li>Infrastructure Coordination</li><li>Facility Maintenance Coordination</li></ul></div></div>
-    <div class="tab-panel" id="infrastructure-programs"><div class="info-block"><h3>Programs & Projects</h3><span class="coming">Coming Soon</span></div></div>
-    <div class="tab-panel" id="infrastructure-activities">
-      <div class="info-block"><h3>Upcoming Activities</h3><span class="coming">Coming Soon</span></div>
-      <div class="info-block"><h3>Recent Activities</h3><span class="coming">Coming Soon</span></div>
-    </div>
-    <div class="tab-panel" id="infrastructure-reports"><div class="info-block"><h3>Reports & Documents</h3><span class="coming">Coming Soon</span></div></div>
-  </div></div>
-</div>
-
-<div class="view" id="view-committee-finance">
-  <div class="page-head"><div class="container page-head-row">
-    <div><h1>Committee on Finance / Appropriations</h1><p>Committee profile and sector information.</p></div>
-    <button class="back-btn" onclick="showView('officials')">← Back to Officials</button>
-  </div></div>
-  <div class="page-content"><div class="container">
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('committee-finance','finance-profile',this)">Profile</button>
-      <button class="tab-btn" onclick="switchTab('committee-finance','finance-services',this)">Services</button>
-      <button class="tab-btn" onclick="switchTab('committee-finance','finance-programs',this)">Programs & Projects</button>
-      <button class="tab-btn" onclick="switchTab('committee-finance','finance-activities',this)">Activities</button>
-      <button class="tab-btn" onclick="switchTab('committee-finance','finance-reports',this)">Reports</button>
-    </div>
-    <div class="tab-panel active" id="finance-profile">
-      <div class="info-block"><h3>Committee Information</h3><ul class="clean-list">
-        <li>Chairperson: <span class="coming">Coming Soon</span></li>
-        <li>Vice Chairperson: <span class="coming">Coming Soon</span></li>
-        <li>Members: <span class="coming">Coming Soon</span></li>
-        <li>Mandate / Responsibilities: <span class="coming">Coming Soon</span></li>
-      </ul></div>
-      <h3 style="margin-top:24px">Sector Statistics</h3>
-      <div class="stats-grid"><div class="stat"><small>Approved Programs</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Budget Items</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Funded Projects</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Financial Reports</small><strong>—</strong><span class="coming">Coming Soon</span></div></div>
-      <div class="info-block"><h3>Organizations / Associations</h3><ul class="clean-list"><li>Committee support groups — Coming Soon</li></ul></div>
-    </div>
-    <div class="tab-panel" id="finance-services"><div class="info-block"><h3>Available Services</h3><ul class="clean-list"><li>Budget / Appropriation Information</li><li>Program Funding Coordination</li><li>Financial Documentation</li></ul></div></div>
-    <div class="tab-panel" id="finance-programs"><div class="info-block"><h3>Programs & Projects</h3><span class="coming">Coming Soon</span></div></div>
-    <div class="tab-panel" id="finance-activities">
-      <div class="info-block"><h3>Upcoming Activities</h3><span class="coming">Coming Soon</span></div>
-      <div class="info-block"><h3>Recent Activities</h3><span class="coming">Coming Soon</span></div>
-    </div>
-    <div class="tab-panel" id="finance-reports"><div class="info-block"><h3>Reports & Documents</h3><span class="coming">Coming Soon</span></div></div>
-  </div></div>
-</div>
-
-<div class="view" id="view-committee-disaster">
-  <div class="page-head"><div class="container page-head-row">
-    <div><h1>Committee on Disaster Risk Reduction</h1><p>Committee profile and sector information.</p></div>
-    <button class="back-btn" onclick="showView('officials')">← Back to Officials</button>
-  </div></div>
-  <div class="page-content"><div class="container">
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('committee-disaster','disaster-profile',this)">Profile</button>
-      <button class="tab-btn" onclick="switchTab('committee-disaster','disaster-services',this)">Services</button>
-      <button class="tab-btn" onclick="switchTab('committee-disaster','disaster-programs',this)">Programs & Projects</button>
-      <button class="tab-btn" onclick="switchTab('committee-disaster','disaster-activities',this)">Activities</button>
-      <button class="tab-btn" onclick="switchTab('committee-disaster','disaster-reports',this)">Reports</button>
-    </div>
-    <div class="tab-panel active" id="disaster-profile">
-      <div class="info-block"><h3>Committee Information</h3><ul class="clean-list">
-        <li>Chairperson: <span class="coming">Coming Soon</span></li>
-        <li>Vice Chairperson: <span class="coming">Coming Soon</span></li>
-        <li>Members: <span class="coming">Coming Soon</span></li>
-        <li>Mandate / Responsibilities: <span class="coming">Coming Soon</span></li>
-      </ul></div>
-      <h3 style="margin-top:24px">Sector Statistics</h3>
-      <div class="stats-grid"><div class="stat"><small>Households Covered</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Emergency Volunteers</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Preparedness Activities</small><strong>—</strong><span class="coming">Coming Soon</span></div><div class="stat"><small>Relief / Response Records</small><strong>—</strong><span class="coming">Coming Soon</span></div></div>
-      <div class="info-block"><h3>Organizations / Associations</h3><ul class="clean-list"><li>BDRRMC / volunteers — Coming Soon</li></ul></div>
-    </div>
-    <div class="tab-panel" id="disaster-services"><div class="info-block"><h3>Available Services</h3><ul class="clean-list"><li>Emergency Coordination</li><li>Preparedness Information</li><li>Relief Assistance Coordination</li><li>Disaster Response Referral</li></ul></div></div>
-    <div class="tab-panel" id="disaster-programs"><div class="info-block"><h3>Programs & Projects</h3><span class="coming">Coming Soon</span></div></div>
-    <div class="tab-panel" id="disaster-activities">
-      <div class="info-block"><h3>Upcoming Activities</h3><span class="coming">Coming Soon</span></div>
-      <div class="info-block"><h3>Recent Activities</h3><span class="coming">Coming Soon</span></div>
-    </div>
-    <div class="tab-panel" id="disaster-reports"><div class="info-block"><h3>Reports & Documents</h3><span class="coming">Coming Soon</span></div></div>
-  </div></div>
-</div>
-
-<!-- PROGRAMS -->
 <div class="view" id="view-programs">
   <div class="page-head">
     <div class="container page-head-row">
@@ -4347,65 +3935,7 @@ function publicTime(v){
   return s;
 }
 
-function renderCommitteePublic(data, committeeId){
-  const entries=(data.committeeProfileData||[]).filter(x=>String(x['Committee ID'])===committeeId);
-  const officials=data.officials||[];
-  const content=(data.content||[]).filter(x=>String(x['Committee ID'])===committeeId);
 
-  const infoEl=document.getElementById('public-committee-info-'+committeeId);
-  if(infoEl){
-    const assigned=[];
-    officials.forEach(o=>{
-      (o.committees||[]).forEach(a=>{
-        if(String(a.committeeId)===committeeId){
-          assigned.push({name:o['Full Name']||'',position:o['Position']||'',role:a.role||'Member'});
-        }
-      });
-    });
-
-    const roleOrder={'Chairperson':1,'Vice Chairperson':2,'Member':3};
-    assigned.sort((a,b)=>(roleOrder[a.role]||9)-(roleOrder[b.role]||9));
-
-    infoEl.innerHTML='<h3>Committee Information</h3>'+
-      (assigned.length
-        ? '<div class="committee-person-list">'+assigned.map(x=>
-            `<div class="committee-person-row"><strong>${publicEsc(x.role)}</strong><span>${publicEsc(x.name)}${x.position?' · '+publicEsc(x.position):''}</span></div>`
-          ).join('')+'</div>'
-        : '<div class="live-empty">Coming Soon</div>');
-  }
-
-  const stats=entries.filter(x=>String(x.Section).toUpperCase()==='STATISTIC');
-  const statsEl=document.getElementById('public-stats-'+committeeId);
-  if(statsEl){
-    statsEl.innerHTML=stats.length ? stats.map(x=>`
-      <div class="stat">
-        <small>${publicEsc(x.Title)}</small>
-        <strong>${publicEsc(x.Value||'—')}</strong>
-        <span>${publicEsc(x.Unit||'')}${x['As Of Date']?' · As of '+publicDate(x['As Of Date']):''}</span>
-      </div>`).join('') : '<div class="live-empty">Coming Soon</div>';
-  }
-
-  renderPublicEntryList('public-organizations-'+committeeId,entries,'ORGANIZATION');
-  renderPublicEntryList('public-services-'+committeeId,entries,'SERVICE');
-  renderPublicEntryList('public-programs-'+committeeId,entries,'PROGRAM');
-  renderPublicEntryList('public-reports-'+committeeId,entries,'REPORT');
-
-  const now=new Date(); now.setHours(0,0,0,0);
-  const sorted=content.slice().sort((a,b)=>String(b['Event Date']||'').localeCompare(String(a['Event Date']||'')));
-  const upcoming=sorted.filter(x=>{
-    if(!x['Event Date']) return false;
-    const d=new Date(x['Event Date']); d.setHours(0,0,0,0);
-    return d>=now;
-  });
-  const recent=sorted.filter(x=>{
-    if(!x['Event Date']) return true;
-    const d=new Date(x['Event Date']); d.setHours(0,0,0,0);
-    return d<now;
-  });
-
-  renderPublicContentList('public-upcoming-'+committeeId,upcoming);
-  renderPublicContentList('public-recent-'+committeeId,recent);
-}
 
 function renderPublicEntryList(id,entries,section){
   const root=document.getElementById(id);
@@ -5303,12 +4833,6 @@ function isTanodOfficial(o){
     p.includes('TANOD');
 }
 
-function committeeViewName(id){
-  if(String(id)==='COM-001') return 'committee-agriculture';
-  if(String(id)==='COM-003') return 'committee-environment';
-  return '';
-}
-
 function renderOfficialCard(o,primary=false){
   const name=o['Full Name']||o.fullName||o.name||'';
   const position=o['Position']||o.position||'';
@@ -5331,11 +4855,8 @@ function renderOfficialCard(o,primary=false){
   const committeeHtml=committees.length
     ? `<div class="official-live-committees">${
         committees.map(c=>{
-          const view=committeeViewName(c.committeeId);
           const label=String(c.committeeName||'').replace(/^Committee on\s+/i,'');
-          return view
-            ? `<button type="button" onclick="showView('${view}')">${publicEsc(label)}</button>`
-            : `<span class="tag">${publicEsc(label)}</span>`;
+          return `<span class="tag">${publicEsc(label)}</span>`;
         }).join('')
       }</div>`
     : '';
@@ -6284,16 +5805,16 @@ function applyPublicData(data){
   renderHomeAnnouncements(data);
   renderHomeRecentActivities(data);
   renderAllAnnouncements(data);
-  renderCommitteePublic(data,'COM-001');
-  renderCommitteePublic(data,'COM-003');
 }
+
+let BTO_PUBLIC_LOAD_STARTED=false;
 
 function btoWelcomeStatus(message){
   const el=document.getElementById('btoWelcomeStatus');
   if(el) el.textContent=message||'';
 }
 
-function btoOpenSite(){
+function btoUnlockWebsite(){
   const loader=document.getElementById('btoWelcomeLoader');
 
   document.documentElement.classList.remove('bto-site-loading');
@@ -6302,29 +5823,29 @@ function btoOpenSite(){
   if(loader){
     loader.classList.add('is-complete');
     setTimeout(()=>{
-      if(loader.parentNode) loader.parentNode.removeChild(loader);
+      if(loader && loader.parentNode) loader.parentNode.removeChild(loader);
     },650);
   }
 }
 
-async function loadPublicDataForWelcome(){
-  btoWelcomeStatus('Loading official barangay information...');
+async function loadPublicDataOnce(){
+  // HARD GUARD: only one request for the entire page visit.
+  if(BTO_PUBLIC_LOAD_STARTED) return;
+  BTO_PUBLIC_LOAD_STARTED=true;
+
+  const errorEl=document.getElementById('btoWelcomeError');
 
   try{
-    /*
-     * Keep the original working publicData architecture.
-     * No snapshot, no LockService, no per-page endpoints, no forced timeout.
-     * We simply keep the welcome screen visible until this working request ends.
-     */
+    btoWelcomeStatus('Loading official barangay information...');
+
     const freshUrl=BTO_PUBLIC_API +
       (BTO_PUBLIC_API.includes('?')?'&':'?') +
       '_ts=' + Date.now();
 
+    // Exactly ONE request.
     const res=await fetch(freshUrl,{cache:'no-store'});
 
-    if(!res.ok){
-      throw new Error('HTTP '+res.status);
-    }
+    if(!res.ok) throw new Error('HTTP '+res.status);
 
     btoWelcomeStatus('Preparing website content...');
 
@@ -6334,27 +5855,25 @@ async function loadPublicDataForWelcome(){
       throw new Error(data?.message || 'Public data response was not successful.');
     }
 
-    // Render all current site data before allowing access.
+    // Render complete data once.
     applyPublicData(data);
     publicCacheSet(data);
 
     btoWelcomeStatus('Welcome to Barangay Tupol Oeste');
-    await new Promise(resolve=>setTimeout(resolve,300));
 
-    btoOpenSite();
-    return true;
+    await new Promise(resolve=>setTimeout(resolve,250));
+    btoUnlockWebsite();
 
   }catch(err){
     console.warn('Public data load failed:',err);
 
-    /*
-     * Do not trap the visitor on a manual Retry button.
-     * Retry automatically while the welcome animation remains visible.
-     */
-    btoWelcomeStatus('Connecting to the Barangay server...');
+    btoWelcomeStatus('Unable to complete website loading.');
+    if(errorEl) errorEl.style.display='block';
 
-    await new Promise(resolve=>setTimeout(resolve,3000));
-    return loadPublicDataForWelcome();
+    // IMPORTANT:
+    // No automatic retry.
+    // No second doGet.
+    // User may refresh manually if the single request genuinely fails.
   }
 }
 
@@ -6367,11 +5886,10 @@ document.addEventListener('DOMContentLoaded',()=>{
   const hash=location.hash.replace('#','');
   const requested=(hash && document.getElementById('view-'+hash)) ? hash : 'home';
 
-  // Prepare the requested view behind the loader.
   showView(requested);
 
-  // Site remains inaccessible until the original complete publicData succeeds.
-  loadPublicDataForWelcome();
+  // One and only one public data request.
+  loadPublicDataOnce();
 });
 </script>
 
