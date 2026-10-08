@@ -2838,6 +2838,20 @@ a.back-btn:focus{
   opacity:.92;
 }
 
+
+.officer-duty-days{
+  display:inline-flex;
+  width:max-content;
+  max-width:100%;
+  margin-top:7px;
+  padding:4px 8px;
+  border-radius:999px;
+  background:rgba(255,255,255,.17);
+  border:1px solid rgba(255,255,255,.25);
+  font-size:11px;
+  font-weight:800;
+}
+
 </style>
 </head>
 <body>
@@ -3952,7 +3966,7 @@ function switchTab(scope,panelId,btn){
 
 
 const BTO_PUBLIC_API = "https://script.google.com/macros/s/AKfycbwM6bagjlHKao-NCB3d_nDwX29zO4EFKcoj50vABCQP7bKJuSI4j7772Zam9LwNiLCqNg/exec?action=publicData";
-const BTO_PUBLIC_CACHE_KEY = 'bto_public_data_v8';
+const BTO_PUBLIC_CACHE_KEY = 'bto_public_data_v9';
 const BTO_PUBLIC_CACHE_MS = 5 * 60 * 1000;
 
 function publicEsc(v){
@@ -5879,6 +5893,7 @@ function renderPublicOfficersOfTheDay(data){
     <div class="officer-duty-item">
       <div class="officer-duty-name">${btoEsc(x.officerName||'')}</div>
       ${x.position?`<div class="officer-duty-position">${btoEsc(x.position)}</div>`:''}
+      ${x.dutyDays?`<div class="officer-duty-days">Duty: ${btoEsc(x.dutyDays)}</div>`:''}
       ${x.contactNumber?`<div class="officer-duty-contact">Contact: ${btoEsc(x.contactNumber)}</div>`:''}
       ${x.remarks?`<div class="officer-duty-remarks">${btoEsc(x.remarks)}</div>`:''}
     </div>
