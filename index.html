@@ -4198,6 +4198,26 @@ function deDuplicateOfficials(rows){
   return Array.from(byName.values());
 }
 
+
+function mergeLiveFirstWithFallback(liveRows,fallbackRows){
+  const live=deDuplicateOfficials(liveRows||[]);
+  const liveKeys=new Set(
+    live.map(o=>looseOfficialNameKey(o['Full Name']||o.fullName||o.name||''))
+  );
+
+  const fallbackOnly=(fallbackRows||[])
+    .filter(f=>!liveKeys.has(looseOfficialNameKey(f.name||'')))
+    .map(f=>({
+      'Full Name':f.name,
+      'Position':f.position,
+      'Photo URL':'',
+      'Contact Number':'',
+      committees:[]
+    }));
+
+  return deDuplicateOfficials([...live,...fallbackOnly]);
+}
+
 function mergeLiveWithFallback(liveRows,fallbackRows){
   const live=deDuplicateOfficials(liveRows);
   const used=new Set();
@@ -4271,9 +4291,16 @@ function renderOfficialsPersonnel(data){
 
   // Always preserve the full official master list.
   // Encoded/live records replace the matching fallback person by name.
-  const liveBarangay = (Array.isArray(data.barangayOfficials) && data.barangayOfficials.length)
-    ? data.barangayOfficials
-    : active.filter(isBarangayOfficial);
+  // Barangay Officials must use the enriched officials array because it
+  // includes each Kagawad's committee assignments.
+  const liveBarangay = active.filter(isBarangayOfficial);
+
+  console.log('[BTO BARANGAY COMMITTEES]',
+    liveBarangay.map(o=>({
+      name:o['Full Name']||'',
+      committees:(o.committees||[]).length
+    }))
+  );
 
   const liveSK = (Array.isArray(data.skOfficials) && data.skOfficials.length)
     ? data.skOfficials
@@ -4288,12 +4315,12 @@ function renderOfficialsPersonnel(data){
     BTO_FALLBACK_BARANGAY
   );
 
-  let sk=mergeLiveWithFallback(
+  let sk=mergeLiveFirstWithFallback(
     liveSK,
     BTO_FALLBACK_SK
   );
 
-  let tanod=mergeLiveWithFallback(
+  let tanod=mergeLiveFirstWithFallback(
     liveTanod,
     BTO_FALLBACK_TANODS
   );
@@ -4319,6 +4346,12 @@ function renderOfficialsPersonnel(data){
   }
 
   if(tanodRoot){
+    console.log('[BTO TANOD LIVE FIRST]',tanod.map(x=>({
+      name:x['Full Name']||'',
+      position:x['Position']||'',
+      photo:!!(x['Photo URL']),
+      contact:x['Contact Number']||''
+    })));
     tanodRoot.innerHTML=tanod.map(o=>renderOfficialCard(o,false)).join('');
   }
 }
