@@ -449,6 +449,84 @@ button[id*="save"]:hover,
 button[onclick*="save"]:hover,
 button[onclick*="Save"]:hover{background:#d91e37}
 
+
+/* ===== Legislative + Full Disclosure modules ===== */
+.doc-form-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+}
+.doc-list{
+  display:grid;
+  gap:10px;
+  margin-top:14px;
+}
+.doc-row{
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  padding:12px 14px;
+  background:#fff;
+  display:flex;
+  gap:12px;
+  align-items:center;
+  justify-content:space-between;
+}
+.doc-row-main{
+  min-width:0;
+}
+.doc-row-title{
+  font-weight:800;
+  color:#17202a;
+  margin-bottom:3px;
+}
+.doc-row-meta{
+  font-size:12px;
+  color:#667085;
+}
+.doc-row-actions{
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+}
+.doc-row-actions button{
+  width:auto;
+  margin:0;
+  padding:8px 11px;
+}
+.doc-file-current{
+  font-size:12px;
+  color:#475467;
+  padding:8px 10px;
+  border-radius:9px;
+  background:#f8fafc;
+  margin-top:6px;
+  word-break:break-all;
+}
+.disclosure-category-box{
+  border:1px solid #e5e7eb;
+  background:#fafafa;
+  border-radius:12px;
+  padding:14px;
+  margin:14px 0;
+}
+.disclosure-category-add{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:8px;
+  align-items:end;
+}
+.disclosure-category-add button{
+  width:auto;
+  min-width:120px;
+  margin:0;
+}
+@media(max-width:720px){
+  .doc-form-grid{grid-template-columns:1fr}
+  .doc-row{align-items:flex-start;flex-direction:column}
+  .disclosure-category-add{grid-template-columns:1fr}
+  .disclosure-category-add button{width:100%}
+}
+
 </style>
 </head>
 <body>
@@ -576,7 +654,7 @@ function isWriteApiAction(action){
          a.includes('save') || a.includes('delete') || a.includes('upload');
 }
 
-console.info('BTO ADMIN BUILD: 2026-10-07 LOGIN-FINAL-FIX-5');
+console.info('BTO ADMIN BUILD: 2026-10-08 LEGISLATIVE-FULL-DISCLOSURE-1');
 
 function ensureGlobalActionStatus(){
   let el=document.getElementById('globalActionStatus');
@@ -851,6 +929,12 @@ function renderApp(){
   if(hasModule('CONTENT') || (me.assignedModules||'').includes('COM-'))
     items.push(['Announcements & Activities','content']);
 
+  if(hasModule('LEGISLATIVE'))
+    items.push(['Ordinances & Resolutions','legislative']);
+
+  if(hasModule('FULL_DISCLOSURE'))
+    items.push(['Barangay Full Disclosure','fullDisclosure']);
+
   if(['SUPER_ADMIN','ADMIN'].includes(me.role)){
     items.push(['Users','users']);
     items.push(['Site Media','siteMedia']);
@@ -931,6 +1015,8 @@ async function openModule(name,title='Module'){
   if(name==='stats') return loadStats();
   if(name==='livestock') return loadLivestock();
   if(name==='content') return contentForm();
+  if(name==='legislative') return legislativeForm();
+  if(name==='fullDisclosure') return fullDisclosureForm();
   if(name==='officials') return officialsForm();
   if(name==='assignments') return assignmentForm();
   if(name==='users') return usersForm();
@@ -1424,7 +1510,9 @@ function renderUsersBundle(bundle){
     ['OFFICIALS','Officials Management'],
     ['BARANGAY_STATISTICS','Barangay Statistics'],
     ['LIVESTOCK','Livestock Statistics'],
-    ['CONTENT','Announcements & Activities']
+    ['CONTENT','Announcements & Activities'],
+    ['LEGISLATIVE','Ordinances & Resolutions'],
+    ['FULL_DISCLOSURE','Barangay Full Disclosure']
   ];
 
   document.getElementById('moduleArea').innerHTML=`
@@ -2118,6 +2206,378 @@ function dateInputValue(v){
     if(isNaN(d)) return '';
     return d.toISOString().slice(0,10);
   }catch(e){return ''}
+}
+
+
+
+/* ===== ORDINANCES & RESOLUTIONS ===== */
+window.BTO_LEGISLATIVE_ROWS={ordinances:[],resolutions:[]};
+window.BTO_EDIT_LEGISLATIVE=null;
+
+function currentYearValue(){
+  return String(new Date().getFullYear());
+}
+
+async function legislativeForm(){
+  const r=await api('getLegislative');
+  if(!r.success){showModuleError(r.message);return}
+
+  window.BTO_LEGISLATIVE_ROWS={
+    ordinances:r.ordinances||[],
+    resolutions:r.resolutions||[]
+  };
+  window.BTO_EDIT_LEGISLATIVE=null;
+  renderLegislativeModule();
+}
+
+function renderLegislativeModule(){
+  const rows=[
+    ...(window.BTO_LEGISLATIVE_ROWS.ordinances||[]),
+    ...(window.BTO_LEGISLATIVE_ROWS.resolutions||[])
+  ].sort((a,b)=>Number(b.year||0)-Number(a.year||0) || String(a.title||'').localeCompare(String(b.title||'')));
+
+  document.getElementById('moduleArea').innerHTML=`
+    <div class="card">
+      <h2>Ordinances & Resolutions</h2>
+      <div class="help">Simple setup: select type, enter year and document name, then upload the PDF.</div>
+
+      <input id="legId" type="hidden">
+
+      <div class="doc-form-grid">
+        <div>
+          <label>Type</label>
+          <select id="legType">
+            <option value="ORDINANCE">Ordinance</option>
+            <option value="RESOLUTION">Resolution</option>
+          </select>
+        </div>
+        <div>
+          <label>Year</label>
+          <input id="legYear" type="number" min="1900" max="2200" value="${currentYearValue()}">
+        </div>
+      </div>
+
+      <label>Name / Title of Ordinance or Resolution</label>
+      <input id="legTitle" placeholder="Example: Barangay Ordinance No. 01, Series of 2026 – Anti-Rabies...">
+
+      <label>Upload PDF</label>
+      <input id="legPdf" type="file" accept="application/pdf,.pdf">
+      <div id="legCurrentFile" class="doc-file-current hidden"></div>
+
+      <label>Status</label>
+      <select id="legStatus">
+        <option value="PUBLISHED">Published</option>
+        <option value="INACTIVE">Inactive</option>
+      </select>
+
+      <div class="grid">
+        <button onclick="saveLegislativeDocument(this)">Save & Publish</button>
+        <button class="secondary" onclick="clearLegislativeForm()">Clear</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Existing Documents</h2>
+      <div class="doc-list">
+        ${rows.length ? rows.map(x=>`
+          <div class="doc-row">
+            <div class="doc-row-main">
+              <div class="doc-row-title">${esc(x.title||'Untitled')}</div>
+              <div class="doc-row-meta">${esc(x.type==='ORDINANCE'?'Ordinance':'Resolution')} • ${esc(x.year||'')} • ${esc(x.status||'')}</div>
+            </div>
+            <div class="doc-row-actions">
+              ${x.pdfUrl?`<button class="secondary" onclick="window.open('${esc(x.pdfUrl)}','_blank')">View PDF</button>`:''}
+              <button onclick='editLegislativeDocument(${JSON.stringify(JSON.stringify(x))})'>Edit</button>
+            </div>
+          </div>`).join('') : '<div class="help">No ordinance or resolution encoded yet.</div>'}
+      </div>
+    </div>`;
+}
+
+function editLegislativeDocument(json){
+  const x=JSON.parse(json);
+  document.getElementById('legId').value=x.id||'';
+  document.getElementById('legType').value=x.type||'ORDINANCE';
+  document.getElementById('legYear').value=x.year||currentYearValue();
+  document.getElementById('legTitle').value=x.title||'';
+  document.getElementById('legStatus').value=x.status||'PUBLISHED';
+
+  const f=document.getElementById('legCurrentFile');
+  if(x.pdfUrl){
+    f.classList.remove('hidden');
+    f.innerHTML=`Current PDF: <a href="${esc(x.pdfUrl)}" target="_blank" rel="noopener">Open current file</a><br>Leave PDF upload blank to keep it.`;
+  }else{
+    f.classList.add('hidden');
+    f.innerHTML='';
+  }
+  window.BTO_EDIT_LEGISLATIVE=x;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function clearLegislativeForm(){
+  window.BTO_EDIT_LEGISLATIVE=null;
+  document.getElementById('legId').value='';
+  document.getElementById('legType').value='ORDINANCE';
+  document.getElementById('legYear').value=currentYearValue();
+  document.getElementById('legTitle').value='';
+  document.getElementById('legPdf').value='';
+  document.getElementById('legStatus').value='PUBLISHED';
+  document.getElementById('legCurrentFile').classList.add('hidden');
+}
+
+async function saveLegislativeDocument(btn){
+  return withButtonSpinner(btn,'Saving...',async()=>{
+    const file=document.getElementById('legPdf').files[0];
+    let pdfUrl='';
+
+    if(file){
+      if(file.type && file.type!=='application/pdf' && !/\.pdf$/i.test(file.name))
+        throw new Error('Please select a PDF file.');
+
+      const base64=await fileToBase64(file);
+      const u=await api('uploadBase64',{
+        fileName:file.name,
+        mimeType:file.type||'application/pdf',
+        base64
+      });
+      if(!u.success) throw new Error(u.message||'PDF upload failed.');
+      pdfUrl=u.url;
+    }
+
+    const r=await api('saveLegislative',{
+      id:document.getElementById('legId').value,
+      type:document.getElementById('legType').value,
+      year:document.getElementById('legYear').value,
+      title:document.getElementById('legTitle').value,
+      pdfUrl:pdfUrl,
+      status:document.getElementById('legStatus').value
+    });
+    if(!r.success) throw new Error(r.message||'Save failed.');
+
+    await legislativeForm();
+    return r;
+  },'Document saved.');
+}
+
+/* ===== FULL DISCLOSURE ===== */
+window.BTO_DISCLOSURE_CATEGORIES=[];
+window.BTO_DISCLOSURE_ROWS=[];
+window.BTO_EDIT_DISCLOSURE=null;
+
+async function fullDisclosureForm(){
+  const [c,d]=await Promise.all([
+    api('getDisclosureCategories'),
+    api('getFullDisclosure')
+  ]);
+
+  if(!c.success){showModuleError(c.message);return}
+  if(!d.success){showModuleError(d.message);return}
+
+  window.BTO_DISCLOSURE_CATEGORIES=c.data||[];
+  window.BTO_DISCLOSURE_ROWS=d.data||[];
+  window.BTO_EDIT_DISCLOSURE=null;
+  renderFullDisclosureModule();
+}
+
+function renderFullDisclosureModule(){
+  const cats=window.BTO_DISCLOSURE_CATEGORIES||[];
+  const rows=window.BTO_DISCLOSURE_ROWS||[];
+
+  document.getElementById('moduleArea').innerHTML=`
+    <div class="card">
+      <h2>Barangay Full Disclosure</h2>
+      <div class="help">Upload an image, PDF, or both. Only Published records appear on the public website.</div>
+
+      <div class="disclosure-category-box">
+        <strong>Disclosure Items / Categories</strong>
+        <div class="help">Add a new item here anytime. No website code change is needed.</div>
+        <div class="disclosure-category-add">
+          <div>
+            <label>New Item / Category Name</label>
+            <input id="newDisclosureCategory" placeholder="Example: Statement of Receipts and Expenditures">
+          </div>
+          <button onclick="addDisclosureCategory(this)">+ Add Item</button>
+        </div>
+        <div class="help" style="margin-top:8px">
+          Current: ${cats.length ? cats.map(c=>esc(c.name)).join(' • ') : 'No categories yet'}
+        </div>
+      </div>
+
+      <input id="fdId" type="hidden">
+
+      <div class="doc-form-grid">
+        <div>
+          <label>Year</label>
+          <input id="fdYear" type="number" min="1900" max="2200" value="${currentYearValue()}">
+        </div>
+        <div>
+          <label>Disclosure Item / Category</label>
+          <select id="fdCategory">
+            <option value="">Select item/category</option>
+            ${cats.filter(c=>c.status==='ACTIVE').map(c=>`<option value="${esc(c.name)}">${esc(c.name)}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+
+      <label>Document Title</label>
+      <input id="fdTitle" placeholder="Enter the public document title">
+
+      <div class="doc-form-grid">
+        <div>
+          <label>Upload Image (optional)</label>
+          <input id="fdImage" type="file" accept="image/*">
+          <div id="fdCurrentImage" class="doc-file-current hidden"></div>
+        </div>
+        <div>
+          <label>Upload PDF (optional)</label>
+          <input id="fdPdf" type="file" accept="application/pdf,.pdf">
+          <div id="fdCurrentPdf" class="doc-file-current hidden"></div>
+        </div>
+      </div>
+
+      <label>Status</label>
+      <select id="fdStatus">
+        <option value="PUBLISHED">Published</option>
+        <option value="INACTIVE">Inactive</option>
+      </select>
+
+      <div class="grid">
+        <button onclick="saveFullDisclosureDocument(this)">Save & Publish</button>
+        <button class="secondary" onclick="clearFullDisclosureForm()">Clear</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Existing Full Disclosure Documents</h2>
+      <div class="doc-list">
+        ${rows.length ? rows.map(x=>`
+          <div class="doc-row">
+            <div class="doc-row-main">
+              <div class="doc-row-title">${esc(x.title||'Untitled')}</div>
+              <div class="doc-row-meta">${esc(x.year||'')} • ${esc(x.category||'')} • ${esc(x.status||'')}</div>
+            </div>
+            <div class="doc-row-actions">
+              ${x.imageUrl?`<button class="secondary" onclick="window.open('${esc(x.imageUrl)}','_blank')">Image</button>`:''}
+              ${x.pdfUrl?`<button class="secondary" onclick="window.open('${esc(x.pdfUrl)}','_blank')">PDF</button>`:''}
+              <button onclick='editFullDisclosureDocument(${JSON.stringify(JSON.stringify(x))})'>Edit</button>
+            </div>
+          </div>`).join('') : '<div class="help">No Full Disclosure documents encoded yet.</div>'}
+      </div>
+    </div>`;
+}
+
+async function addDisclosureCategory(btn){
+  return withButtonSpinner(btn,'Adding...',async()=>{
+    const name=document.getElementById('newDisclosureCategory').value.trim();
+    if(!name) throw new Error('Enter the new item/category name.');
+
+    const r=await api('saveDisclosureCategory',{name,status:'ACTIVE'});
+    if(!r.success) throw new Error(r.message||'Unable to add item.');
+
+    const c=await api('getDisclosureCategories');
+    if(c.success) window.BTO_DISCLOSURE_CATEGORIES=c.data||[];
+
+    renderFullDisclosureModule();
+    return r;
+  },'Disclosure item added.');
+}
+
+function editFullDisclosureDocument(json){
+  const x=JSON.parse(json);
+  document.getElementById('fdId').value=x.id||'';
+  document.getElementById('fdYear').value=x.year||currentYearValue();
+
+  const sel=document.getElementById('fdCategory');
+  if(x.category && !Array.from(sel.options).some(o=>o.value===x.category)){
+    sel.insertAdjacentHTML('beforeend',`<option value="${esc(x.category)}">${esc(x.category)}</option>`);
+  }
+  sel.value=x.category||'';
+
+  document.getElementById('fdTitle').value=x.title||'';
+  document.getElementById('fdStatus').value=x.status||'PUBLISHED';
+
+  const img=document.getElementById('fdCurrentImage');
+  if(x.imageUrl){
+    img.classList.remove('hidden');
+    img.innerHTML=`Current image: <a href="${esc(x.imageUrl)}" target="_blank" rel="noopener">Open</a><br>Leave blank to keep it.`;
+  }else{
+    img.classList.add('hidden');
+    img.innerHTML='';
+  }
+
+  const pdf=document.getElementById('fdCurrentPdf');
+  if(x.pdfUrl){
+    pdf.classList.remove('hidden');
+    pdf.innerHTML=`Current PDF: <a href="${esc(x.pdfUrl)}" target="_blank" rel="noopener">Open</a><br>Leave blank to keep it.`;
+  }else{
+    pdf.classList.add('hidden');
+    pdf.innerHTML='';
+  }
+
+  window.BTO_EDIT_DISCLOSURE=x;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function clearFullDisclosureForm(){
+  window.BTO_EDIT_DISCLOSURE=null;
+  document.getElementById('fdId').value='';
+  document.getElementById('fdYear').value=currentYearValue();
+  document.getElementById('fdCategory').value='';
+  document.getElementById('fdTitle').value='';
+  document.getElementById('fdImage').value='';
+  document.getElementById('fdPdf').value='';
+  document.getElementById('fdStatus').value='PUBLISHED';
+  document.getElementById('fdCurrentImage').classList.add('hidden');
+  document.getElementById('fdCurrentPdf').classList.add('hidden');
+}
+
+async function saveFullDisclosureDocument(btn){
+  return withButtonSpinner(btn,'Saving...',async()=>{
+    const imageFile=document.getElementById('fdImage').files[0];
+    const pdfFile=document.getElementById('fdPdf').files[0];
+
+    let imageUrl='';
+    let pdfUrl='';
+
+    if(imageFile){
+      const base64=await fileToBase64(imageFile);
+      const u=await api('uploadBase64',{
+        fileName:imageFile.name,
+        mimeType:imageFile.type||'image/jpeg',
+        base64
+      });
+      if(!u.success) throw new Error(u.message||'Image upload failed.');
+      imageUrl=u.url;
+    }
+
+    if(pdfFile){
+      if(pdfFile.type && pdfFile.type!=='application/pdf' && !/\.pdf$/i.test(pdfFile.name))
+        throw new Error('Please select a PDF file.');
+
+      const base64=await fileToBase64(pdfFile);
+      const u=await api('uploadBase64',{
+        fileName:pdfFile.name,
+        mimeType:pdfFile.type||'application/pdf',
+        base64
+      });
+      if(!u.success) throw new Error(u.message||'PDF upload failed.');
+      pdfUrl=u.url;
+    }
+
+    const r=await api('saveFullDisclosure',{
+      id:document.getElementById('fdId').value,
+      year:document.getElementById('fdYear').value,
+      category:document.getElementById('fdCategory').value,
+      title:document.getElementById('fdTitle').value,
+      imageUrl,
+      pdfUrl,
+      status:document.getElementById('fdStatus').value
+    });
+    if(!r.success) throw new Error(r.message||'Save failed.');
+
+    await fullDisclosureForm();
+    return r;
+  },'Full Disclosure document saved.');
 }
 
 
