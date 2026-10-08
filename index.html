@@ -2318,6 +2318,182 @@ a.back-btn:focus{
   min-height:190px;
 }
 
+
+/* ===== About Barangay + Enhanced Statistics ===== */
+.about-public-section{
+  background:#fff;
+  border:1px solid #e4e7ec;
+  border-radius:16px;
+  padding:20px;
+  margin-bottom:16px;
+}
+.about-public-section h2{
+  margin:0 0 10px;
+}
+.about-public-section h2 span{
+  color:#f8324b;
+}
+.about-public-text{
+  line-height:1.7;
+  white-space:pre-line;
+  color:#475467;
+}
+.about-facts{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:10px;
+  margin-top:18px;
+}
+.about-fact{
+  border:1px solid #e4e7ec;
+  border-radius:12px;
+  padding:12px;
+  background:#fafafa;
+}
+.about-fact small{
+  display:block;
+  color:#667085;
+  margin-bottom:5px;
+}
+.about-fact strong{
+  font-size:15px;
+  word-break:break-word;
+}
+.about-public-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px;
+}
+.about-public-card{
+  background:#fff;
+  border:1px solid #e4e7ec;
+  border-radius:16px;
+  padding:18px;
+}
+.about-public-card .icon{
+  font-size:28px;
+  margin-bottom:8px;
+}
+.about-public-card h3{
+  margin:0 0 8px;
+}
+.about-public-card p{
+  margin:0;
+  line-height:1.65;
+  white-space:pre-line;
+  color:#475467;
+}
+.about-map-card{
+  margin-top:16px;
+  background:#fff;
+  border:1px solid #e4e7ec;
+  border-radius:16px;
+  padding:16px;
+}
+.about-map-card img{
+  display:block;
+  max-width:100%;
+  width:100%;
+  max-height:620px;
+  object-fit:contain;
+  border-radius:12px;
+  background:#f8fafc;
+}
+.public-stats-chart-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:16px;
+  margin-top:18px;
+}
+.public-chart-card{
+  background:#fff;
+  border:1px solid #e4e7ec;
+  border-radius:16px;
+  padding:18px;
+}
+.public-chart-card h3{
+  margin:0 0 5px;
+}
+.public-chart-card > p{
+  margin:0 0 16px;
+  font-size:13px;
+  color:#667085;
+}
+.sex-chart{
+  display:grid;
+  grid-template-columns:150px 1fr;
+  gap:20px;
+  align-items:center;
+}
+.sex-donut{
+  width:150px;
+  height:150px;
+  border-radius:50%;
+  position:relative;
+}
+.sex-donut::after{
+  content:'';
+  position:absolute;
+  inset:28px;
+  background:#fff;
+  border-radius:50%;
+}
+.sex-chart-legend{
+  display:grid;
+  gap:10px;
+}
+.sex-legend-row{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  border-bottom:1px solid #f0f1f3;
+  padding-bottom:7px;
+}
+.age-bars{
+  display:grid;
+  gap:11px;
+}
+.age-bar-row{
+  display:grid;
+  grid-template-columns:minmax(120px,170px) 1fr auto;
+  gap:10px;
+  align-items:center;
+}
+.age-bar-label{
+  font-size:12px;
+  font-weight:700;
+  line-height:1.25;
+}
+.age-bar-track{
+  height:12px;
+  border-radius:999px;
+  background:#eef1f4;
+  overflow:hidden;
+}
+.age-bar-fill{
+  height:100%;
+  border-radius:999px;
+  background:#f8324b;
+  min-width:2px;
+}
+.age-bar-value{
+  font-size:12px;
+  font-weight:800;
+  min-width:35px;
+  text-align:right;
+}
+@media(max-width:900px){
+  .about-facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .about-public-grid{grid-template-columns:1fr}
+  .public-stats-chart-grid{grid-template-columns:1fr}
+}
+@media(max-width:560px){
+  .about-facts{grid-template-columns:1fr}
+  .sex-chart{grid-template-columns:1fr;justify-items:center}
+  .sex-chart-legend{width:100%}
+  .age-bar-row{grid-template-columns:105px 1fr auto}
+}
+
 </style>
 </head>
 <body>
@@ -2452,7 +2628,7 @@ a.back-btn:focus{
       </button>
       <button class="module-card" onclick="showView('statistics')">
         <div class="icon">📊</div><h3>Barangay Statistics</h3>
-        <p>Population, households, families, voters, farmers, livestock, and other sector data.</p>
+        <p>Population, households, families, voters, sex distribution, and demographic age groups.</p>
         <span class="module-link">Open</span>
       </button>
     </div>
@@ -2974,19 +3150,48 @@ a.back-btn:focus{
 
 <!-- STATISTICS -->
 <div class="view" id="view-statistics">
-  <div class="page-head"><div class="container page-head-row"><div><h1>Barangay Statistics</h1><p>Community profile figures. Official values will be added later.</p></div><button class="back-btn" onclick="showView('barangay')">← Back to Barangay</button></div></div>
-  <div class="page-content"><div class="container">
-    <div class="stats-grid">
-      <div class="stat"><small>Total Population</small><strong>—</strong><span class="coming">Coming Soon</span></div>
-      <div class="stat"><small>Total Households</small><strong>—</strong><span class="coming">Coming Soon</span></div>
-      <div class="stat"><small>Total Families</small><strong>—</strong><span class="coming">Coming Soon</span></div>
-      <div class="stat"><small>Registered Voters</small><strong>—</strong><span class="coming">Coming Soon</span></div>
-      <div class="stat"><small>Senior Citizens</small><strong>—</strong><span class="coming">Coming Soon</span></div>
-      <div class="stat"><small>Persons with Disability</small><strong>—</strong><span class="coming">Coming Soon</span></div>
-      <div class="stat"><small>Farmers</small><strong>—</strong><span class="coming">Coming Soon</span></div>
-      <div class="stat clickable" onclick="showView('livestock-statistics')"><small>Livestock Population</small><strong>—</strong><span class="coming">Coming Soon</span></div>
+  <div class="page-head">
+    <div class="container page-head-row">
+      <div>
+        <h1>Barangay Statistics</h1>
+        <p>Official population and demographic information of Barangay Tupol Oeste.</p>
+      </div>
+      <button class="back-btn" onclick="showView('barangay')">← Back to Barangay</button>
     </div>
-  </div></div>
+  </div>
+
+  <div class="page-content">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <h2>Barangay <span>Statistics</span></h2>
+          <p id="publicStatsAsOf">Validated figures will appear once encoded.</p>
+        </div>
+      </div>
+
+      <div id="publicBasicStats" class="stats-grid">
+        <div class="live-empty">Loading barangay statistics...</div>
+      </div>
+
+      <div class="public-stats-chart-grid">
+        <section class="public-chart-card" id="sexChartCard" style="display:none">
+          <h3>Population by Sex</h3>
+          <p>Male and female population based on available validated data.</p>
+          <div id="sexChartBody"></div>
+        </section>
+
+        <section class="public-chart-card" id="ageChartCard" style="display:none">
+          <h3>Population by Age Group / Demographic</h3>
+          <p>Only encoded categories with actual values are displayed.</p>
+          <div id="ageChartBody" class="age-bars"></div>
+        </section>
+      </div>
+
+      <div id="publicStatsEmpty" class="live-empty" style="display:none">
+        Barangay statistics have not been encoded yet.
+      </div>
+    </div>
+  </div>
 </div>
 
 
@@ -2998,7 +3203,7 @@ a.back-btn:focus{
         <h1>Livestock Statistics</h1>
         <p>Barangay-wide livestock population breakdown. Official counts will be added once validated.</p>
       </div>
-      <button class="back-btn" onclick="showView('statistics')">← Back to Barangay Statistics</button>
+      <button class="back-btn" onclick="showView('barangay')">← Back to Barangay</button>
     </div>
   </div>
 
@@ -3077,14 +3282,73 @@ a.back-btn:focus{
 
 <!-- ABOUT -->
 <div class="view" id="view-about">
-  <div class="page-head"><div class="container page-head-row"><div><h1>About Barangay Tupol Oeste</h1><p>Barangay profile, history, vision and mission.</p></div><button class="back-btn" onclick="showView('barangay')">← Back to Barangay</button></div></div>
-  <div class="page-content"><div class="container"><div class="grid grid-3">
-    <div class="card"><div class="icon">📍</div><h3>Barangay Profile</h3><p>General information and sitios will be added soon.</p></div>
-    <div class="card"><div class="icon">📖</div><h3>History</h3><p>Historical background will be added soon.</p></div>
-    <div class="card"><div class="icon">🎯</div><h3>Vision & Mission</h3><p>Official vision and mission will be added soon.</p></div>
-  </div></div></div>
-</div>
+  <div class="page-head">
+    <div class="container page-head-row">
+      <div>
+        <h1>About Barangay Tupol Oeste</h1>
+        <p>Official barangay profile, history, vision, mission, and basic information.</p>
+      </div>
+      <button class="back-btn" onclick="showView('barangay')">← Back to Barangay</button>
+    </div>
+  </div>
 
+  <div class="page-content">
+    <div class="container">
+      <section class="about-public-section">
+        <h2>Barangay <span>Profile</span></h2>
+        <p id="aboutOverview" class="about-public-text">Profile information will be added soon.</p>
+
+        <div class="about-facts">
+          <div class="about-fact">
+            <small>Barangay</small>
+            <strong>Tupol Oeste</strong>
+          </div>
+          <div class="about-fact">
+            <small>Municipality</small>
+            <strong>Cabatuan</strong>
+          </div>
+          <div class="about-fact">
+            <small>Province</small>
+            <strong>Iloilo</strong>
+          </div>
+          <div class="about-fact">
+            <small>Land Area</small>
+            <strong id="aboutLandArea">—</strong>
+          </div>
+          <div class="about-fact">
+            <small>Sitios / Puroks</small>
+            <strong id="aboutSitios">—</strong>
+          </div>
+        </div>
+      </section>
+
+      <div class="about-public-grid">
+        <section class="about-public-card">
+          <div class="icon">📖</div>
+          <h3>History</h3>
+          <p id="aboutHistory">Historical background will be added soon.</p>
+        </section>
+
+        <section class="about-public-card">
+          <div class="icon">🎯</div>
+          <h3>Vision</h3>
+          <p id="aboutVision">Official vision will be added soon.</p>
+        </section>
+
+        <section class="about-public-card">
+          <div class="icon">🤝</div>
+          <h3>Mission</h3>
+          <p id="aboutMission">Official mission will be added soon.</p>
+        </section>
+      </div>
+
+      <section id="aboutMapSection" class="about-map-card" style="display:none">
+        <h3>Barangay Map / Location</h3>
+        <img id="aboutMapImage" alt="Barangay Tupol Oeste map">
+      </section>
+    </div>
+  </div>
+</div>
 
 
 <!-- BARANGAY FULL DISCLOSURE -->
@@ -3270,7 +3534,7 @@ function switchTab(scope,panelId,btn){
 
 
 const BTO_PUBLIC_API = "https://script.google.com/macros/s/AKfycbwM6bagjlHKao-NCB3d_nDwX29zO4EFKcoj50vABCQP7bKJuSI4j7772Zam9LwNiLCqNg/exec?action=publicData";
-const BTO_PUBLIC_CACHE_KEY = 'bto_public_data_v4';
+const BTO_PUBLIC_CACHE_KEY = 'bto_public_data_v5';
 const BTO_PUBLIC_CACHE_MS = 5 * 60 * 1000;
 
 function publicEsc(v){
@@ -4791,11 +5055,137 @@ function renderPublicDisclosureFiltered(){
 }
 
 
+
+/* ===== ABOUT BARANGAY + ENHANCED BARANGAY STATISTICS ===== */
+function btoNumberOrNull(v){
+  if(v===null || v===undefined || String(v).trim()==='') return null;
+  const n=Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+function renderAboutBarangay(data){
+  const a=data?.aboutBarangay||{};
+
+  const setText=(id,value,fallback)=>{
+    const el=document.getElementById(id);
+    if(el) el.textContent=String(value||'').trim() || fallback;
+  };
+
+  setText('aboutOverview',a.overview,'Profile information will be added soon.');
+  setText('aboutHistory',a.history,'Historical background will be added soon.');
+  setText('aboutVision',a.vision,'Official vision will be added soon.');
+  setText('aboutMission',a.mission,'Official mission will be added soon.');
+  setText('aboutLandArea',a.landArea,'—');
+  setText('aboutSitios',a.sitiosPuroks,'—');
+
+  const mapSection=document.getElementById('aboutMapSection');
+  const map=document.getElementById('aboutMapImage');
+
+  if(mapSection && map){
+    if(a.mapImageUrl){
+      map.src=publicImageUrl(a.mapImageUrl);
+      mapSection.style.display='';
+      map.onerror=()=>{
+        mapSection.style.display='none';
+      };
+    }else{
+      mapSection.style.display='none';
+      map.removeAttribute('src');
+    }
+  }
+}
+
+function renderEnhancedBarangayStats(data){
+  const s=data?.enhancedBarangayStats||{};
+  const basic=Array.isArray(s.basic)?s.basic:[];
+  const demographics=Array.isArray(s.demographics)?s.demographics:[];
+
+  const root=document.getElementById('publicBasicStats');
+  const empty=document.getElementById('publicStatsEmpty');
+  const asOf=document.getElementById('publicStatsAsOf');
+
+  if(asOf){
+    asOf.textContent=s.asOfDate
+      ? `As of ${s.asOfDate}`
+      : 'Validated figures will appear once encoded.';
+  }
+
+  const available=basic.filter(x=>btoNumberOrNull(x.value)!==null);
+
+  if(root){
+    if(available.length){
+      root.innerHTML=available.map(x=>`
+        <div class="stat">
+          <small>${btoEsc(x.label||'Statistic')}</small>
+          <strong>${Number(x.value).toLocaleString()}</strong>
+        </div>
+      `).join('');
+    }else{
+      root.innerHTML='';
+    }
+  }
+
+  if(empty) empty.style.display=available.length||demographics.length?'none':'';
+
+  // Male / Female chart: show only when both have actual values.
+  const male=basic.find(x=>x.key==='MALE');
+  const female=basic.find(x=>x.key==='FEMALE');
+  const maleN=btoNumberOrNull(male?.value);
+  const femaleN=btoNumberOrNull(female?.value);
+  const sexCard=document.getElementById('sexChartCard');
+  const sexBody=document.getElementById('sexChartBody');
+
+  if(sexCard && sexBody && maleN!==null && femaleN!==null && (maleN+femaleN)>0){
+    const total=maleN+femaleN;
+    const malePct=(maleN/total)*100;
+    const femalePct=100-malePct;
+
+    sexBody.innerHTML=`
+      <div class="sex-chart">
+        <div class="sex-donut" style="background:conic-gradient(#f8324b 0 ${malePct}%, #242424 ${malePct}% 100%)"></div>
+        <div class="sex-chart-legend">
+          <div class="sex-legend-row"><span>Male</span><strong>${maleN.toLocaleString()} (${malePct.toFixed(1)}%)</strong></div>
+          <div class="sex-legend-row"><span>Female</span><strong>${femaleN.toLocaleString()} (${femalePct.toFixed(1)}%)</strong></div>
+          <div class="sex-legend-row"><span>Total</span><strong>${total.toLocaleString()}</strong></div>
+        </div>
+      </div>`;
+    sexCard.style.display='';
+  }else if(sexCard){
+    sexCard.style.display='none';
+  }
+
+  // Dynamic age / demographic horizontal bars.
+  const ageCard=document.getElementById('ageChartCard');
+  const ageBody=document.getElementById('ageChartBody');
+  const demoRows=demographics
+    .map(x=>({...x,num:btoNumberOrNull(x.value)}))
+    .filter(x=>x.num!==null);
+
+  if(ageCard && ageBody && demoRows.length){
+    const max=Math.max(...demoRows.map(x=>x.num),1);
+    ageBody.innerHTML=demoRows.map(x=>`
+      <div class="age-bar-row">
+        <div class="age-bar-label">${btoEsc(x.label)}</div>
+        <div class="age-bar-track">
+          <div class="age-bar-fill" style="width:${Math.max(2,(x.num/max)*100)}%"></div>
+        </div>
+        <div class="age-bar-value">${x.num.toLocaleString()}</div>
+      </div>
+    `).join('');
+    ageCard.style.display='';
+  }else if(ageCard){
+    ageCard.style.display='none';
+  }
+}
+
+
 function applyPublicData(data){
   if(!data || !data.success) return;
   renderOfficialsPersonnel(data);
   renderPublicLegislative(data);
   renderPublicDisclosure(data);
+  renderAboutBarangay(data);
+  renderEnhancedBarangayStats(data);
   renderHighlightsLive(data);
   renderHighlightsActivityGallery(data);
   renderAnnouncementTicker(data);
