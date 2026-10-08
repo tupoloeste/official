@@ -1838,33 +1838,92 @@ async function saveServiceLinks(btn){
 
 /* ===== OFFICERS OF THE DAY ===== */
 window.BTO_CONTACT_OFFICERS=[];
+window.BTO_CONTACT_BARANGAY_OFFICIALS=[];
+
+function isBarangayOfficialForDuty(o){
+  const group=String(o['Group']||'').trim().toUpperCase();
+  const position=String(o['Position']||'').trim().toUpperCase();
+  const status=String(o['Status']||'ACTIVE').trim().toUpperCase();
+
+  if(status==='INACTIVE' || status==='DELETED') return false;
+
+  return (
+    group==='BARANGAY' ||
+    position.includes('PUNONG BARANGAY') ||
+    position.includes('SANGGUNIANG BARANGAY') ||
+    position.includes('BARANGAY SECRETARY') ||
+    position.includes('BARANGAY TREASURER')
+  );
+}
 
 async function contactOfficersForm(){
-  const r=await api('getOfficersOfTheDay');
-  if(!r.success){showModuleError(r.message);return}
+  document.getElementById('moduleArea').innerHTML=
+    '<div class="bto-loading"><span class="bto-spinner"></span><span>Loading Barangay Officials...</span></div>';
 
-  window.BTO_CONTACT_OFFICERS=r.data||[];
+  const [duty,officials]=await Promise.all([
+    api('getOfficersOfTheDay'),
+    api('getOfficials')
+  ]);
+
+  if(!duty.success){showModuleError(duty.message);return}
+  if(!officials.success){showModuleError(officials.message);return}
+
+  window.BTO_CONTACT_OFFICERS=duty.data||[];
+  window.BTO_CONTACT_BARANGAY_OFFICIALS=(officials.data||[])
+    .filter(isBarangayOfficialForDuty);
+
   renderContactOfficersAdmin();
+}
+
+function contactOfficialOptions(){
+  const rows=window.BTO_CONTACT_BARANGAY_OFFICIALS||[];
+
+  return `
+    <option value="">Select Barangay Official</option>
+    ${rows.map(o=>`
+      <option value="${esc(o['Official ID']||'')}">
+        ${esc(o['Full Name']||'')} — ${esc(o['Position']||'')}
+      </option>
+    `).join('')}
+  `;
 }
 
 function renderContactOfficersAdmin(){
   const rows=window.BTO_CONTACT_OFFICERS||[];
+  const officials=window.BTO_CONTACT_BARANGAY_OFFICIALS||[];
 
   document.getElementById('moduleArea').innerHTML=`
     <div class="card">
       <h2>Officers of the Day</h2>
-      <div class="help">These names appear in the red panel of the public Contact page.</div>
+      <div class="help">
+        Select from the existing Barangay Officials list. Name, position, and contact number are filled automatically.
+      </div>
+
+      ${officials.length ? '' : `
+        <div class="help" style="margin-top:10px">
+          No active Barangay Officials found. Encode/update them first in the Officials module.
+        </div>
+      `}
 
       <input id="odId" type="hidden">
 
-      <label>Officer Name</label>
-      <input id="odName" placeholder="Full name">
+      <label>Barangay Official</label>
+      <select id="odOfficialId" onchange="fillOfficerOfDayFromOfficial()">
+        ${contactOfficialOptions()}
+      </select>
 
-      <label>Position</label>
-      <input id="odPosition" placeholder="Example: Barangay Kagawad">
+      <div class="grid">
+        <div>
+          <label>Position</label>
+          <input id="odPosition" readonly placeholder="Auto-filled from Officials">
+        </div>
+        <div>
+          <label>Contact Number</label>
+          <input id="odContact" readonly placeholder="Auto-filled from Officials">
+        </div>
+      </div>
 
-      <label>Contact Number (optional)</label>
-      <input id="odContact" placeholder="09XXXXXXXXX">
+      <input id="odName" type="hidden">
 
       <label>Duty / Remarks (optional)</label>
       <textarea id="odRemarks" rows="3" placeholder="Example: Public Assistance Desk"></textarea>
@@ -1884,7 +1943,7 @@ function renderContactOfficersAdmin(){
       </div>
 
       <div class="grid">
-        <button onclick="saveOfficerOfTheDay(this)">Save Officer</button>
+        <button onclick="saveOfficerOfTheDay(this)" ${officials.length?'':'disabled'}>Save Officer</button>
         <button class="secondary" onclick="clearOfficerOfTheDayForm()">Clear</button>
       </div>
     </div>
@@ -1906,18 +1965,46 @@ function renderContactOfficersAdmin(){
               <button onclick='editOfficerOfTheDay(${JSON.stringify(JSON.stringify(x))})'>Edit</button>
             </div>
           </div>
-        `).join('') : '<div class="help">No Officers of the Day encoded yet.</div>'}
+        `).join('') : '<div class="help">No Officers of the Day selected yet.</div>'}
       </div>
     </div>`;
+}
+
+function fillOfficerOfDayFromOfficial(){
+  const id=document.getElementById('odOfficialId')?.value||'';
+  const o=(window.BTO_CONTACT_BARANGAY_OFFICIALS||[])
+    .find(x=>String(x['Official ID']||'')===String(id));
+
+  document.getElementById('odName').value=o ? (o['Full Name']||'') : '';
+  document.getElementById('odPosition').value=o ? (o['Position']||'') : '';
+  document.getElementById('odContact').value=o ? (o['Contact Number']||'') : '';
 }
 
 function editOfficerOfTheDay(json){
   const x=JSON.parse(json);
 
   document.getElementById('odId').value=x.id||'';
-  document.getElementById('odName').value=x.officerName||'';
-  document.getElementById('odPosition').value=x.position||'';
-  document.getElementById('odContact').value=x.contactNumber||'';
+
+  // Prefer saved official reference. For older records, try matching the name.
+  let officialId=x.officialId||'';
+
+  if(!officialId){
+    const match=(window.BTO_CONTACT_BARANGAY_OFFICIALS||[])
+      .find(o=>String(o['Full Name']||'').trim().toUpperCase()===
+               String(x.officerName||'').trim().toUpperCase());
+    if(match) officialId=match['Official ID']||'';
+  }
+
+  document.getElementById('odOfficialId').value=officialId;
+  fillOfficerOfDayFromOfficial();
+
+  // Keep old saved text visible if a historical record no longer matches an official.
+  if(!officialId){
+    document.getElementById('odName').value=x.officerName||'';
+    document.getElementById('odPosition').value=x.position||'';
+    document.getElementById('odContact').value=x.contactNumber||'';
+  }
+
   document.getElementById('odRemarks').value=x.remarks||'';
   document.getElementById('odOrder').value=x.displayOrder||1;
   document.getElementById('odStatus').value=x.status||'ACTIVE';
@@ -1927,6 +2014,7 @@ function editOfficerOfTheDay(json){
 
 function clearOfficerOfTheDayForm(){
   document.getElementById('odId').value='';
+  document.getElementById('odOfficialId').value='';
   document.getElementById('odName').value='';
   document.getElementById('odPosition').value='';
   document.getElementById('odContact').value='';
@@ -1936,9 +2024,19 @@ function clearOfficerOfTheDayForm(){
 }
 
 async function saveOfficerOfTheDay(btn){
+  const officialId=document.getElementById('odOfficialId').value;
+
+  if(!officialId){
+    alert('Please select a Barangay Official.');
+    return;
+  }
+
+  fillOfficerOfDayFromOfficial();
+
   return withButtonSpinner(btn,'Saving...',async()=>{
     const r=await api('saveOfficerOfTheDay',{
       id:document.getElementById('odId').value,
+      officialId,
       officerName:document.getElementById('odName').value,
       position:document.getElementById('odPosition').value,
       contactNumber:document.getElementById('odContact').value,
@@ -1948,11 +2046,11 @@ async function saveOfficerOfTheDay(btn){
     });
 
     if(!r.success) throw new Error(r.message||'Save failed.');
+
     await contactOfficersForm();
     return r;
   },'Officer of the Day saved.');
 }
-
 
 async function officialsForm(){
   document.getElementById('moduleArea').innerHTML=
