@@ -5272,6 +5272,13 @@ function renderAnnouncementTicker(data){
   const track=document.getElementById('announcement-ticker-track');
   if(!track) return;
 
+  const tickerEsc=value=>String(value ?? '')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+
   const rows=(data.content||[])
     .filter(r=>{
       const type=String(r['Type']||r.type||'').trim().toUpperCase();
@@ -5322,15 +5329,15 @@ function renderAnnouncementTicker(data){
       <div class="announcement-ticker-item"
            role="button"
            tabindex="0"
-           aria-label="${esc(title)}">
+           aria-label="${tickerEsc(title)}">
         <div class="announcement-ticker-main">
-          <strong>${esc(title)}</strong>
-          ${meta ? `<span>${esc(meta)}</span>` : ''}
+          <strong>${tickerEsc(title)}</strong>
+          ${meta ? `<span>${tickerEsc(meta)}</span>` : ''}
         </div>
 
         ${description ? `
           <div class="announcement-ticker-hover-description">
-            ${esc(description)}
+            ${tickerEsc(description)}
           </div>
         ` : ''}
       </div>
