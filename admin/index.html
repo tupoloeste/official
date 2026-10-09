@@ -2101,6 +2101,97 @@ button.danger,
   vertical-align:middle;
 }
 
+
+
+/* ===== SCHOOL PROFILES ADMIN ===== */
+.school-admin-card{
+  border-top:4px solid #991b1b;
+}
+
+.school-admin-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
+.school-type-badge{
+  display:inline-flex;
+  padding:4px 8px;
+  border-radius:999px;
+  background:#fff1f3;
+  color:#c5162e;
+  border:1px solid #ffc7d0;
+  font-size:10px;
+  font-weight:900;
+  margin-bottom:6px;
+}
+
+.school-status-select{
+  width:auto;
+  min-width:140px;
+}
+
+.school-admin-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  margin-top:14px;
+}
+
+.school-admin-grid .wide{
+  grid-column:1 / -1;
+}
+
+.school-upload-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  margin-top:16px;
+}
+
+.school-admin-photo{
+  width:100%;
+  max-width:520px;
+  height:260px;
+  object-fit:cover;
+  border-radius:12px;
+  border:1px solid #e4e7ec;
+  background:#f8fafc;
+  display:block;
+  margin:8px 0 10px;
+}
+
+.school-admin-empty-photo{
+  min-height:160px;
+  border:1px dashed #d0d5dd;
+  border-radius:12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#98a2b3;
+  background:#f8fafc;
+  margin:8px 0 10px;
+  text-align:center;
+  padding:12px;
+}
+
+@media(max-width:720px){
+  .school-admin-grid,
+  .school-upload-grid{
+    grid-template-columns:1fr;
+  }
+
+  .school-admin-grid .wide{
+    grid-column:auto;
+  }
+
+  .school-status-select{
+    width:100%;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -3501,6 +3592,13 @@ function renderPopulationProfileAdmin(){
             >
               Load Year
             </button>
+
+      <button class="menu-card" onclick="schoolProfilesForm()">
+        <span class="menu-card-icon">🏫</span>
+        <span class="menu-card-title">School Profiles</span>
+        <span class="menu-card-help">CDC and Elementary School profiles</span>
+      </button>
+
           </div>
         </div>
       </div>
@@ -3828,6 +3926,295 @@ async function savePopulationProfile(btn){
   );
 }
 
+
+
+
+/* ============================================================
+   SCHOOL PROFILES — CDC + ELEMENTARY
+   ============================================================ */
+
+window.BTO_SCHOOL_PROFILES=[];
+
+async function schoolProfilesForm(){
+  document.getElementById('moduleArea').innerHTML=
+    '<div class="bto-loading"><span class="bto-spinner"></span><span>Loading school profiles...</span></div>';
+
+  const r=await api('getSchoolProfiles');
+
+  if(!r.success){
+    showModuleError(r.message);
+    return;
+  }
+
+  window.BTO_SCHOOL_PROFILES=Array.isArray(r.schools)?r.schools:[];
+  renderSchoolProfilesAdmin();
+}
+
+function btoSchoolProfile_(id){
+  return (window.BTO_SCHOOL_PROFILES||[]).find(x=>x.id===id) || {
+    id:id,
+    schoolType:id==='SCHOOL-CDC'?'CDC':'ELEMENTARY',
+    schoolName:'',
+    schoolYear:'',
+    address:'',
+    schoolHead:'',
+    contactNumber:'',
+    totalEnrollees:null,
+    maleEnrollees:null,
+    femaleEnrollees:null,
+    staffCount:null,
+    description:'',
+    photoUrl:'',
+    pdfUrl:'',
+    status:'ACTIVE'
+  };
+}
+
+function btoSchoolNumVal_(v){
+  return (
+    v===null ||
+    v===undefined
+  ) ? '' : v;
+}
+
+function btoSchoolCard_(school){
+  const prefix=school.id==='SCHOOL-CDC'?'cdc':'elem';
+  const label=school.id==='SCHOOL-CDC'
+    ? 'Child Development Center (CDC)'
+    : 'Elementary School';
+
+  return `
+    <div class="card school-admin-card">
+      <div class="school-admin-head">
+        <div>
+          <span class="school-type-badge">${esc(label)}</span>
+          <h2>${esc(school.schoolName||label)}</h2>
+        </div>
+        <select id="${prefix}_status" class="school-status-select">
+          <option value="ACTIVE" ${school.status==='ACTIVE'?'selected':''}>Active</option>
+          <option value="INACTIVE" ${school.status==='INACTIVE'?'selected':''}>Inactive</option>
+        </select>
+      </div>
+
+      <div class="school-admin-grid">
+        <div>
+          <label>School Name <span style="color:#c5162e">*</span></label>
+          <input
+            id="${prefix}_name"
+            value="${esc(school.schoolName||'')}"
+            placeholder="Enter official school name"
+          >
+          <div class="help">Barangay Encoder enters the official school name.</div>
+        </div>
+
+        <div>
+          <label>School Year</label>
+          <input
+            id="${prefix}_year"
+            value="${esc(school.schoolYear||'')}"
+            placeholder="Example: 2026-2027"
+          >
+        </div>
+
+        <div class="wide">
+          <label>Sitio / Address</label>
+          <input id="${prefix}_address" value="${esc(school.address||'')}">
+        </div>
+
+        <div>
+          <label>${school.id==='SCHOOL-CDC'?'Child Development Worker / Teacher':'School Head / Principal'}</label>
+          <input id="${prefix}_head" value="${esc(school.schoolHead||'')}">
+        </div>
+
+        <div>
+          <label>Contact Number</label>
+          <input id="${prefix}_contact" value="${esc(school.contactNumber||'')}">
+        </div>
+
+        <div>
+          <label>Total Enrollees</label>
+          <input id="${prefix}_total" type="number" min="0" step="1"
+            value="${esc(btoSchoolNumVal_(school.totalEnrollees))}">
+        </div>
+
+        <div>
+          <label>Male Enrollees</label>
+          <input id="${prefix}_male" type="number" min="0" step="1"
+            value="${esc(btoSchoolNumVal_(school.maleEnrollees))}">
+        </div>
+
+        <div>
+          <label>Female Enrollees</label>
+          <input id="${prefix}_female" type="number" min="0" step="1"
+            value="${esc(btoSchoolNumVal_(school.femaleEnrollees))}">
+        </div>
+
+        <div>
+          <label>${school.id==='SCHOOL-CDC'?'No. of Workers / Teachers':'No. of Teachers'}</label>
+          <input id="${prefix}_staff" type="number" min="0" step="1"
+            value="${esc(btoSchoolNumVal_(school.staffCount))}">
+        </div>
+
+        <div class="wide">
+          <label>Description / Profile Notes</label>
+          <textarea id="${prefix}_description" rows="4">${esc(school.description||'')}</textarea>
+        </div>
+      </div>
+
+      <div class="school-upload-grid">
+        <div>
+          <label>School Photo</label>
+          ${school.photoUrl
+            ? `<img
+                class="school-admin-photo"
+                src="${esc(normalizePortalImageUrl(school.photoUrl))}"
+                alt="${esc(school.schoolName||label)}"
+                onerror="this.style.display='none'"
+              >`
+            : '<div class="school-admin-empty-photo">No school photo uploaded yet.</div>'
+          }
+
+          <input
+            id="${prefix}_photo"
+            type="file"
+            accept="image/*"
+          >
+          <div class="help">
+            Upload one official school photo. Existing photo is kept when left blank.
+          </div>
+        </div>
+
+        <div>
+          <label>School Profile PDF (optional)</label>
+          ${school.pdfUrl
+            ? `<div class="doc-file-current">
+                Current PDF:
+                <a href="${esc(school.pdfUrl)}" target="_blank" rel="noopener">Open</a>
+              </div>`
+            : '<div class="doc-file-current">No PDF uploaded yet.</div>'
+          }
+
+          <input
+            id="${prefix}_pdf"
+            type="file"
+            accept="application/pdf,.pdf"
+          >
+          <div class="help">
+            Optional official school profile/report PDF.
+          </div>
+        </div>
+      </div>
+
+      <div class="admin-actions">
+        <button onclick="saveSchoolProfile(this,'${school.id}')">
+          Save ${school.id==='SCHOOL-CDC'?'CDC':'Elementary'} Profile
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function renderSchoolProfilesAdmin(){
+  const cdc=btoSchoolProfile_('SCHOOL-CDC');
+  const elem=btoSchoolProfile_('SCHOOL-ELEMENTARY');
+
+  document.getElementById('moduleArea').innerHTML=`
+    <div class="card">
+      <h2>School Profiles</h2>
+      <div class="help">
+        Barangay Encoder maintains the official profiles for the two school types:
+        Child Development Center (CDC) and Elementary School.
+        The official school names are entered by the Encoder.
+      </div>
+    </div>
+
+    ${btoSchoolCard_(cdc)}
+    ${btoSchoolCard_(elem)}
+  `;
+}
+
+function btoSchoolFormNumber_(id){
+  const el=document.getElementById(id);
+  if(!el) return null;
+
+  const raw=String(el.value||'').trim();
+  if(raw==='') return null;
+
+  const n=Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
+async function saveSchoolProfile(btn,schoolId){
+  return withButtonSpinner(
+    btn,
+    'Saving Profile...',
+    async()=>{
+      const prefix=schoolId==='SCHOOL-CDC'?'cdc':'elem';
+
+      const schoolName=String(
+        document.getElementById(prefix+'_name')?.value||''
+      ).trim();
+
+      if(!schoolName){
+        throw new Error('School Name is required.');
+      }
+
+      let photoUrl=btoSchoolProfile_(schoolId).photoUrl||'';
+      let pdfUrl=btoSchoolProfile_(schoolId).pdfUrl||'';
+
+      const photoFile=document.getElementById(prefix+'_photo')?.files?.[0];
+      const pdfFile=document.getElementById(prefix+'_pdf')?.files?.[0];
+
+      if(photoFile){
+        photoUrl=await btoUploadDocumentFile(photoFile,'image');
+      }
+
+      if(pdfFile){
+        pdfUrl=await btoUploadDocumentFile(pdfFile,'pdf');
+      }
+
+      const payload={
+        id:schoolId,
+        schoolName:schoolName,
+        schoolYear:String(document.getElementById(prefix+'_year')?.value||'').trim(),
+        address:String(document.getElementById(prefix+'_address')?.value||'').trim(),
+        schoolHead:String(document.getElementById(prefix+'_head')?.value||'').trim(),
+        contactNumber:String(document.getElementById(prefix+'_contact')?.value||'').trim(),
+        totalEnrollees:btoSchoolFormNumber_(prefix+'_total'),
+        maleEnrollees:btoSchoolFormNumber_(prefix+'_male'),
+        femaleEnrollees:btoSchoolFormNumber_(prefix+'_female'),
+        staffCount:btoSchoolFormNumber_(prefix+'_staff'),
+        description:String(document.getElementById(prefix+'_description')?.value||'').trim(),
+        photoUrl:photoUrl,
+        pdfUrl:pdfUrl,
+        status:String(document.getElementById(prefix+'_status')?.value||'ACTIVE').trim()
+      };
+
+      if(
+        payload.totalEnrollees!==null &&
+        payload.maleEnrollees!==null &&
+        payload.femaleEnrollees!==null &&
+        payload.maleEnrollees+payload.femaleEnrollees!==payload.totalEnrollees
+      ){
+        throw new Error(
+          'Male Enrollees + Female Enrollees must equal Total Enrollees.'
+        );
+      }
+
+      const r=await api('saveSchoolProfile',payload);
+
+      if(!r.success){
+        throw new Error(r.message||'Unable to save School Profile.');
+      }
+
+      window.BTO_SCHOOL_PROFILES=Array.isArray(r.schools)?r.schools:[];
+      renderSchoolProfilesAdmin();
+
+      return r;
+    },
+    'School Profile saved.'
+  );
+}
 
 
 window.BTO_LIVESTOCK_ROWS=[];
