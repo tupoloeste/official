@@ -4279,6 +4279,364 @@ body.bto-site-loading{overflow:hidden!important}
   }
 }
 
+
+
+/* ===== BARANGAY FULL DISCLOSURE BOARD ===== */
+.fd-board{
+  border:4px solid #f4d000;
+  border-radius:8px;
+  overflow:hidden;
+  background:#00a94f;
+  box-shadow:0 10px 28px rgba(0,0,0,.08);
+}
+
+.fd-board-header{
+  background:#5b99d3;
+  display:grid;
+  grid-template-columns:86px minmax(0,1fr) 150px;
+  gap:16px;
+  align-items:center;
+  padding:15px 18px;
+  border-bottom:3px solid #111827;
+}
+
+.fd-board-seal{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.fd-board-seal img{
+  width:76px;
+  height:76px;
+  object-fit:contain;
+}
+
+.fd-board-heading{
+  text-align:center;
+}
+
+.fd-board-kicker{
+  font-size:12px;
+  font-weight:800;
+  color:#132238;
+  margin-bottom:4px;
+}
+
+.fd-board-heading h2{
+  margin:0;
+  color:#111827;
+  font-family:Cambria, Georgia, serif;
+  font-weight:900;
+  font-size:clamp(24px,3vw,38px);
+  letter-spacing:.015em;
+}
+
+.fd-board-heading p{
+  margin:5px 0 0;
+  color:#b00020;
+  font-family:Cambria, Georgia, serif;
+  font-style:italic;
+  font-weight:800;
+  font-size:14px;
+}
+
+.fd-board-year-box{
+  background:rgba(255,255,255,.95);
+  border:2px solid #111827;
+  border-radius:8px;
+  padding:8px;
+}
+
+.fd-board-year-box label{
+  display:block;
+  margin:0 0 4px;
+  font-size:10px;
+  font-weight:900;
+  color:#475467;
+  text-align:center;
+}
+
+.fd-board-year-box select{
+  width:100%;
+  border:0;
+  background:transparent;
+  font-size:20px;
+  font-weight:900;
+  color:#991b1b;
+  text-align:center;
+  outline:0;
+}
+
+.fd-board-year-strip{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:10px;
+  background:#008d43;
+  color:#fff;
+  padding:9px 14px;
+  border-bottom:1px solid rgba(255,255,255,.35);
+}
+
+.fd-board-year-strip span{
+  font-size:12px;
+  font-weight:700;
+  opacity:.9;
+}
+
+.fd-board-year-strip strong{
+  font-size:18px;
+  letter-spacing:.04em;
+}
+
+.fd-board-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:16px;
+  padding:18px;
+  align-items:stretch;
+}
+
+.fd-board-item{
+  min-width:0;
+  background:#fff;
+  border:2px solid #1f2937;
+  border-radius:4px;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  box-shadow:0 3px 8px rgba(0,0,0,.08);
+}
+
+.fd-board-item-heading{
+  min-height:78px;
+  display:grid;
+  grid-template-columns:32px minmax(0,1fr);
+  gap:8px;
+  align-items:start;
+  padding:10px;
+  background:#00a94f;
+  color:#07140c;
+  border-bottom:2px solid #1f2937;
+}
+
+.fd-board-item-number{
+  width:28px;
+  height:28px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#fff;
+  border:1px solid rgba(0,0,0,.25);
+  font-size:10px;
+  font-weight:900;
+}
+
+.fd-board-item-category{
+  font-size:10px;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.035em;
+  opacity:.82;
+  margin-bottom:3px;
+}
+
+.fd-board-item-heading h3{
+  margin:0;
+  font-family:Cambria, Georgia, serif;
+  font-size:14px;
+  line-height:1.2;
+  color:#07140c;
+}
+
+.fd-board-image{
+  height:285px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#fff;
+  overflow:hidden;
+  text-decoration:none;
+  border-bottom:1px solid #d0d5dd;
+  cursor:zoom-in;
+}
+
+.fd-board-image img{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:contain;
+  background:#fff;
+}
+
+.fd-board-image.no-image{
+  cursor:default;
+  background:#f8fafc;
+}
+
+.fd-image-fallback{
+  width:100%;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  color:#98a2b3;
+  font-size:42px;
+}
+
+.fd-image-fallback small{
+  font-size:11px;
+  font-weight:700;
+}
+
+.fd-board-pdf{
+  margin-top:auto;
+  padding:10px;
+  background:#f8fafc;
+}
+
+.fd-board-pdf-label{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:8px;
+}
+
+.fd-board-pdf-label > span{
+  font-size:22px;
+}
+
+.fd-board-pdf-label strong{
+  display:block;
+  color:#1d2939;
+  font-size:12px;
+}
+
+.fd-board-pdf-label small{
+  display:block;
+  color:#667085;
+  font-size:10px;
+}
+
+.fd-board-pdf-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:6px;
+}
+
+.fd-board-pdf-actions a,
+.fd-board-pdf-actions button{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:34px;
+  border:0;
+  border-radius:7px;
+  padding:7px 8px;
+  text-decoration:none;
+  font-size:11px;
+  font-weight:800;
+  cursor:pointer;
+  background:#c5162e;
+  color:#fff;
+}
+
+.fd-board-pdf-actions .outline{
+  background:#fff;
+  color:#344054;
+  border:1px solid #d0d5dd;
+}
+
+.fd-board-pdf-actions button{
+  grid-column:1 / -1;
+  background:#344054;
+}
+
+.fd-board-pdf-missing{
+  border:1px dashed #d0d5dd;
+  border-radius:7px;
+  padding:9px;
+  text-align:center;
+  font-size:11px;
+  color:#98a2b3;
+}
+
+.fd-board .public-doc-empty{
+  grid-column:1/-1;
+  background:#fff;
+}
+
+@media(max-width:1100px){
+  .fd-board-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+}
+
+@media(max-width:850px){
+  .fd-board-header{
+    grid-template-columns:70px minmax(0,1fr);
+  }
+
+  .fd-board-seal img{
+    width:62px;
+    height:62px;
+  }
+
+  .fd-board-year-box{
+    grid-column:1/-1;
+    width:min(220px,100%);
+    justify-self:center;
+  }
+
+  .fd-board-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+@media(max-width:560px){
+  .fd-board{
+    border-width:3px;
+  }
+
+  .fd-board-header{
+    grid-template-columns:52px minmax(0,1fr);
+    gap:9px;
+    padding:11px;
+  }
+
+  .fd-board-seal img{
+    width:48px;
+    height:48px;
+  }
+
+  .fd-board-kicker{
+    font-size:9px;
+  }
+
+  .fd-board-heading h2{
+    font-size:19px;
+    line-height:1.05;
+  }
+
+  .fd-board-heading p{
+    font-size:10px;
+  }
+
+  .fd-board-grid{
+    grid-template-columns:1fr;
+    padding:10px;
+    gap:12px;
+  }
+
+  .fd-board-image{
+    height:360px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -5072,7 +5430,7 @@ body.bto-site-loading{overflow:hidden!important}
     <div class="container page-head-row">
       <div>
         <h1>Barangay Full Disclosure</h1>
-        <p>Public access to official barangay disclosure documents.</p>
+        <p>Official barangay financial, procurement, budget and transparency documents.</p>
       </div>
       <button class="back-btn" onclick="showView('governance')">← Back to Governance</button>
     </div>
@@ -5080,32 +5438,35 @@ body.bto-site-loading{overflow:hidden!important}
 
   <div class="page-content">
     <div class="container">
-      <div class="section-head">
-        <div>
-          <h2>Full Disclosure <span>Documents</span></h2>
-          <p>Select a year and item/category, then view, download, or print the available public files.</p>
-        </div>
-      </div>
+      <section class="fd-board">
+        <div class="fd-board-header">
+          <div class="fd-board-seal">
+            <img src="barangay-logo.png" alt="Barangay Tupol Oeste Logo">
+          </div>
 
-      <div class="public-doc-hint">Choose a year and disclosure item. You may view the image or PDF first, then download or print if needed.</div>
-      <div class="public-doc-toolbar">
-        <div>
-          <label for="fdPublicYear">Year</label>
-          <select id="fdPublicYear" onchange="renderPublicDisclosureFiltered()">
-            <option value="ALL">All Years</option>
-          </select>
-        </div>
-        <div>
-          <label for="fdPublicCategory">Item / Category</label>
-          <select id="fdPublicCategory" onchange="renderPublicDisclosureFiltered()">
-            <option value="ALL">All Items</option>
-          </select>
-        </div>
-      </div>
+          <div class="fd-board-heading">
+            <div class="fd-board-kicker">Barangay Tupol Oeste · Municipality of Cabatuan, Iloilo</div>
+            <h2>BARANGAY FULL DISCLOSURE POLICY</h2>
+            <p>Public transparency and disclosure of official barangay documents</p>
+          </div>
 
-      <div id="publicDisclosureList" class="public-doc-grid">
-        <div class="public-doc-empty">No Full Disclosure documents published yet.</div>
-      </div>
+          <div class="fd-board-year-box">
+            <label for="fdPublicYear">YEAR</label>
+            <select id="fdPublicYear" onchange="renderPublicDisclosureFiltered()">
+              <option value="">—</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="fd-board-year-strip">
+          <span>Disclosure Year</span>
+          <strong id="fdPublicYearTitle">—</strong>
+        </div>
+
+        <div id="publicDisclosureList" class="fd-board-grid">
+          <div class="public-doc-empty">No Full Disclosure documents published yet.</div>
+        </div>
+      </section>
     </div>
   </div>
 </div>
@@ -6953,29 +7314,26 @@ function renderPublicLegislativeFiltered(){
 
 function populateDisclosureFilters(){
   const y=document.getElementById('fdPublicYear');
-  const c=document.getElementById('fdPublicCategory');
-  if(!y||!c) return;
+  if(!y) return;
 
-  const oldY=y.value||'ALL';
-  const oldC=c.value||'ALL';
+  const oldY=y.value;
 
-  const years=[...new Set(window.BTO_PUBLIC_DISCLOSURE.map(x=>String(x.year||'')).filter(Boolean))]
-    .sort((a,b)=>Number(b)-Number(a));
+  const years=[...new Set(
+    (window.BTO_PUBLIC_DISCLOSURE||[])
+      .map(x=>String(x.year||'').trim())
+      .filter(Boolean)
+  )].sort((a,b)=>Number(b)-Number(a));
 
-  let cats=(window.BTO_PUBLIC_DISCLOSURE_CATEGORIES||[]).map(x=>x.name).filter(Boolean);
-  window.BTO_PUBLIC_DISCLOSURE.forEach(x=>{
-    if(x.category&&!cats.includes(x.category)) cats.push(x.category);
-  });
-  cats=[...new Set(cats)].sort((a,b)=>a.localeCompare(b));
+  y.innerHTML=years.length
+    ? years.map(v=>`<option value="${btoEsc(v)}">${btoEsc(v)}</option>`).join('')
+    : '<option value="">—</option>';
 
-  y.innerHTML='<option value="ALL">All Years</option>'+
-    years.map(v=>`<option value="${btoEsc(v)}">${btoEsc(v)}</option>`).join('');
-
-  c.innerHTML='<option value="ALL">All Items</option>'+
-    cats.map(v=>`<option value="${btoEsc(v)}">${btoEsc(v)}</option>`).join('');
-
-  if(Array.from(y.options).some(o=>o.value===oldY)) y.value=oldY;
-  if(Array.from(c.options).some(o=>o.value===oldC)) c.value=oldC;
+  if(oldY && years.includes(oldY)){
+    y.value=oldY;
+  }else if(years.length){
+    // Board-style display always opens the latest encoded/published year.
+    y.value=years[0];
+  }
 }
 
 function renderPublicDisclosure(data){
@@ -6989,41 +7347,101 @@ function renderPublicDisclosureFiltered(){
   const root=document.getElementById('publicDisclosureList');
   if(!root) return;
 
-  const year=document.getElementById('fdPublicYear')?.value||'ALL';
-  const cat=document.getElementById('fdPublicCategory')?.value||'ALL';
+  const year=document.getElementById('fdPublicYear')?.value||'';
+  const yearTitle=document.getElementById('fdPublicYearTitle');
 
-  const rows=(window.BTO_PUBLIC_DISCLOSURE||[]).filter(x=>
-    (year==='ALL'||String(x.year)===year) &&
-    (cat==='ALL'||String(x.category)===cat)
-  );
+  if(yearTitle){
+    yearTitle.textContent=year||'—';
+  }
+
+  let rows=(window.BTO_PUBLIC_DISCLOSURE||[])
+    .filter(x=>!year || String(x.year||'')===year)
+    .slice()
+    .sort((a,b)=>{
+      const ca=String(a.category||'').localeCompare(String(b.category||''));
+      if(ca!==0) return ca;
+      return String(a.title||'').localeCompare(String(b.title||''));
+    });
 
   if(!rows.length){
-    root.innerHTML='<div class="public-doc-empty">No published Full Disclosure documents match this filter.</div>';
+    root.innerHTML=`
+      <div class="public-doc-empty">
+        No published Full Disclosure documents are available
+        ${year ? `for ${btoEsc(year)}` : 'yet'}.
+      </div>
+    `;
     return;
   }
 
-  root.innerHTML=rows.map(x=>{
-    const img=x.imageUrl||'';
-    const pdf=x.pdfUrl||'';
-    const preferred=pdf||img;
+  root.innerHTML=rows.map((x,index)=>{
+    const img=String(x.imageUrl||'').trim();
+    const pdf=String(x.pdfUrl||'').trim();
+    const title=String(x.title||x.category||'Disclosure Document').trim();
+    const category=String(x.category||'Full Disclosure').trim();
 
-    return `<article class="public-disclosure-card">
-      <div class="public-disclosure-preview ${img?'':'no-image'}">
-        ${img?`<img src="${btoEsc(publicImageUrl(img))}" alt="${btoEsc(x.title||'Disclosure document')}" loading="lazy" onerror="this.style.display='none';this.parentElement.classList.add('no-image');this.parentElement.innerHTML='<span aria-hidden=\'true\'>📄</span>';">`:'<span aria-hidden="true">📄</span>'}
-      </div>
-      <div class="public-disclosure-body">
-        <span class="public-disclosure-category">${btoEsc(x.category||'Disclosure')}</span>
-        <div class="public-disclosure-title">${btoEsc(x.title||'Untitled')}</div>
-        <div class="public-disclosure-year">Year ${btoEsc(x.year||'')}</div>
-
-        <div class="public-doc-actions">
-          ${img?`<a class="outline" href="${btoEsc(publicViewUrl(img))}" target="_blank" rel="noopener">View Image</a>`:''}
-          ${pdf?`<a class="outline" href="${btoEsc(publicViewUrl(pdf))}" target="_blank" rel="noopener">View PDF</a>`:''}
-          ${preferred?`<a href="${btoEsc(publicDownloadUrl(preferred))}" target="_blank" rel="noopener">${pdf?'Download PDF':'Download Image'}</a>`:''}
-          ${preferred?`<button onclick='publicPrintFile(${JSON.stringify(preferred)},${JSON.stringify(x.title||"Document")})'>Print</button>`:''}
+    return `
+      <article class="fd-board-item">
+        <div class="fd-board-item-heading">
+          <span class="fd-board-item-number">${String(index+1).padStart(2,'0')}</span>
+          <div>
+            <div class="fd-board-item-category">${btoEsc(category)}</div>
+            <h3>${btoEsc(title)}</h3>
+          </div>
         </div>
-      </div>
-    </article>`;
+
+        <a
+          class="fd-board-image ${img?'':'no-image'}"
+          ${img
+            ? `href="${btoEsc(publicViewUrl(img))}" target="_blank" rel="noopener"`
+            : 'href="javascript:void(0)"'}
+          aria-label="${img ? `Open image for ${btoEsc(title)}` : `No image uploaded for ${btoEsc(title)}`}"
+        >
+          ${img
+            ? `<img
+                src="${btoEsc(publicImageUrl(img))}"
+                alt="${btoEsc(title)}"
+                loading="lazy"
+                onerror="this.style.display='none';this.parentElement.classList.add('no-image');this.parentElement.querySelector('.fd-image-fallback').style.display='flex';"
+              >
+              <span class="fd-image-fallback" style="display:none">📄<small>Image unavailable</small></span>`
+            : `<span class="fd-image-fallback">📄<small>No image uploaded</small></span>`
+          }
+        </a>
+
+        <div class="fd-board-pdf">
+          <div class="fd-board-pdf-label">
+            <span aria-hidden="true">📕</span>
+            <div>
+              <strong>PDF Document</strong>
+              <small>Year ${btoEsc(x.year||year||'')}</small>
+            </div>
+          </div>
+
+          ${pdf
+            ? `<div class="fd-board-pdf-actions">
+                <a
+                  href="${btoEsc(publicViewUrl(pdf))}"
+                  target="_blank"
+                  rel="noopener"
+                >View PDF</a>
+
+                <a
+                  class="outline"
+                  href="${btoEsc(publicDownloadUrl(pdf))}"
+                  target="_blank"
+                  rel="noopener"
+                >Download</a>
+
+                <button
+                  type="button"
+                  onclick='publicPrintFile(${JSON.stringify(pdf)},${JSON.stringify(title)})'
+                >Print</button>
+              </div>`
+            : `<div class="fd-board-pdf-missing">PDF not uploaded</div>`
+          }
+        </div>
+      </article>
+    `;
   }).join('');
 }
 
