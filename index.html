@@ -3859,6 +3859,52 @@ body.bto-site-loading{overflow:hidden!important}
   }
 }
 
+
+
+/* ===== PUBLIC ACTIVITY MULTI-PHOTO DISPLAY ===== */
+.activity-gallery-card .event-photo-carousel{
+  width:100%;
+  max-width:none;
+  height:230px;
+  margin:0;
+  border:0;
+  border-bottom:1px solid #ececec;
+  border-radius:14px 14px 0 0;
+}
+
+.activity-gallery-card .event-photo-slide img{
+  object-fit:cover;
+}
+
+.activity-gallery-card .event-photo-controls button{
+  width:34px;
+  height:34px;
+}
+
+.home-activity-photo-note,
+.update-photo-summary{
+  margin-top:8px;
+  color:#6b7280;
+  font-size:12px;
+  font-weight:700;
+}
+
+.update-photo-summary{
+  max-width:640px;
+  margin:0 auto 12px;
+  text-align:center;
+}
+
+@media(max-width:700px){
+  .activity-gallery-card .event-photo-carousel{
+    height:210px;
+  }
+
+  .update-photo-summary{
+    font-size:11px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -5563,17 +5609,27 @@ function renderHomeRecentActivities(data){
     .sort((a,b)=>String(b['Event Date']||b['Created At']||'').localeCompare(String(a['Event Date']||a['Created At']||'')))
     .slice(0,3);
 
-  root.innerHTML=rows.length ? rows.map(x=>`
-    <article class="news-card" onclick="showView('announcements')" style="cursor:pointer">
-      ${photoHtml(x,'📷')}
-      <div class="body">
+  root.innerHTML=rows.length ? rows.map((x,i)=>`
+    <article class="news-card activity-gallery-card" style="cursor:pointer">
+      ${eventSlideshowHtml(
+        x,
+        'home-activity-'+(x['Content ID']||i)
+      )}
+      <div class="body" onclick="showView('announcements')">
         <span class="label">${publicEsc(committeeName(data,x['Committee ID'])||'Activity')}</span>
         <h3>${publicEsc(x.Title||'')}</h3>
         <p>${contentMeta(x)}</p>
         ${x.Description?`<p>${publicEsc(x.Description)}</p>`:''}
+        ${eventPhotoUrls(x).length>1
+          ? `<div class="home-activity-photo-note">
+              📷 ${eventPhotoUrls(x).length} photos
+            </div>`
+          : ''}
       </div>
     </article>`).join('')
     : '<div class="live-empty">No recent activities yet.</div>';
+
+  setTimeout(initEventCarousels,0);
 }
 
 
@@ -5692,6 +5748,11 @@ function renderAllAnnouncements(data){
         return `
           <article class="activity-live-card update-public-card">
             ${eventSlideshowHtml(x,'update-'+(x['Content ID']||i))}
+            ${eventPhotoUrls(x).length>1 ? `
+              <div class="update-photo-summary">
+                📷 ${eventPhotoUrls(x).length} photos · use ‹ › or tap a photo to enlarge
+              </div>
+            ` : ''}
             <div class="update-badges">
               <span class="update-type-badge ${type==='COMMITTEE UPDATE'?'committee':''}">
                 ${publicEsc(updateTypeLabel(x))}
@@ -5761,8 +5822,19 @@ let heroCarouselIndex=0;
 let heroCarouselTimer=null;
 
 function heroActivityRows(data){
-  return (data.content||[])
-    .filter(x=>contentPhotoUrl(x))
+  const rows=[];
+  const seen=new Set();
+
+  const content=(data.content||[])
+    .filter(x=>{
+      const type=String(x.Type||'').toUpperCase();
+      return (
+        type==='ACTIVITY' ||
+        type==='COMMITTEE UPDATE' ||
+        type==='ANNOUNCEMENT'
+      );
+    })
+    .slice()
     .sort((a,b)=>{
       const ad=String(a['Event Date']||a['Created At']||'');
       const bd=String(b['Event Date']||b['Created At']||'');
@@ -5770,8 +5842,29 @@ function heroActivityRows(data){
       const bt=String(b.Type||'').toUpperCase()==='ACTIVITY' ? 1 : 0;
       if(at!==bt) return bt-at;
       return bd.localeCompare(ad);
-    })
-    .slice(0,8);
+    });
+
+  content.forEach(row=>{
+    const type=String(row.Type||'').toUpperCase();
+
+    const urls=(
+      type==='ACTIVITY' || type==='COMMITTEE UPDATE'
+    )
+      ? eventPhotoUrls(row)
+      : [contentPhotoUrl(row)].filter(Boolean);
+
+    urls.forEach(url=>{
+      if(!url || seen.has(url)) return;
+      seen.add(url);
+
+      rows.push({
+        ...row,
+        _heroPhotoUrl:url
+      });
+    });
+  });
+
+  return rows.slice(0,12);
 }
 
 
@@ -5831,7 +5924,7 @@ function renderHeroActivityCarousel(data){
 
   track.innerHTML=heroCarouselRows.map((x,i)=>`
     <div class="hero-carousel-slide ${i===0?'active':''}" data-index="${i}" onclick="showView('announcements')">
-      <img src="${publicEsc(contentPhotoUrl(x))}"
+      <img src="${publicEsc(x._heroPhotoUrl||contentPhotoUrl(x))}"
         alt="${publicEsc(x.Title||'Barangay activity')}"
         loading="${i===0?'eager':'lazy'}"
         referrerpolicy="no-referrer"
