@@ -3222,10 +3222,100 @@ function editContentAdmin(index){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
+
+function btoContentApplySavedPayload_(payload){
+  const rows=window.BTO_CONTENT_ADMIN_ROWS||[];
+  const id=String(payload?.id||payload?.contentId||'').trim();
+
+  if(!id) return false;
+
+  const index=rows.findIndex(r=>String(btoContentId(r))===id);
+  if(index<0) return false;
+
+  const row=Object.assign({},rows[index]);
+
+  row['Content ID']=row['Content ID']||id;
+  row['Type']=payload.type||'';
+  row['Title']=payload.title||'';
+  row['Event Date']=payload.eventDate||'';
+  row['Time']=payload.time||'';
+  row['Venue']=payload.venue||'';
+  row['Committee ID']=payload.committeeId||'';
+  row['Description']=payload.description||'';
+
+  if(String(payload.featuredPhotoUrl||'').trim()){
+    row['Featured Photo URL']=payload.featuredPhotoUrl;
+    row['Photo URL']=payload.featuredPhotoUrl;
+  }
+
+  row['Status']=payload.status||'PUBLISHED';
+
+  rows[index]=row;
+  window.BTO_CONTENT_ADMIN_ROWS=rows;
+  window.BTO_EDIT_CONTENT=null;
+
+  renderContentAdmin();
+  return true;
+}
+
+function btoContentRowMatchesPayload_(row,payload){
+  if(!row || !payload) return false;
+
+  const same=(a,b)=>String(a??'').trim()===String(b??'').trim();
+
+  return (
+    same(btoContentVal(row,'Type'),payload.type) &&
+    same(btoContentVal(row,'Title'),payload.title) &&
+    same(
+      btoContentDateInputValue(
+        btoContentVal(row,'Event Date','Date')
+      ),
+      payload.eventDate
+    ) &&
+    same(
+      btoContentTimeInputValue(
+        btoContentVal(row,'Time')
+      ),
+      payload.time
+    ) &&
+    same(btoContentVal(row,'Venue'),payload.venue) &&
+    same(btoContentVal(row,'Description'),payload.description)
+  );
+}
+
+function btoContentReconcileAfterUpdate_(payload){
+  // Re-read the Sheet after a short delay, but never replace the
+  // just-saved local display with an older/stale response.
+  setTimeout(async()=>{
+    try{
+      const cr=await api('adminCrudList',{kind:'CONTENT'});
+      if(!cr.success || !Array.isArray(cr.data)) return;
+
+      const id=String(payload?.id||payload?.contentId||'').trim();
+      const fresh=cr.data.find(r=>String(btoContentId(r))===id);
+
+      if(!fresh || !btoContentRowMatchesPayload_(fresh,payload)){
+        console.warn(
+          '[BTO CONTENT] Sheet/list response did not yet match the saved payload; keeping immediate saved display.'
+        );
+        return;
+      }
+
+      window.BTO_CONTENT_ADMIN_ROWS=cr.data;
+      renderContentAdmin();
+
+    }catch(err){
+      console.warn('[BTO CONTENT] Background reconcile failed:',err);
+    }
+  },1200);
+}
+
 async function saveContent(btn){
   return btoSingleSave('CONTENT',async()=>{
     const id=document.getElementById('cId').value.trim();
-    const successMessage=id
+    const isUpdate=Boolean(id);
+
+    const successMessage=isUpdate
       ? 'Announcement / Activity updated.'
       : 'Published successfully.';
 
@@ -3250,13 +3340,13 @@ async function saveContent(btn){
 
         photoUrl=String(u.url||'').trim();
 
-        // Keep the uploaded URL locally so a retry does not upload
-        // the same file again if the record-save step ever fails.
+        // Keep the uploaded URL locally so retry will not re-upload.
         if(existingInput) existingInput.value=photoUrl;
         if(photoInput) photoInput.value='';
       }
 
       const contentType=document.getElementById('cType').value;
+
       const committeeId=
         String(contentType).toUpperCase()==='COMMITTEE UPDATE'
           ? document.getElementById('cCommittee').value
@@ -3286,7 +3376,7 @@ async function saveContent(btn){
         status:'PUBLISHED'
       };
 
-      const r=id
+      const r=isUpdate
         ? await api('adminCrudUpdateContent',payload)
         : await api('saveContent',payload);
 
@@ -3294,7 +3384,25 @@ async function saveContent(btn){
         throw new Error(r.message||'Unable to save.');
       }
 
-      await contentForm();
+      if(isUpdate){
+        // IMPORTANT:
+        // Do not wait for a second Sheet read before updating the UI.
+        // The successful payload is already the value written to the Sheet.
+        btoContentApplySavedPayload_(payload);
+
+        showGlobalActionStatus(
+          'Updated successfully. The list below now shows the saved values.',
+          'ok'
+        );
+
+        // Optional background verification against the Sheet.
+        btoContentReconcileAfterUpdate_(payload);
+
+      }else{
+        // New record needs its generated ID, so reload from Sheet.
+        await contentForm();
+      }
+
       return r;
 
     },successMessage);
