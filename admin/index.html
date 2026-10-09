@@ -1931,6 +1931,145 @@ button.danger,
   }
 }
 
+
+
+/* ===== FULL DISCLOSURE BOARD ENCODER ===== */
+.fd-required{
+  color:#c5162e;
+}
+
+.fd-encoder-step{
+  display:grid;
+  grid-template-columns:42px minmax(0,1fr);
+  gap:12px;
+  border:1px solid #e4e7ec;
+  border-radius:14px;
+  padding:14px;
+  margin-top:14px;
+  background:#fff;
+}
+
+.fd-encoder-step-no{
+  width:36px;
+  height:36px;
+  border-radius:50%;
+  background:#991b1b;
+  color:#fff;
+  font-weight:900;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:15px;
+}
+
+.fd-encoder-step-body{
+  min-width:0;
+}
+
+.fd-encoder-step-body h3{
+  margin:4px 0 10px;
+}
+
+.fd-upload-preview{
+  margin-top:10px;
+  max-width:480px;
+  border:1px solid #e4e7ec;
+  border-radius:12px;
+  background:#f8fafc;
+  overflow:hidden;
+}
+
+.fd-upload-preview img{
+  display:block;
+  width:100%;
+  max-height:340px;
+  object-fit:contain;
+  background:#fff;
+}
+
+.fd-upload-preview-name{
+  padding:8px 10px;
+  font-size:11px;
+  color:#475467;
+  font-weight:700;
+  word-break:break-word;
+}
+
+.fd-pdf-selected{
+  margin-top:8px;
+  padding:9px 10px;
+  border:1px solid #d1fadf;
+  background:#ecfdf3;
+  color:#166534;
+  border-radius:9px;
+  font-size:12px;
+  font-weight:800;
+  word-break:break-word;
+}
+
+.fd-existing-row{
+  align-items:stretch;
+}
+
+.fd-existing-thumb{
+  width:78px;
+  min-width:78px;
+  height:92px;
+  border:1px solid #e4e7ec;
+  border-radius:8px;
+  background:#f8fafc;
+  overflow:hidden;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:30px;
+}
+
+.fd-existing-thumb img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  background:#fff;
+}
+
+.fd-existing-year{
+  display:inline-flex;
+  padding:3px 7px;
+  border-radius:999px;
+  background:#fff1f3;
+  border:1px solid #ffc7d0;
+  color:#c5162e;
+  font-size:10px;
+  font-weight:900;
+  margin-bottom:5px;
+}
+
+.fd-existing-files{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:6px;
+  font-size:10px;
+  color:#667085;
+  font-weight:700;
+}
+
+@media(max-width:720px){
+  .fd-encoder-step{
+    grid-template-columns:1fr;
+  }
+
+  .fd-encoder-step-no{
+    width:32px;
+    height:32px;
+  }
+
+  .fd-existing-thumb{
+    width:100%;
+    height:180px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -7565,92 +7704,230 @@ async function fullDisclosureForm(){
 
 function renderFullDisclosureModule(){
   const cats=window.BTO_DISCLOSURE_CATEGORIES||[];
-  const rows=window.BTO_DISCLOSURE_ROWS||[];
+  const rows=(window.BTO_DISCLOSURE_ROWS||[])
+    .slice()
+    .sort((a,b)=>
+      Number(b.year||0)-Number(a.year||0) ||
+      String(a.category||'').localeCompare(String(b.category||'')) ||
+      String(a.title||'').localeCompare(String(b.title||''))
+    );
 
   document.getElementById('moduleArea').innerHTML=`
     <div class="card">
       <h2>Barangay Full Disclosure</h2>
-      <div class="help">Upload an image, a PDF, or both. Only records marked <strong>Published</strong> will appear on the public website.</div>
+      <div class="help">
+        The Barangay Encoder enters the disclosure <strong>Year</strong>,
+        uploads the display photo/image, then uploads the corresponding official PDF.
+        Published records will appear on the public Full Disclosure board.
+      </div>
 
       <div class="disclosure-category-box">
         <strong>Disclosure Items / Categories</strong>
-        <div class="help">Add a new item here anytime. Once added, it will automatically become available in the category dropdown and public filter.</div>
+        <div class="help">
+          Add new disclosure item names here when needed.
+          Existing categories remain reusable for future years.
+        </div>
+
         <div class="disclosure-category-add">
           <div>
             <label>New Item / Category Name</label>
-            <input id="newDisclosureCategory" placeholder="Example: Statement of Receipts and Expenditures">
+            <input
+              id="newDisclosureCategory"
+              placeholder="Example: Statement of Receipts and Expenditures"
+            >
           </div>
           <button onclick="addDisclosureCategory(this)">+ Add Item</button>
         </div>
+
         <div class="help" style="margin-top:8px">
-          Current: ${cats.length ? cats.map(c=>esc(c.name)).join(' • ') : 'No categories yet'}
+          Current:
+          ${cats.length
+            ? cats.map(c=>esc(c.name)).join(' • ')
+            : 'No categories yet'}
         </div>
       </div>
 
       <input id="fdId" type="hidden">
 
-      <div class="doc-form-grid">
-        <div>
-          <label>Year</label>
-          <input id="fdYear" type="number" min="1900" max="2200" value="${currentYearValue()}">
-        </div>
-        <div>
-          <label>Disclosure Item / Category</label>
-          <select id="fdCategory">
-            <option value="">Select item/category</option>
-            ${cats.filter(c=>c.status==='ACTIVE').map(c=>`<option value="${esc(c.name)}">${esc(c.name)}</option>`).join('')}
-          </select>
+      <div class="fd-encoder-step">
+        <div class="fd-encoder-step-no">1</div>
+        <div class="fd-encoder-step-body">
+          <h3>Disclosure Information</h3>
+
+          <div class="doc-form-grid">
+            <div>
+              <label>Year <span class="fd-required">*</span></label>
+              <input
+                id="fdYear"
+                type="number"
+                min="1900"
+                max="2200"
+                value="${currentYearValue()}"
+                placeholder="Example: 2026"
+              >
+              <div class="help">
+                Encoder sets the official year for this disclosure record.
+              </div>
+            </div>
+
+            <div>
+              <label>Disclosure Item / Category <span class="fd-required">*</span></label>
+              <select id="fdCategory">
+                <option value="">Select item/category</option>
+                ${cats
+                  .filter(c=>c.status==='ACTIVE')
+                  .map(c=>`
+                    <option value="${esc(c.name)}">
+                      ${esc(c.name)}
+                    </option>
+                  `).join('')}
+              </select>
+            </div>
+          </div>
+
+          <label>Document Title <span class="fd-required">*</span></label>
+          <input
+            id="fdTitle"
+            placeholder="Enter the public document title"
+          >
         </div>
       </div>
 
-      <label>Document Title</label>
-      <input id="fdTitle" placeholder="Enter the public document title">
+      <div class="fd-encoder-step">
+        <div class="fd-encoder-step-no">2</div>
+        <div class="fd-encoder-step-body">
+          <h3>Upload Display Photo / Image</h3>
+          <div class="help">
+            This image will be shown on the public Full Disclosure board.
+            This upload keeps its original image quality.
+          </div>
 
-      <div class="doc-form-grid">
-        <div>
-          <label>Upload Image (optional)</label>
-          <input id="fdImage" type="file" accept="image/*" onchange="btoResetPendingUpload('disclosureImage')">
+          <input
+            id="fdImage"
+            type="file"
+            accept="image/*"
+            onchange="btoDisclosureImagePreview(this)"
+          >
+
+          <div id="fdImagePreviewWrap" class="fd-upload-preview hidden">
+            <img id="fdImagePreview" alt="Selected Full Disclosure image preview">
+            <div id="fdImagePreviewName" class="fd-upload-preview-name"></div>
+          </div>
+
           <div id="fdCurrentImage" class="doc-file-current hidden"></div>
         </div>
-        <div>
-          <label>Upload PDF (optional)</label>
-          <input id="fdPdf" type="file" accept="application/pdf,.pdf" onchange="btoResetPendingUpload('disclosurePdf')">
+      </div>
+
+      <div class="fd-encoder-step">
+        <div class="fd-encoder-step-no">3</div>
+        <div class="fd-encoder-step-body">
+          <h3>Upload Official PDF</h3>
+          <div class="help">
+            The PDF will appear directly below the image on the public board.
+          </div>
+
+          <input
+            id="fdPdf"
+            type="file"
+            accept="application/pdf,.pdf"
+            onchange="btoDisclosurePdfSelected(this)"
+          >
+
+          <div id="fdPdfSelectedName" class="fd-pdf-selected hidden"></div>
           <div id="fdCurrentPdf" class="doc-file-current hidden"></div>
         </div>
       </div>
 
-      <label>Status</label>
-      <select id="fdStatus">
-        <option value="PUBLISHED">Published</option>
-        <option value="INACTIVE">Inactive</option>
-      </select>
+      <div class="fd-encoder-step">
+        <div class="fd-encoder-step-no">4</div>
+        <div class="fd-encoder-step-body">
+          <h3>Publish</h3>
 
-      <div class="grid">
-        <button onclick="saveFullDisclosureDocument(this)">Save & Publish</button>
-        <button class="secondary" onclick="clearFullDisclosureForm()">Clear</button>
+          <label>Status</label>
+          <select id="fdStatus">
+            <option value="PUBLISHED">Published</option>
+            <option value="INACTIVE">Inactive</option>
+          </select>
+
+          <div class="grid">
+            <button onclick="saveFullDisclosureDocument(this)">
+              Save & Publish
+            </button>
+            <button class="secondary" onclick="clearFullDisclosureForm()">
+              Clear
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="card">
       <h2>Existing Full Disclosure Documents</h2>
-      <div class="doc-list">
-        ${rows.length ? rows.map(x=>`
-          <div class="doc-row">
-            <div class="doc-row-main">
-              <div class="doc-row-title">${esc(x.title||'Untitled')}</div>
-              <div class="doc-row-meta">${esc(x.year||'')} • ${esc(x.category||'')} • ${esc(x.status||'')}</div>
-            </div>
-            <div class="doc-row-actions">
-              ${x.imageUrl?`<button class="secondary" onclick="window.open('${esc(x.imageUrl)}','_blank')">Image</button>`:''}
-              ${x.pdfUrl?`<button class="secondary" onclick="window.open('${esc(x.pdfUrl)}','_blank')">PDF</button>`:''}
-              <button onclick='editFullDisclosureDocument(${JSON.stringify(JSON.stringify(x))})'>Edit</button>
-                 <button class="danger" onclick="btoDeleteRecord('FULL_DISCLOSURE','${esc(x.id||'')}',fullDisclosureForm,'full disclosure record')">Delete</button>
-            </div>
-          </div>`).join('') : '<div class="help">No Full Disclosure documents encoded yet.</div>'}
+      <div class="help">
+        Records are grouped by the year entered by the Barangay Encoder.
       </div>
-    </div>`;
-}
 
+      <div class="doc-list">
+        ${rows.length
+          ? rows.map(x=>`
+            <div class="doc-row fd-existing-row">
+              <div class="fd-existing-thumb">
+                ${x.imageUrl
+                  ? `<img
+                      src="${esc(normalizePortalImageUrl(x.imageUrl))}"
+                      alt="${esc(x.title||'Full Disclosure image')}"
+                      onerror="this.style.display='none'"
+                    >`
+                  : '<span>📄</span>'
+                }
+              </div>
+
+              <div class="doc-row-main">
+                <div class="fd-existing-year">YEAR ${esc(x.year||'—')}</div>
+                <div class="doc-row-title">${esc(x.title||'Untitled')}</div>
+                <div class="doc-row-meta">
+                  ${esc(x.category||'')} • ${esc(x.status||'')}
+                </div>
+                <div class="fd-existing-files">
+                  <span>${x.imageUrl?'✓ Image':'— No image'}</span>
+                  <span>${x.pdfUrl?'✓ PDF':'— No PDF'}</span>
+                </div>
+              </div>
+
+              <div class="doc-row-actions">
+                ${x.imageUrl
+                  ? `<button
+                      class="secondary"
+                      onclick="window.open('${esc(x.imageUrl)}','_blank')"
+                    >Image</button>`
+                  : ''}
+                ${x.pdfUrl
+                  ? `<button
+                      class="secondary"
+                      onclick="window.open('${esc(x.pdfUrl)}','_blank')"
+                    >PDF</button>`
+                  : ''}
+                <button
+                  onclick='editFullDisclosureDocument(${JSON.stringify(JSON.stringify(x))})'
+                >Edit</button>
+                <button
+                  class="danger"
+                  onclick="btoDeleteRecord(
+                    'FULL_DISCLOSURE',
+                    '${esc(x.id||'')}',
+                    fullDisclosureForm,
+                    'full disclosure record'
+                  )"
+                >Delete</button>
+              </div>
+            </div>
+          `).join('')
+          : '<div class="help">No Full Disclosure documents encoded yet.</div>'
+        }
+      </div>
+    </div>
+  `;
+}
 async function addDisclosureCategory(btn){
   return withButtonSpinner(btn,'Adding...',async()=>{
     const name=document.getElementById('newDisclosureCategory').value.trim();
@@ -7667,6 +7944,62 @@ async function addDisclosureCategory(btn){
   },'Disclosure item added.');
 }
 
+
+function btoDisclosureImagePreview(input){
+  btoResetPendingUpload('disclosureImage');
+
+  const wrap=document.getElementById('fdImagePreviewWrap');
+  const img=document.getElementById('fdImagePreview');
+  const name=document.getElementById('fdImagePreviewName');
+  const file=input?.files?.[0];
+
+  if(!wrap || !img || !name) return;
+
+  if(!file){
+    wrap.classList.add('hidden');
+    img.removeAttribute('src');
+    name.textContent='';
+    return;
+  }
+
+  try{
+    const reader=new FileReader();
+
+    reader.onload=()=>{
+      img.src=String(reader.result||'');
+      name.textContent=`Selected image: ${file.name}`;
+      wrap.classList.remove('hidden');
+    };
+
+    reader.onerror=()=>{
+      wrap.classList.add('hidden');
+    };
+
+    reader.readAsDataURL(file);
+  }catch(e){
+    wrap.classList.add('hidden');
+  }
+}
+
+function btoDisclosurePdfSelected(input){
+  btoResetPendingUpload('disclosurePdf');
+
+  const root=document.getElementById('fdPdfSelectedName');
+  const file=input?.files?.[0];
+
+  if(!root) return;
+
+  if(!file){
+    root.classList.add('hidden');
+    root.textContent='';
+    return;
+  }
+
+  root.textContent=`Selected PDF: ${file.name}`;
+  root.classList.remove('hidden');
+}
+
+
 function editFullDisclosureDocument(json){
   const x=JSON.parse(json);
   document.getElementById('fdId').value=x.id||'';
@@ -7682,21 +8015,44 @@ function editFullDisclosureDocument(json){
   document.getElementById('fdStatus').value=x.status||'PUBLISHED';
 
   const img=document.getElementById('fdCurrentImage');
+  const previewWrap=document.getElementById('fdImagePreviewWrap');
+  const preview=document.getElementById('fdImagePreview');
+  const previewName=document.getElementById('fdImagePreviewName');
+
   if(x.imageUrl){
     img.classList.remove('hidden');
-    img.innerHTML=`Current image: <a href="${esc(x.imageUrl)}" target="_blank" rel="noopener">Open</a><br>Leave blank to keep it.`;
+    img.innerHTML=`Current image: <a href="${esc(x.imageUrl)}" target="_blank" rel="noopener">Open</a><br>Leave the upload field blank to keep it.`;
+
+    if(previewWrap && preview && previewName){
+      preview.src=normalizePortalImageUrl(x.imageUrl);
+      previewName.textContent='Current saved image';
+      previewWrap.classList.remove('hidden');
+    }
   }else{
     img.classList.add('hidden');
     img.innerHTML='';
+
+    if(previewWrap && preview && previewName){
+      previewWrap.classList.add('hidden');
+      preview.removeAttribute('src');
+      previewName.textContent='';
+    }
   }
 
   const pdf=document.getElementById('fdCurrentPdf');
+  const selectedPdf=document.getElementById('fdPdfSelectedName');
+
   if(x.pdfUrl){
     pdf.classList.remove('hidden');
-    pdf.innerHTML=`Current PDF: <a href="${esc(x.pdfUrl)}" target="_blank" rel="noopener">Open</a><br>Leave blank to keep it.`;
+    pdf.innerHTML=`Current PDF: <a href="${esc(x.pdfUrl)}" target="_blank" rel="noopener">Open</a><br>Leave the upload field blank to keep it.`;
   }else{
     pdf.classList.add('hidden');
     pdf.innerHTML='';
+  }
+
+  if(selectedPdf){
+    selectedPdf.classList.add('hidden');
+    selectedPdf.textContent='';
   }
 
   window.BTO_EDIT_DISCLOSURE=x;
@@ -7716,12 +8072,41 @@ function clearFullDisclosureForm(){
   document.getElementById('fdStatus').value='PUBLISHED';
   document.getElementById('fdCurrentImage').classList.add('hidden');
   document.getElementById('fdCurrentPdf').classList.add('hidden');
+
+  const previewWrap=document.getElementById('fdImagePreviewWrap');
+  const preview=document.getElementById('fdImagePreview');
+  const previewName=document.getElementById('fdImagePreviewName');
+  const pdfName=document.getElementById('fdPdfSelectedName');
+
+  if(previewWrap) previewWrap.classList.add('hidden');
+  if(preview) preview.removeAttribute('src');
+  if(previewName) previewName.textContent='';
+  if(pdfName){
+    pdfName.classList.add('hidden');
+    pdfName.textContent='';
+  }
 }
 
 async function saveFullDisclosureDocument(btn){
   return btoSingleSave('FULL_DISCLOSURE',async()=>{
 
   return withButtonSpinner(btn,'Saving...',async()=>{
+    const year=String(document.getElementById('fdYear').value||'').trim();
+    const category=String(document.getElementById('fdCategory').value||'').trim();
+    const title=String(document.getElementById('fdTitle').value||'').trim();
+
+    if(!/^\d{4}$/.test(year)){
+      throw new Error('Enter a valid four-digit disclosure year.');
+    }
+
+    if(!category){
+      throw new Error('Select a Disclosure Item / Category.');
+    }
+
+    if(!title){
+      throw new Error('Document Title is required.');
+    }
+
     const imageFile=document.getElementById('fdImage').files[0];
     const pdfFile=document.getElementById('fdPdf').files[0];
 
@@ -7741,9 +8126,9 @@ async function saveFullDisclosureDocument(btn){
 
     const r=await api('saveFullDisclosure',{
       id:document.getElementById('fdId').value,
-      year:document.getElementById('fdYear').value,
-      category:document.getElementById('fdCategory').value,
-      title:document.getElementById('fdTitle').value,
+      year:year,
+      category:category,
+      title:title,
       imageUrl,
       pdfUrl,
       status:document.getElementById('fdStatus').value
