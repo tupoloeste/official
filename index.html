@@ -5812,39 +5812,13 @@ function renderOrgPerson(o,isPrimary=false){
 
 
 
-const BTO_FALLBACK_SK = [
-  {name:'ERIKA MAE M. ALVIAR', position:'SK Chairperson'},
-  {name:'WENNARD M. REYES', position:'SK Member'},
-  {name:'DONAR H. ANGELADA', position:'SK Member'},
-  {name:'HANELYN G. ROBLES', position:'SK Member'},
-  {name:'JAMIL S. MONEVA', position:'SK Member'},
-  {name:'MUKTADIR A. HAMBANGAN', position:'SK Member'},
-  {name:'APRIL ROSE P. TORMON', position:'SK Member'}
-];
-
-const BTO_FALLBACK_TANODS = [
-  {name:'RIO M. TORMON', position:'Barangay Tanod'},
-  {name:'ARSENIA H. ANGELADA', position:'Barangay Tanod'},
-  {name:'JOHNJIE S. MONEVA', position:'Barangay Tanod'},
-  {name:'ELMAR A. EUROLFAN', position:'Barangay Tanod'},
-  {name:'MHELJUN T. CASQUETE', position:'Barangay Tanod'},
-  {name:'REMYWVIEL E. ROBLES', position:'Barangay Tanod'},
-  {name:'LEMUEL B. ROSANO', position:'Barangay Tanod'},
-  {name:'MARCOS J. ALINDAY', position:'Barangay Tanod'}
-];
-
-const BTO_FALLBACK_BARANGAY = [
-  {name:'JOSELITO M. TORMON', position:'Punong Barangay'},
-  {name:'ARDITO F. HUYO', position:'Sangguniang Barangay Member'},
-  {name:'EUSEBIA A. CUARTE', position:'Sangguniang Barangay Member'},
-  {name:'VICTORIA T. SAPRA', position:'Sangguniang Barangay Member'},
-  {name:'JONEL G. ROSANO', position:'Sangguniang Barangay Member'},
-  {name:'CUSTODIO T. MARCON JR.', position:'Sangguniang Barangay Member'},
-  {name:'JOLYN P. LAGUTANG', position:'Sangguniang Barangay Member'},
-  {name:'IAN PAUL B. MOSCARDON', position:'Sangguniang Barangay Member'},
-  {name:'', position:'Barangay Secretary', placeholder:true},
-  {name:'', position:'Barangay Treasurer', placeholder:true}
-];
+/* ============================================================
+   PUBLIC OFFICIALS / PERSONNEL
+   LIVE DATA ONLY
+   ------------------------------------------------------------
+   No hardcoded names, placeholders, fallback officials, SK,
+   or Tanods. Everything comes from the OFFICIALS data source.
+   ============================================================ */
 
 function officialGroup(o){
   return String(o.Group||o.group||'').trim().toUpperCase();
@@ -5933,219 +5907,91 @@ function renderOfficialCard(o,primary=false){
   </div>`;
 }
 
-function fallbackToOfficialRows(rows){
-  return rows.map(x=>({
-    'Full Name':x.name,
-    'Position':x.position,
-    'Photo URL':'',
-    committees:[]
-  }));
-}
-
-function normalizedOfficialName(o){
-  return String(o['Full Name']||o.fullName||o.name||'')
-    .trim()
-    .toUpperCase()
-    .replace(/[.,]/g,'')
-    .replace(/\s+/g,' ');
-}
-
-function looseOfficialNameKey(value){
-  return String(value||'')
-    .trim()
-    .toUpperCase()
-    .replace(/[.,]/g,'')
-    .replace(/\bJR\b/g,'JR')
-    .replace(/\s+/g,' ');
-}
-
-function deDuplicateOfficials(rows){
-  const byName=new Map();
-
-  rows.forEach(o=>{
-    const name=normalizedOfficialName(o);
-    if(!name) return;
-
-    // Prefer a richer/live record if the same person appears more than once.
-    const current=byName.get(name);
-    if(!current){
-      byName.set(name,o);
-      return;
-    }
-
-    const currentScore=
-      (current['Photo URL']?4:0)+
-      ((current.committees||[]).length?3:0)+
-      (current['Official ID']?2:0)+
-      (current['Contact Number']?1:0);
-
-    const nextScore=
-      (o['Photo URL']?4:0)+
-      ((o.committees||[]).length?3:0)+
-      (o['Official ID']?2:0)+
-      (o['Contact Number']?1:0);
-
-    if(nextScore>currentScore) byName.set(name,o);
-  });
-
-  return Array.from(byName.values());
-}
-
-
-function mergeLiveFirstWithFallback(liveRows,fallbackRows){
-  const live=deDuplicateOfficials(liveRows||[]);
-  const liveKeys=new Set(
-    live.map(o=>looseOfficialNameKey(o['Full Name']||o.fullName||o.name||''))
-  );
-
-  const fallbackOnly=(fallbackRows||[])
-    .filter(f=>!liveKeys.has(looseOfficialNameKey(f.name||'')))
-    .map(f=>({
-      'Full Name':f.name,
-      'Position':f.position,
-      'Photo URL':'',
-      'Contact Number':'',
-      committees:[]
-    }));
-
-  return deDuplicateOfficials([...live,...fallbackOnly]);
-}
-
-function mergeLiveWithFallback(liveRows,fallbackRows){
-  const live=deDuplicateOfficials(liveRows);
-  const used=new Set();
-
-  const result=fallbackRows.map(f=>{
-    const wanted=looseOfficialNameKey(f.name);
-
-    let found=live.find((o,index)=>{
-      if(used.has(index)) return false;
-      return looseOfficialNameKey(o['Full Name']||o.fullName||'')===wanted;
-    });
-
-    // Secondary tolerant match: first + last name.
-    if(!found && wanted){
-      const parts=wanted.split(' ').filter(Boolean);
-      const first=parts[0]||'';
-      const last=parts[parts.length-1]||'';
-
-      found=live.find((o,index)=>{
-        if(used.has(index)) return false;
-        const key=looseOfficialNameKey(o['Full Name']||o.fullName||'');
-        return key && key.startsWith(first+' ') && key.endsWith(' '+last);
-      });
-    }
-
-    if(found){
-      const idx=live.indexOf(found);
-      if(idx>=0) used.add(idx);
-
-      const livePos=String(found['Position']||found.position||'').trim();
-      const resolvedPos=(livePos && livePos.toUpperCase()!=='KAGAWAD')
-        ? livePos
-        : f.position;
-
-      return {
-        ...found,
-        'Full Name':found['Full Name']||f.name,
-        'Position':resolvedPos
-      };
-    }
-
-    return {
-      'Full Name':f.name || 'Coming Soon',
-      'Position':f.position,
-      'Photo URL':'',
-      'Contact Number':'',
-      committees:[]
-    };
-  });
-
-  // Append encoded/live personnel not found in the fallback list.
-  live.forEach((o,index)=>{
-    if(!used.has(index)) result.push(o);
-  });
-
-  return deDuplicateOfficials(result);
-}
-
 function renderOfficialsPersonnel(data){
-  console.log('[BTO PUBLIC PERSONNEL]',{
+  console.log('[BTO PUBLIC PERSONNEL — LIVE ONLY]',{
     officials:(data.officials||[]).length,
     barangayOfficials:(data.barangayOfficials||[]).length,
     skOfficials:(data.skOfficials||[]).length,
     tanods:(data.tanods||[]).length
   });
+
+  const isActiveOfficial=o=>{
+    const status=String(
+      o?.Status ||
+      o?.status ||
+      'ACTIVE'
+    ).trim().toUpperCase();
+
+    return ![
+      'INACTIVE',
+      'DELETED',
+      'ARCHIVED'
+    ].includes(status);
+  };
+
+  // Main OFFICIALS array is preferred because it contains enriched
+  // committee assignments for Barangay Officials.
   const active=deDuplicateOfficials(
-    (data.officials||[]).filter(o=>
-      String(o.Status||o.status||'ACTIVE').toUpperCase()!=='INACTIVE'
-    )
+    (Array.isArray(data.officials) ? data.officials : [])
+      .filter(isActiveOfficial)
   );
 
-  // Always preserve the full official master list.
-  // Encoded/live records replace the matching fallback person by name.
-  // Barangay Officials must use the enriched officials array because it
-  // includes each Kagawad's committee assignments.
-  const liveBarangay = active.filter(isBarangayOfficial);
-
-  console.log('[BTO BARANGAY COMMITTEES]',
-    liveBarangay.map(o=>({
-      name:o['Full Name']||'',
-      committees:(o.committees||[]).length
-    }))
+  const barangay=deDuplicateOfficials(
+    active.filter(isBarangayOfficial)
   );
 
-  const liveSK = (Array.isArray(data.skOfficials) && data.skOfficials.length)
-    ? data.skOfficials
-    : active.filter(isSKOfficial);
+  const skSource=
+    Array.isArray(data.skOfficials) && data.skOfficials.length
+      ? data.skOfficials
+      : active.filter(isSKOfficial);
 
-  const liveTanod = (Array.isArray(data.tanods) && data.tanods.length)
-    ? data.tanods
-    : active.filter(isTanodOfficial);
-
-  let barangay=mergeLiveWithFallback(
-    liveBarangay,
-    BTO_FALLBACK_BARANGAY
+  const sk=deDuplicateOfficials(
+    skSource.filter(isActiveOfficial)
   );
 
-  let sk=mergeLiveFirstWithFallback(
-    liveSK,
-    BTO_FALLBACK_SK
+  const tanodSource=
+    Array.isArray(data.tanods) && data.tanods.length
+      ? data.tanods
+      : active.filter(isTanodOfficial);
+
+  const tanod=deDuplicateOfficials(
+    tanodSource.filter(isActiveOfficial)
   );
 
-  let tanod=mergeLiveFirstWithFallback(
-    liveTanod,
-    BTO_FALLBACK_TANODS
-  );
+  console.log('[BTO BARANGAY OFFICIALS — LIVE]',barangay.map(o=>({
+    name:o['Full Name']||o.fullName||'',
+    position:o['Position']||o.position||'',
+    committees:(o.committees||[]).length
+  })));
 
   const brgyRoot=document.getElementById('public-officials-barangay');
   const skRoot=document.getElementById('public-officials-sk');
   const tanodRoot=document.getElementById('public-officials-tanod');
 
   if(brgyRoot){
-    brgyRoot.innerHTML=barangay.map(o=>{
-      const p=officialPosition(o).toUpperCase();
-      const primary=p.includes('PUNONG BARANGAY');
-      return renderOfficialCard(o,primary);
-    }).join('');
+    brgyRoot.innerHTML=barangay.length
+      ? barangay.map(o=>{
+          const p=officialPosition(o).toUpperCase();
+          const primary=p.includes('PUNONG BARANGAY');
+          return renderOfficialCard(o,primary);
+        }).join('')
+      : '<div class="live-empty">No active Barangay Officials encoded.</div>';
   }
 
   if(skRoot){
-    skRoot.innerHTML=sk.map(o=>{
-      const p=officialPosition(o).toUpperCase();
-      const primary=p.includes('CHAIR');
-      return renderOfficialCard(o,primary);
-    }).join('');
+    skRoot.innerHTML=sk.length
+      ? sk.map(o=>{
+          const p=officialPosition(o).toUpperCase();
+          const primary=p.includes('CHAIR');
+          return renderOfficialCard(o,primary);
+        }).join('')
+      : '<div class="live-empty">No active Sangguniang Kabataan officials encoded.</div>';
   }
 
   if(tanodRoot){
-    console.log('[BTO TANOD LIVE FIRST]',tanod.map(x=>({
-      name:x['Full Name']||'',
-      position:x['Position']||'',
-      photo:!!(x['Photo URL']),
-      contact:x['Contact Number']||''
-    })));
-    tanodRoot.innerHTML=tanod.map(o=>renderOfficialCard(o,false)).join('');
+    tanodRoot.innerHTML=tanod.length
+      ? tanod.map(o=>renderOfficialCard(o,false)).join('')
+      : '<div class="live-empty">No active Barangay Tanods encoded.</div>';
   }
 }
 
