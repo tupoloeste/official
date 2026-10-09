@@ -3905,6 +3905,38 @@ body.bto-site-loading{overflow:hidden!important}
   }
 }
 
+
+
+/* ===== AUTOMATIC ANNOUNCEMENT LIFECYCLE ===== */
+.announcement-life-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:3px 8px;
+  border-radius:999px;
+  font-size:10px;
+  line-height:1.2;
+  font-weight:900;
+  letter-spacing:.03em;
+  white-space:nowrap;
+}
+
+.announcement-life-badge.upcoming{
+  background:#fff7ed;
+  color:#9a3412;
+  border:1px solid #fed7aa;
+}
+
+.announcement-life-badge.current{
+  background:#dcfce7;
+  color:#166534;
+  border:1px solid #86efac;
+}
+
+.announcement-ticker-main .announcement-life-badge{
+  flex:0 0 auto;
+}
+
 </style>
 </head>
 <body>
@@ -5296,6 +5328,179 @@ function committeeName(data,committeeId){
 }
 
 
+
+/* ============================================================
+   ANNOUNCEMENT AUTOMATIC LIFECYCLE — ASIA/MANILA
+   ------------------------------------------------------------
+   UPCOMING : before scheduled event time
+   CURRENT  : from event time until 11:59:59 PM of event date
+   EXPIRED  : from 12:00 AM of the following day
+   ============================================================ */
+
+function btoManilaNowParts_(){
+  const parts=new Intl.DateTimeFormat('en-CA',{
+    timeZone:'Asia/Manila',
+    year:'numeric',
+    month:'2-digit',
+    day:'2-digit',
+    hour:'2-digit',
+    minute:'2-digit',
+    second:'2-digit',
+    hourCycle:'h23'
+  }).formatToParts(new Date());
+
+  const get=t=>{
+    const p=parts.find(x=>x.type===t);
+    return p ? p.value : '';
+  };
+
+  return {
+    date:`${get('year')}-${get('month')}-${get('day')}`,
+    time:`${get('hour')}:${get('minute')}:${get('second')}`
+  };
+}
+
+function btoAnnouncementDateYmd_(row){
+  const raw=String(
+    row?.['Event Date'] ||
+    row?.['Date'] ||
+    row?.eventDate ||
+    row?.date ||
+    ''
+  ).trim();
+
+  if(!raw) return '';
+
+  if(/^\d{4}-\d{2}-\d{2}$/.test(raw)){
+    return raw;
+  }
+
+  try{
+    const d=new Date(raw);
+    if(isNaN(d)) return '';
+
+    const parts=new Intl.DateTimeFormat('en-CA',{
+      timeZone:'Asia/Manila',
+      year:'numeric',
+      month:'2-digit',
+      day:'2-digit'
+    }).formatToParts(d);
+
+    const get=t=>{
+      const p=parts.find(x=>x.type===t);
+      return p ? p.value : '';
+    };
+
+    return `${get('year')}-${get('month')}-${get('day')}`;
+  }catch(e){
+    return '';
+  }
+}
+
+function btoAnnouncementTime24_(row){
+  const raw=String(
+    row?.['Time'] ||
+    row?.time ||
+    ''
+  ).trim();
+
+  if(!raw) return '00:00';
+
+  let m=raw.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if(m){
+    return `${String(Number(m[1])).padStart(2,'0')}:${m[2]}`;
+  }
+
+  m=raw.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if(m){
+    let h=Number(m[1])%12;
+    if(String(m[3]).toUpperCase()==='PM') h+=12;
+    return `${String(h).padStart(2,'0')}:${m[2]}`;
+  }
+
+  return '00:00';
+}
+
+function btoAnnouncementLifecycle_(row){
+  const eventDate=btoAnnouncementDateYmd_(row);
+
+  if(!eventDate){
+    return {
+      state:'UPCOMING',
+      label:'UPCOMING',
+      active:true
+    };
+  }
+
+  const eventTime=btoAnnouncementTime24_(row);
+  const now=btoManilaNowParts_();
+
+  // The calendar date decides when the announcement expires.
+  if(now.date > eventDate){
+    return {
+      state:'EXPIRED',
+      label:'EXPIRED',
+      active:false
+    };
+  }
+
+  if(now.date < eventDate){
+    return {
+      state:'UPCOMING',
+      label:'UPCOMING',
+      active:true
+    };
+  }
+
+  // Same day: before scheduled time = Upcoming.
+  const nowHm=now.time.slice(0,5);
+
+  if(nowHm < eventTime){
+    return {
+      state:'UPCOMING',
+      label:'UPCOMING',
+      active:true
+    };
+  }
+
+  // Same day, at/after scheduled time through 11:59 PM.
+  return {
+    state:'CURRENT',
+    label:'CURRENT / ONGOING',
+    active:true
+  };
+}
+
+function btoIsActivePublicAnnouncement_(row){
+  const type=String(
+    row?.['Type'] ||
+    row?.type ||
+    ''
+  ).trim().toUpperCase();
+
+  const status=String(
+    row?.['Status'] ||
+    row?.status ||
+    'PUBLISHED'
+  ).trim().toUpperCase();
+
+  if(type!=='ANNOUNCEMENT') return false;
+  if(status!=='PUBLISHED') return false;
+
+  return btoAnnouncementLifecycle_(row).active;
+}
+
+function btoAnnouncementLifecycleBadge_(row){
+  const life=btoAnnouncementLifecycle_(row);
+
+  return `
+    <span class="announcement-life-badge ${life.state.toLowerCase()}">
+      ${life.label}
+    </span>
+  `;
+}
+
+
 function renderAnnouncementTicker(data){
   const track=document.getElementById('announcement-ticker-track');
   if(!track) return;
@@ -5308,11 +5513,7 @@ function renderAnnouncementTicker(data){
     .replace(/'/g,'&#39;');
 
   const rows=(data.content||[])
-    .filter(r=>{
-      const type=String(r['Type']||r.type||'').trim().toUpperCase();
-      const status=String(r['Status']||r.status||'PUBLISHED').trim().toUpperCase();
-      return type==='ANNOUNCEMENT' && status==='PUBLISHED';
-    })
+    .filter(btoIsActivePublicAnnouncement_)
     .sort((a,b)=>{
       const da=new Date(a['Event Date']||a['Date']||0).getTime()||0;
       const db=new Date(b['Event Date']||b['Date']||0).getTime()||0;
@@ -5359,6 +5560,7 @@ function renderAnnouncementTicker(data){
            tabindex="0"
            aria-label="${tickerEsc(title)}${description ? ` — ${tickerEsc(description)}` : ''}">
         <div class="announcement-ticker-main">
+          ${btoAnnouncementLifecycleBadge_(r)}
           <strong>${tickerEsc(title)}</strong>
           ${meta ? `<span>${tickerEsc(meta)}</span>` : ''}
           ${description ? `
@@ -7223,6 +7425,7 @@ function applyPublicData(data){
   renderHomeAnnouncements(data);
   renderHomeRecentActivities(data);
   renderAllAnnouncements(data);
+  btoScheduleAnnouncementBoundaryRefresh_();
 }
 
 
@@ -7310,6 +7513,7 @@ async function refreshPublicUpdatesFromCloudflare(force=false){
     renderHomeAnnouncements(merged);
     renderHomeRecentActivities(merged);
     renderAllAnnouncements(merged);
+    btoScheduleAnnouncementBoundaryRefresh_();
 
     console.log(
       '[BTO PUBLIC UPDATES] Refreshed from Cloudflare',
@@ -8080,6 +8284,77 @@ document.addEventListener('DOMContentLoaded',()=>{
     });
   }
 });
+
+
+
+let BTO_ANNOUNCEMENT_BOUNDARY_TIMER=null;
+
+function btoScheduleAnnouncementBoundaryRefresh_(){
+  if(BTO_ANNOUNCEMENT_BOUNDARY_TIMER){
+    clearTimeout(BTO_ANNOUNCEMENT_BOUNDARY_TIMER);
+    BTO_ANNOUNCEMENT_BOUNDARY_TIMER=null;
+  }
+
+  const rows=Array.isArray(BTO_PUBLIC_LAST_DATA?.content)
+    ? BTO_PUBLIC_LAST_DATA.content.filter(r=>{
+        const type=String(r?.['Type']||r?.type||'').toUpperCase();
+        const status=String(r?.['Status']||r?.status||'PUBLISHED').toUpperCase();
+        return type==='ANNOUNCEMENT' && status==='PUBLISHED';
+      })
+    : [];
+
+  if(!rows.length) return;
+
+  const now=new Date();
+
+  const candidates=[];
+
+  rows.forEach(row=>{
+    const ymd=btoAnnouncementDateYmd_(row);
+    if(!ymd) return;
+
+    const hm=btoAnnouncementTime24_(row);
+    const [y,m,d]=ymd.split('-').map(Number);
+    const [hh,mm]=hm.split(':').map(Number);
+
+    // Event start in Asia/Manila (+08:00)
+    const start=new Date(
+      `${ymd}T${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:00+08:00`
+    );
+
+    // Midnight immediately after the event date.
+    const end=new Date(
+      Date.UTC(y,m-1,d,16,0,0,0)
+    );
+
+    if(start.getTime()>now.getTime()){
+      candidates.push(start.getTime());
+    }
+
+    if(end.getTime()>now.getTime()){
+      candidates.push(end.getTime());
+    }
+  });
+
+  if(!candidates.length) return;
+
+  const next=Math.min(...candidates);
+  const delay=Math.max(1000,next-Date.now()+1000);
+
+  // setTimeout has a maximum practical 32-bit delay. If farther away,
+  // schedule a safe re-evaluation instead.
+  const safeDelay=Math.min(delay,2147480000);
+
+  BTO_ANNOUNCEMENT_BOUNDARY_TIMER=setTimeout(()=>{
+    if(BTO_PUBLIC_LAST_DATA){
+      renderAnnouncementTicker(BTO_PUBLIC_LAST_DATA);
+      renderHomeAnnouncements(BTO_PUBLIC_LAST_DATA);
+      renderAllAnnouncements(BTO_PUBLIC_LAST_DATA);
+    }
+
+    btoScheduleAnnouncementBoundaryRefresh_();
+  },safeDelay);
+}
 
 </script>
 
