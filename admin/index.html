@@ -3197,8 +3197,18 @@ function previewContentPhotoInput(input){
 
 
 const BTO_CONTENT_GALLERY_MAX=10;
+
+// Applies ONLY to Gallery Photos.
+// Featured Photo, Site Media, Officials photos and all other uploaders
+// keep their current original upload behavior.
+const BTO_GALLERY_MAX_DIMENSION=1600;
+const BTO_GALLERY_TARGET_BYTES=180*1024;
+const BTO_GALLERY_START_QUALITY=0.82;
+const BTO_GALLERY_MIN_QUALITY=0.52;
+
 window.BTO_CONTENT_GALLERY_NEW_FILES=[];
 window.BTO_CONTENT_GALLERY_NEW_PREVIEWS=[];
+window.BTO_CONTENT_GALLERY_NEW_META=[];
 
 function btoContentGalleryUrls(row){
   const raw=String(
@@ -3293,6 +3303,175 @@ function removeContentGalleryExisting(index){
 }
 
 
+
+function btoFormatFileSize_(bytes){
+  const n=Number(bytes||0);
+  if(n<1024) return `${n} B`;
+  if(n<1024*1024) return `${Math.round(n/1024)} KB`;
+  return `${(n/(1024*1024)).toFixed(1)} MB`;
+}
+
+function btoGalleryCanvasBlob_(canvas,type,quality){
+  return new Promise(resolve=>{
+    try{
+      canvas.toBlob(blob=>resolve(blob||null),type,quality);
+    }catch(e){
+      resolve(null);
+    }
+  });
+}
+
+function btoGalleryLoadImage_(file){
+  return new Promise((resolve,reject)=>{
+    try{
+      const url=URL.createObjectURL(file);
+      const img=new Image();
+
+      img.onload=()=>{
+        try{ URL.revokeObjectURL(url); }catch(e){}
+        resolve(img);
+      };
+
+      img.onerror=()=>{
+        try{ URL.revokeObjectURL(url); }catch(e){}
+        reject(new Error('Unable to read image.'));
+      };
+
+      img.src=url;
+    }catch(e){
+      reject(e);
+    }
+  });
+}
+
+async function btoOptimizeGalleryImage_(file){
+  const originalSize=Number(file?.size||0);
+  const originalName=String(file?.name||'gallery-photo.jpg');
+  const originalType=String(file?.type||'').toLowerCase();
+
+  if(
+    !file ||
+    !/^image\/(jpeg|jpg|png|webp)$/i.test(originalType)
+  ){
+    return {
+      file:file,
+      originalSize:originalSize,
+      optimizedSize:originalSize,
+      compressed:false,
+      note:'Original retained'
+    };
+  }
+
+  try{
+    const img=await btoGalleryLoadImage_(file);
+
+    const sourceW=Number(img.naturalWidth||img.width||0);
+    const sourceH=Number(img.naturalHeight||img.height||0);
+
+    if(!sourceW || !sourceH){
+      throw new Error('Invalid image dimensions.');
+    }
+
+    const scale=Math.min(
+      1,
+      BTO_GALLERY_MAX_DIMENSION/Math.max(sourceW,sourceH)
+    );
+
+    const width=Math.max(1,Math.round(sourceW*scale));
+    const height=Math.max(1,Math.round(sourceH*scale));
+
+    const canvas=document.createElement('canvas');
+    canvas.width=width;
+    canvas.height=height;
+
+    const ctx=canvas.getContext('2d',{alpha:false});
+    if(!ctx) throw new Error('Canvas is unavailable.');
+
+    ctx.fillStyle='#ffffff';
+    ctx.fillRect(0,0,width,height);
+    ctx.drawImage(img,0,0,width,height);
+
+    let quality=BTO_GALLERY_START_QUALITY;
+    let blob=await btoGalleryCanvasBlob_(
+      canvas,
+      'image/jpeg',
+      quality
+    );
+
+    if(!blob){
+      throw new Error('Image compression failed.');
+    }
+
+    while(
+      blob.size>BTO_GALLERY_TARGET_BYTES &&
+      quality>BTO_GALLERY_MIN_QUALITY
+    ){
+      quality=Math.max(
+        BTO_GALLERY_MIN_QUALITY,
+        quality-0.07
+      );
+
+      const nextBlob=await btoGalleryCanvasBlob_(
+        canvas,
+        'image/jpeg',
+        quality
+      );
+
+      if(!nextBlob) break;
+      blob=nextBlob;
+
+      if(quality<=BTO_GALLERY_MIN_QUALITY) break;
+    }
+
+    if(originalSize && blob.size>=originalSize){
+      return {
+        file:file,
+        originalSize:originalSize,
+        optimizedSize:originalSize,
+        compressed:false,
+        width:sourceW,
+        height:sourceH,
+        note:'Original already smaller'
+      };
+    }
+
+    const base=originalName
+      .replace(/\.[^.]+$/,'')
+      .replace(/[^\w\- ]+/g,'')
+      .trim() || 'gallery-photo';
+
+    const optimizedFile=new File(
+      [blob],
+      `${base}-optimized.jpg`,
+      {
+        type:'image/jpeg',
+        lastModified:Date.now()
+      }
+    );
+
+    return {
+      file:optimizedFile,
+      originalSize:originalSize,
+      optimizedSize:optimizedFile.size,
+      compressed:true,
+      width:width,
+      height:height,
+      quality:quality,
+      note:'Optimized before upload'
+    };
+
+  }catch(e){
+    return {
+      file:file,
+      originalSize:originalSize,
+      optimizedSize:originalSize,
+      compressed:false,
+      note:'Original retained'
+    };
+  }
+}
+
+
 function btoGalleryFilePreview_(file){
   return new Promise(resolve=>{
     try{
@@ -3323,6 +3502,9 @@ async function previewContentGalleryInput(input){
   const currentPreviews=
     Array.from(window.BTO_CONTENT_GALLERY_NEW_PREVIEWS||[]);
 
+  const currentMeta=
+    Array.from(window.BTO_CONTENT_GALLERY_NEW_META||[]);
+
   const selected=Array.from(input?.files||[]);
 
   const available=Math.max(
@@ -3338,19 +3520,57 @@ async function previewContentGalleryInput(input){
   }
 
   const accepted=selected.slice(0,available);
+  if(input) input.value='';
 
-  const previews=await Promise.all(
-    accepted.map(file=>btoGalleryFilePreview_(file))
-  );
+  const count=document.getElementById('cGalleryCount');
+
+  if(count && accepted.length){
+    count.textContent=
+      `Optimizing ${accepted.length} gallery photo${accepted.length===1?'':'s'}...`;
+  }
+
+  const processed=[];
+
+  for(let i=0;i<accepted.length;i++){
+    const originalFile=accepted[i];
+
+    if(count){
+      count.textContent=
+        `Optimizing gallery photo ${i+1} of ${accepted.length}...`;
+    }
+
+    const optimized=
+      await btoOptimizeGalleryImage_(originalFile);
+
+    const preview=
+      await btoGalleryFilePreview_(optimized.file);
+
+    processed.push({
+      file:optimized.file,
+      preview:preview,
+      meta:{
+        originalName:String(originalFile.name||''),
+        savedName:String(optimized.file?.name||originalFile.name||''),
+        originalSize:Number(optimized.originalSize||0),
+        optimizedSize:Number(optimized.optimizedSize||0),
+        compressed:Boolean(optimized.compressed),
+        width:Number(optimized.width||0),
+        height:Number(optimized.height||0),
+        note:String(optimized.note||'')
+      }
+    });
+
+    await new Promise(resolve=>setTimeout(resolve,0));
+  }
 
   window.BTO_CONTENT_GALLERY_NEW_FILES=
-    currentFiles.concat(accepted);
+    currentFiles.concat(processed.map(x=>x.file));
 
   window.BTO_CONTENT_GALLERY_NEW_PREVIEWS=
-    currentPreviews.concat(previews);
+    currentPreviews.concat(processed.map(x=>x.preview));
 
-  // Clear native input so the same photo can be chosen again after removal.
-  if(input) input.value='';
+  window.BTO_CONTENT_GALLERY_NEW_META=
+    currentMeta.concat(processed.map(x=>x.meta));
 
   renderContentGalleryNew_();
   renderContentGalleryExisting_();
@@ -3362,17 +3582,40 @@ function renderContentGalleryNew_(){
 
   const files=window.BTO_CONTENT_GALLERY_NEW_FILES||[];
   const previews=window.BTO_CONTENT_GALLERY_NEW_PREVIEWS||[];
+  const metas=window.BTO_CONTENT_GALLERY_NEW_META||[];
 
   root.innerHTML=files.map((file,i)=>{
     const preview=String(previews[i]||'');
+    const meta=metas[i]||{};
+
+    const originalSize=Number(
+      meta.originalSize || file.size || 0
+    );
+
+    const optimizedSize=Number(
+      meta.optimizedSize || file.size || 0
+    );
+
+    const sizeText=meta.compressed
+      ? `${btoFormatFileSize_(originalSize)} → ${btoFormatFileSize_(optimizedSize)}`
+      : `${btoFormatFileSize_(optimizedSize)}`;
 
     return `
       <div class="preview-item">
-        <span class="gallery-state-badge">NEW</span>
+        <span class="gallery-state-badge">
+          ${meta.compressed?'OPTIMIZED':'NEW'}
+        </span>
+
         ${preview
-          ? `<img src="${esc(preview)}" alt="${esc(file.name||`New photo ${i+1}`)}">`
+          ? `<img src="${esc(preview)}" alt="${esc(meta.originalName||file.name||`New photo ${i+1}`)}">`
           : `<div style="height:90px;display:flex;align-items:center;justify-content:center;background:#f3f4f6">📷</div>`}
-        <small>${esc(file.name||`New photo ${i+1}`)}</small>
+
+        <small>${esc(meta.originalName||file.name||`New photo ${i+1}`)}</small>
+
+        <small style="font-weight:800;color:${meta.compressed?'#166534':'#4b5563'}">
+          ${esc(sizeText)}
+        </small>
+
         <button type="button"
           class="danger"
           style="width:calc(100% - 12px);margin:0 6px 6px;padding:7px 8px;font-size:12px"
@@ -3391,7 +3634,16 @@ function renderContentGalleryNew_(){
   const count=document.getElementById('cGalleryCount');
   if(count){
     const existingCount=btoContentGalleryExistingFromInput().length;
-    count.textContent=`${existingCount+files.length} / ${BTO_CONTENT_GALLERY_MAX} gallery photos selected`;
+    const totalBytes=metas.reduce(
+      (sum,m)=>sum+Number(m.optimizedSize||0),
+      0
+    );
+
+    count.textContent=
+      `${existingCount+files.length} / ${BTO_CONTENT_GALLERY_MAX} gallery photos selected` +
+      (files.length
+        ? ` · New upload size ${btoFormatFileSize_(totalBytes)}`
+        : '');
   }
 }
 
@@ -3400,12 +3652,15 @@ function removeContentGalleryNew(index){
 
   const files=window.BTO_CONTENT_GALLERY_NEW_FILES||[];
   const previews=window.BTO_CONTENT_GALLERY_NEW_PREVIEWS||[];
+  const metas=window.BTO_CONTENT_GALLERY_NEW_META||[];
 
   files.splice(i,1);
   previews.splice(i,1);
+  metas.splice(i,1);
 
   window.BTO_CONTENT_GALLERY_NEW_FILES=files;
   window.BTO_CONTENT_GALLERY_NEW_PREVIEWS=previews;
+  window.BTO_CONTENT_GALLERY_NEW_META=metas;
 
   renderContentGalleryNew_();
   renderContentGalleryExisting_();
@@ -3493,6 +3748,8 @@ function renderContentAdmin(){
         <div class="help">
           Available for ACTIVITY and COMMITTEE UPDATE. Select multiple photos at once.
           Maximum ${BTO_CONTENT_GALLERY_MAX} gallery photos, excluding the Featured Photo.
+          Gallery Photos are automatically resized/compressed before upload.
+          Featured Photo, Site Media and Officials photos are not affected.
         </div>
         <div id="cGalleryCount" class="help" style="margin-top:6px"></div>
 
@@ -3573,6 +3830,7 @@ function renderContentAdmin(){
 
   window.BTO_CONTENT_GALLERY_NEW_FILES=[];
   window.BTO_CONTENT_GALLERY_NEW_PREVIEWS=[];
+  window.BTO_CONTENT_GALLERY_NEW_META=[];
   setTimeout(()=>{
     toggleCommitteeUpdateField();
     toggleContentGalleryField_();
@@ -3810,6 +4068,7 @@ async function saveContent(btn){
           btoContentSetGalleryExisting(galleryUrls);
           window.BTO_CONTENT_GALLERY_NEW_FILES=[];
           window.BTO_CONTENT_GALLERY_NEW_PREVIEWS=[];
+          window.BTO_CONTENT_GALLERY_NEW_META=[];
           renderContentGalleryNew_();
           renderContentGalleryExisting_();
         }
