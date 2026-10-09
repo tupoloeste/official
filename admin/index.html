@@ -3300,10 +3300,14 @@ function toggleContentGalleryField_(){
   const wrap=document.getElementById('cGalleryWrap');
   if(!type || !wrap) return;
 
-  const isActivity=
-    String(type.value||'').trim().toUpperCase()==='ACTIVITY';
+  const contentType=
+    String(type.value||'').trim().toUpperCase();
 
-  wrap.classList.toggle('hidden',!isActivity);
+  const allowGallery=
+    contentType==='ACTIVITY' ||
+    contentType==='COMMITTEE UPDATE';
+
+  wrap.classList.toggle('hidden',!allowGallery);
 }
 
 
@@ -3367,12 +3371,12 @@ function renderContentAdmin(){
       </div>
 
       <div id="cGalleryWrap" class="hidden" style="margin-top:16px">
-        <label>Activity Gallery Photos</label>
+        <label>Gallery Photos</label>
         <input id="cGallery" type="file" accept="image/*" multiple
           onchange="previewContentGalleryInput(this)">
         <div class="help">
-          ACTIVITY only. Select multiple photos at once. Maximum ${BTO_CONTENT_GALLERY_MAX}
-          gallery photos, excluding the Featured Photo.
+          Available for ACTIVITY and COMMITTEE UPDATE. Select multiple photos at once.
+          Maximum ${BTO_CONTENT_GALLERY_MAX} gallery photos, excluding the Featured Photo.
         </div>
         <div id="cGalleryCount" class="help" style="margin-top:6px"></div>
 
@@ -3612,7 +3616,11 @@ async function saveContent(btn){
 
       let galleryUrls=btoContentGalleryExistingFromInput();
 
-      if(String(contentType).toUpperCase()==='ACTIVITY'){
+      if(
+        ['ACTIVITY','COMMITTEE UPDATE'].includes(
+          String(contentType).toUpperCase()
+        )
+      ){
         const newGalleryFiles=
           Array.from(window.BTO_CONTENT_GALLERY_NEW_FILES||[]);
 
