@@ -4827,8 +4827,9 @@ function switchTab(scope,panelId,btn){
 }
 
 
-const BTO_PUBLIC_API = "https://script.google.com/macros/s/AKfycbwM6bagjlHKao-NCB3d_nDwX29zO4EFKcoj50vABCQP7bKJuSI4j7772Zam9LwNiLCqNg/exec?action=publicData";
-const BTO_PUBLIC_CACHE_KEY = 'bto_public_data_v10';
+const BTO_PUBLIC_CF_BASE = "https://bto-dog-stats.tupoloestecabatauaniloilo.workers.dev";
+const BTO_PUBLIC_SITE_DATA_URL = BTO_PUBLIC_CF_BASE + "/site-data";
+const BTO_PUBLIC_CACHE_KEY = 'bto_public_data_cf_v1';
 const BTO_PUBLIC_CACHE_MS = 5 * 60 * 1000;
 
 function publicEsc(v){
@@ -7156,9 +7157,8 @@ async function loadPublicDataOnce(){
   try{
     btoWelcomeStatus('Loading official barangay information...');
 
-    const freshUrl=BTO_PUBLIC_API +
-      (BTO_PUBLIC_API.includes('?')?'&':'?') +
-      '_ts=' + Date.now();
+    const freshUrl=BTO_PUBLIC_SITE_DATA_URL +
+      '?_ts=' + Date.now();
 
     // Exactly ONE request.
     const res=await fetch(freshUrl,{cache:'no-store'});
@@ -7226,7 +7226,7 @@ const BTO_DOG_STATS_CACHE_MS=10*60*1000;
  * Example:
  * const BTO_DOG_STATS_CF_URL='https://bto-dog-stats.YOURSUBDOMAIN.workers.dev';
  */
-const BTO_DOG_STATS_CF_URL='https://bto-dog-stats.tupoloestecabatauaniloilo.workers.dev';
+const BTO_DOG_STATS_CF_URL=BTO_PUBLIC_CF_BASE;
 
 
 function dogStatsCacheGet(allowStale=false){
@@ -7297,9 +7297,11 @@ async function dogStatsFetchWithTimeout(timeoutMs=15000){
   try{
     const cfBase=String(BTO_DOG_STATS_CF_URL||'').trim().replace(/\/+$/,'');
 
-    const url=cfBase
-      ? cfBase+'/dog-stats'
-      : BTO_PUBLIC_API.split('?')[0]+'?action=dogStatsPublic&_ts='+Date.now();
+    if(!cfBase){
+      throw new Error('Cloudflare public data service is not configured.');
+    }
+
+    const url=cfBase+'/dog-stats';
 
     const res=await fetch(url,{
       method:'GET',
@@ -7532,27 +7534,13 @@ async function livestockFetchWithFallback_(){
     .trim()
     .replace(/\/+$/,'');
 
-  // Cloudflare first.
-  if(cfBase){
-    try{
-      return await livestockFetchJson_(
-        cfBase+'/livestock',
-        10000
-      );
-    }catch(err){
-      console.warn(
-        'Cloudflare livestock request failed; using Apps Script fallback.',
-        err
-      );
-    }
+  if(!cfBase){
+    throw new Error('Cloudflare public data service is not configured.');
   }
 
-  // Direct lightweight Apps Script fallback.
-  const base=BTO_PUBLIC_API.split('?')[0];
-
   return livestockFetchJson_(
-    base+'?action=livestockPublic&_ts='+Date.now(),
-    15000
+    cfBase+'/livestock',
+    10000
   );
 }
 
@@ -7677,27 +7665,13 @@ async function barangayStatsFetchWithFallback_(){
     .trim()
     .replace(/\/+$/,'');
 
-  // Cloudflare first.
-  if(cfBase){
-    try{
-      return await barangayStatsFetchJson_(
-        cfBase+'/barangay-stats',
-        10000
-      );
-    }catch(err){
-      console.warn(
-        'Cloudflare barangay statistics request failed; using Apps Script fallback.',
-        err
-      );
-    }
+  if(!cfBase){
+    throw new Error('Cloudflare public data service is not configured.');
   }
 
-  // Lightweight Apps Script fallback.
-  const base=BTO_PUBLIC_API.split('?')[0];
-
   return barangayStatsFetchJson_(
-    base+'?action=barangayStatsPublic&_ts='+Date.now(),
-    15000
+    cfBase+'/barangay-stats',
+    10000
   );
 }
 
@@ -7820,27 +7794,13 @@ async function organizationsFetchWithFallback_(){
     .trim()
     .replace(/\/+$/,'');
 
-  // Cloudflare first.
-  if(cfBase){
-    try{
-      return await organizationsFetchJson_(
-        cfBase+'/organizations',
-        10000
-      );
-    }catch(err){
-      console.warn(
-        'Cloudflare organizations request failed; using Apps Script fallback.',
-        err
-      );
-    }
+  if(!cfBase){
+    throw new Error('Cloudflare public data service is not configured.');
   }
 
-  // Lightweight Apps Script fallback.
-  const base=BTO_PUBLIC_API.split('?')[0];
-
   return organizationsFetchJson_(
-    base+'?action=organizationsPublic&_ts='+Date.now(),
-    15000
+    cfBase+'/organizations',
+    10000
   );
 }
 
