@@ -3821,6 +3821,62 @@ body.bto-site-loading{overflow:hidden!important}
   display:none;
 }
 
+
+
+/* ===== ANNOUNCEMENT TICKER DESCRIPTION ON HOVER ===== */
+.announcement-ticker-item{
+  position:relative;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:max-content;
+}
+
+.announcement-ticker-main{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  white-space:nowrap;
+}
+
+.announcement-ticker-hover-description{
+  display:none;
+  position:absolute;
+  left:0;
+  top:calc(100% + 8px);
+  z-index:9999;
+  width:min(420px, calc(100vw - 32px));
+  padding:10px 12px;
+  border-radius:10px;
+  background:#ffffff;
+  color:#222;
+  font-size:13px;
+  line-height:1.45;
+  font-weight:400;
+  white-space:normal;
+  box-shadow:0 10px 28px rgba(0,0,0,.18);
+  border:1px solid rgba(0,0,0,.10);
+  pointer-events:none;
+}
+
+.announcement-ticker-item:hover .announcement-ticker-hover-description,
+.announcement-ticker-item:focus .announcement-ticker-hover-description,
+.announcement-ticker-item:focus-within .announcement-ticker-hover-description{
+  display:block;
+}
+
+/* Pause the ticker while the user is reading a hovered/focused item. */
+#announcement-ticker-track:hover{
+  animation-play-state:paused;
+}
+
+@media (max-width:700px){
+  .announcement-ticker-hover-description{
+    width:min(320px, calc(100vw - 24px));
+    font-size:12.5px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -5217,30 +5273,72 @@ function renderAnnouncementTicker(data){
   if(!track) return;
 
   const rows=(data.content||[])
-    .filter(x=>String(x.Type||'').toUpperCase()==='ANNOUNCEMENT')
-    .sort((a,b)=>String(b['Event Date']||b['Created At']||'').localeCompare(String(a['Event Date']||a['Created At']||'')))
-    .slice(0,8);
+    .filter(r=>{
+      const type=String(r['Type']||r.type||'').trim().toUpperCase();
+      const status=String(r['Status']||r.status||'PUBLISHED').trim().toUpperCase();
+      return type==='ANNOUNCEMENT' && status==='PUBLISHED';
+    })
+    .sort((a,b)=>{
+      const da=new Date(a['Event Date']||a['Date']||0).getTime()||0;
+      const db=new Date(b['Event Date']||b['Date']||0).getTime()||0;
+      return da-db;
+    });
 
   if(!rows.length){
     track.innerHTML=`
-      <div class="announcement-ticker-item">
-        <span>No current public announcements.</span>
-      </div>`;
-    track.style.animation='none';
+      <div class="announcement-ticker-empty">
+        No active announcements at this time.
+      </div>
+    `;
     return;
   }
 
-  const makeItems=()=>rows.map(x=>`
-    <div class="announcement-ticker-item" onclick="showView('announcements')">
-      <strong>${publicEsc(x.Title||'Announcement')}</strong>
-      <span>${contentMeta(x)}</span>
-    </div>`).join('');
+  const html=rows.map(r=>{
+    const title=String(r['Title']||r.title||'Announcement').trim();
+    const venue=String(r['Venue']||r.venue||'').trim();
+    const description=String(r['Description']||r.description||'').trim();
 
-  // Duplicate the feed for a continuous walking ticker.
-  // Hovering the ticker pauses the animation so it can be read easily.
-  track.innerHTML=makeItems()+makeItems();
-  track.style.animation='';
-  track.style.width='max-content';
+    const dateText=publicDate(
+      r['Event Date']||
+      r['Date']||
+      r.eventDate||
+      r.date||
+      ''
+    );
+
+    const timeText=publicTime(
+      r['Time']||
+      r.time||
+      ''
+    );
+
+    const meta=[
+      dateText,
+      timeText,
+      venue
+    ].filter(Boolean).join(' · ');
+
+    return `
+      <div class="announcement-ticker-item"
+           role="button"
+           tabindex="0"
+           aria-label="${esc(title)}">
+        <div class="announcement-ticker-main">
+          <strong>${esc(title)}</strong>
+          ${meta ? `<span>${esc(meta)}</span>` : ''}
+        </div>
+
+        ${description ? `
+          <div class="announcement-ticker-hover-description">
+            ${esc(description)}
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
+
+  // Duplicate the row for seamless marquee animation.
+  track.innerHTML=html+html;
 }
 
 
