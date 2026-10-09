@@ -4293,24 +4293,13 @@ body.bto-site-loading{overflow:hidden!important}
 .fd-board-header{
   background:#5b99d3;
   display:grid;
-  grid-template-columns:86px minmax(0,1fr) 150px;
+  grid-template-columns:minmax(0,1fr) 150px;
   gap:16px;
   align-items:center;
   padding:15px 18px;
   border-bottom:3px solid #111827;
 }
 
-.fd-board-seal{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-
-.fd-board-seal img{
-  width:76px;
-  height:76px;
-  object-fit:contain;
-}
 
 .fd-board-heading{
   text-align:center;
@@ -4578,16 +4567,11 @@ body.bto-site-loading{overflow:hidden!important}
 
 @media(max-width:850px){
   .fd-board-header{
-    grid-template-columns:70px minmax(0,1fr);
-  }
-
-  .fd-board-seal img{
-    width:62px;
-    height:62px;
+    grid-template-columns:1fr;
   }
 
   .fd-board-year-box{
-    grid-column:1/-1;
+    grid-column:auto;
     width:min(220px,100%);
     justify-self:center;
   }
@@ -4603,14 +4587,9 @@ body.bto-site-loading{overflow:hidden!important}
   }
 
   .fd-board-header{
-    grid-template-columns:52px minmax(0,1fr);
+    grid-template-columns:1fr;
     gap:9px;
     padding:11px;
-  }
-
-  .fd-board-seal img{
-    width:48px;
-    height:48px;
   }
 
   .fd-board-kicker{
@@ -4635,6 +4614,23 @@ body.bto-site-loading{overflow:hidden!important}
   .fd-board-image{
     height:360px;
   }
+}
+
+
+
+/* ===== FULL DISCLOSURE FINAL HEADER CLEANUP ===== */
+.fd-board::before,
+.fd-board::after{
+  content:none !important;
+  display:none !important;
+}
+
+.fd-board-header{
+  margin:0 !important;
+}
+
+.fd-board-heading{
+  width:100%;
 }
 
 </style>
@@ -5440,10 +5436,6 @@ body.bto-site-loading{overflow:hidden!important}
     <div class="container">
       <section class="fd-board">
         <div class="fd-board-header">
-          <div class="fd-board-seal">
-            <img src="barangay-logo.png" alt="Barangay Tupol Oeste Logo">
-          </div>
-
           <div class="fd-board-heading">
             <div class="fd-board-kicker">Barangay Tupol Oeste · Municipality of Cabatuan, Iloilo</div>
             <h2>BARANGAY FULL DISCLOSURE POLICY</h2>
