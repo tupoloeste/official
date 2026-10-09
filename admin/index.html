@@ -2070,6 +2070,37 @@ button.danger,
   }
 }
 
+
+
+/* ===== FULL DISCLOSURE CUSTOM DOCUMENT ===== */
+.fd-custom-document{
+  margin-top:10px;
+  padding:12px;
+  border:1px solid #d0d5dd;
+  border-radius:10px;
+  background:#f8fafc;
+}
+
+.fd-custom-document label{
+  display:block;
+  margin-bottom:5px;
+  font-weight:800;
+}
+
+.fd-custom-badge{
+  display:inline-flex;
+  align-items:center;
+  margin-left:6px;
+  padding:3px 7px;
+  border-radius:999px;
+  background:#fff7ed;
+  color:#9a3412;
+  border:1px solid #fed7aa;
+  font-size:9px;
+  font-weight:900;
+  vertical-align:middle;
+}
+
 </style>
 </head>
 <body>
@@ -7748,7 +7779,7 @@ function renderFullDisclosureModule(){
 
             <div>
               <label>Disclosure Item <span class="fd-required">*</span></label>
-              <select id="fdCategory">
+              <select id="fdCategory" onchange="btoDisclosureCustomToggle()">
                 <option value="">Select disclosure item</option>
                 <option value="Barangay Budget">Barangay Budget</option>
                 <option value="Summary of Income and Expenditures">Summary of Income and Expenditures</option>
@@ -7757,7 +7788,20 @@ function renderFullDisclosureModule(){
                 <option value="Annual Procurement Plan or Procurement List">Annual Procurement Plan or Procurement List</option>
                 <option value="List of Notices of Award">List of Notices of Award</option>
                 <option value="Itemized Monthly Collections and Disbursements">Itemized Monthly Collections and Disbursements</option>
+                <option value="__CUSTOM__">Other / Custom Document</option>
               </select>
+
+              <div id="fdCustomDocumentWrap" class="fd-custom-document hidden">
+                <label>Custom Document Name <span class="fd-required">*</span></label>
+                <input
+                  id="fdCustomDocument"
+                  placeholder="Example: List of Beneficiaries"
+                >
+                <div class="help">
+                  Use this for beneficiaries lists, masterlists, notices, reports,
+                  certifications, distribution lists, and other documents not in the standard list.
+                </div>
+              </div>
             </div>
           </div>
 
@@ -7855,6 +7899,9 @@ function renderFullDisclosureModule(){
 
               <div class="doc-row-main">
                 <div class="fd-existing-year">YEAR ${esc(x.year||'—')}</div>
+                ${btoDisclosureIsCustomName(x.category)
+                  ? '<span class="fd-custom-badge">CUSTOM</span>'
+                  : ''}
                 <div class="doc-row-title">${esc(x.title||'Untitled')}</div>
                 <div class="doc-row-meta">
                   ${esc(x.category||'')} • ${esc(x.status||'')}
@@ -7916,6 +7963,59 @@ async function addDisclosureCategory(btn){
 }
 
 
+
+
+
+
+function btoDisclosureCustomToggle(){
+  const select=document.getElementById('fdCategory');
+  const wrap=document.getElementById('fdCustomDocumentWrap');
+  const input=document.getElementById('fdCustomDocument');
+
+  if(!select || !wrap) return;
+
+  const isCustom=String(select.value||'')==='__CUSTOM__';
+
+  wrap.classList.toggle('hidden',!isCustom);
+
+  if(isCustom && input){
+    setTimeout(()=>input.focus(),0);
+  }
+
+  if(!isCustom && input){
+    input.value='';
+  }
+}
+
+function btoDisclosureSelectedName(){
+  const select=document.getElementById('fdCategory');
+  if(!select) return '';
+
+  const value=String(select.value||'').trim();
+
+  if(value==='__CUSTOM__'){
+    return String(
+      document.getElementById('fdCustomDocument')?.value||''
+    ).trim();
+  }
+
+  return value;
+}
+
+function btoDisclosureIsCustomName(name){
+  const standard=[
+    'Barangay Budget',
+    'Summary of Income and Expenditures',
+    '20% Component of the IRA Utilization',
+    'Statement of Receipts and Expenditures',
+    'Annual Procurement Plan or Procurement List',
+    'List of Notices of Award',
+    'Itemized Monthly Collections and Disbursements'
+  ];
+
+  const value=String(name||'').trim();
+  return Boolean(value) && !standard.includes(value);
+}
 
 
 
@@ -7981,18 +8081,24 @@ function editFullDisclosureDocument(json){
 
   const sel=document.getElementById('fdCategory');
   const existingCategory=String(x.category||'').trim();
+  const standardValues=Array.from(sel.options).map(o=>o.value);
 
   if(
     existingCategory &&
-    !Array.from(sel.options).some(o=>o.value===existingCategory)
+    standardValues.includes(existingCategory)
   ){
-    const opt=document.createElement('option');
-    opt.value=existingCategory;
-    opt.textContent=existingCategory+' (existing)';
-    sel.appendChild(opt);
+    sel.value=existingCategory;
+    const custom=document.getElementById('fdCustomDocument');
+    if(custom) custom.value='';
+  }else if(existingCategory){
+    sel.value='__CUSTOM__';
+    const custom=document.getElementById('fdCustomDocument');
+    if(custom) custom.value=existingCategory;
+  }else{
+    sel.value='';
   }
 
-  sel.value=existingCategory;
+  btoDisclosureCustomToggle();
 
   document.getElementById('fdStatus').value=x.status||'PUBLISHED';
 
@@ -8048,6 +8154,12 @@ function clearFullDisclosureForm(){
   document.getElementById('fdId').value='';
   document.getElementById('fdYear').value=currentYearValue();
   document.getElementById('fdCategory').value='';
+
+  const customWrap=document.getElementById('fdCustomDocumentWrap');
+  const customInput=document.getElementById('fdCustomDocument');
+  if(customWrap) customWrap.classList.add('hidden');
+  if(customInput) customInput.value='';
+
   document.getElementById('fdImage').value='';
   document.getElementById('fdPdf').value='';
   document.getElementById('fdStatus').value='PUBLISHED';
@@ -8073,14 +8185,19 @@ async function saveFullDisclosureDocument(btn){
 
   return withButtonSpinner(btn,'Saving...',async()=>{
     const year=String(document.getElementById('fdYear').value||'').trim();
-    const category=String(document.getElementById('fdCategory').value||'').trim();
+    const selectedCategory=String(document.getElementById('fdCategory').value||'').trim();
+    const category=btoDisclosureSelectedName();
 
     if(!/^\d{4}$/.test(year)){
       throw new Error('Enter a valid four-digit disclosure year.');
     }
 
-    if(!category){
+    if(!selectedCategory){
       throw new Error('Select a Disclosure Item.');
+    }
+
+    if(selectedCategory==='__CUSTOM__' && !category){
+      throw new Error('Enter the Custom Document Name.');
     }
 
     const imageFile=document.getElementById('fdImage').files[0];
