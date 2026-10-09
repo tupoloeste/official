@@ -4794,6 +4794,16 @@ function showView(name){
       }
     },0);
   }
+
+  // BTO_BARANGAY_STATS_AUTOLOAD
+  // Works for card click, direct #statistics URL and browser refresh.
+  if(name==='statistics'){
+    setTimeout(()=>{
+      if(typeof loadPublicBarangayStatsCloudflare==='function'){
+        loadPublicBarangayStatsCloudflare(false);
+      }
+    },0);
+  }
 }
 
 function switchTab(scope,panelId,btn){
@@ -7094,7 +7104,6 @@ function applyPublicData(data){
   renderPublicOfficersOfTheDay(data);
   renderPublicContactInformation(data);
   renderAboutBarangay(data);
-  renderEnhancedBarangayStats(data);
   renderPublicOrganizations(data);
   renderHighlightsLive(data);
   renderHighlightsActivityGallery(data);
@@ -7583,6 +7592,149 @@ async function loadPublicLivestockCloudflare(force=false){
 
   }finally{
     BTO_PUBLIC_LIVESTOCK_LOADING=false;
+  }
+}
+
+
+/* ===== CLOUDFLARE BARANGAY STATISTICS PUBLIC DATA ===== */
+let BTO_PUBLIC_BARANGAY_STATS_LOADING=false;
+let BTO_PUBLIC_BARANGAY_STATS_LOADED=false;
+
+const BTO_BARANGAY_STATS_CACHE_KEY='bto_barangay_stats_cloudflare_v1';
+const BTO_BARANGAY_STATS_CACHE_MS=10*60*1000;
+const BTO_BARANGAY_STATS_CF_URL=BTO_DOG_STATS_CF_URL;
+
+function barangayStatsCacheGet(allowStale=false){
+  try{
+    const raw=localStorage.getItem(BTO_BARANGAY_STATS_CACHE_KEY);
+    if(!raw) return null;
+
+    const obj=JSON.parse(raw);
+    if(!obj || !obj.data) return null;
+
+    const age=Date.now()-Number(obj.savedAt||0);
+    if(!allowStale && age>BTO_BARANGAY_STATS_CACHE_MS) return null;
+
+    return obj.data;
+  }catch(e){
+    return null;
+  }
+}
+
+function barangayStatsCacheSet(data){
+  try{
+    localStorage.setItem(
+      BTO_BARANGAY_STATS_CACHE_KEY,
+      JSON.stringify({
+        savedAt:Date.now(),
+        data:data
+      })
+    );
+  }catch(e){}
+}
+
+async function barangayStatsFetchJson_(url,timeoutMs){
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),timeoutMs);
+
+  try{
+    const res=await fetch(url,{
+      method:'GET',
+      cache:'no-store',
+      signal:controller.signal
+    });
+
+    if(!res.ok){
+      throw new Error('HTTP '+res.status);
+    }
+
+    const data=await res.json();
+
+    if(!data || !data.success){
+      throw new Error(
+        data?.message || 'Barangay statistics are unavailable.'
+      );
+    }
+
+    return data;
+
+  }finally{
+    clearTimeout(timer);
+  }
+}
+
+async function barangayStatsFetchWithFallback_(){
+  const cfBase=String(BTO_BARANGAY_STATS_CF_URL||'')
+    .trim()
+    .replace(/\/+$/,'');
+
+  // Cloudflare first.
+  if(cfBase){
+    try{
+      return await barangayStatsFetchJson_(
+        cfBase+'/barangay-stats',
+        10000
+      );
+    }catch(err){
+      console.warn(
+        'Cloudflare barangay statistics request failed; using Apps Script fallback.',
+        err
+      );
+    }
+  }
+
+  // Lightweight Apps Script fallback.
+  const base=BTO_PUBLIC_API.split('?')[0];
+
+  return barangayStatsFetchJson_(
+    base+'?action=barangayStatsPublic&_ts='+Date.now(),
+    15000
+  );
+}
+
+async function loadPublicBarangayStatsCloudflare(force=false){
+  if(BTO_PUBLIC_BARANGAY_STATS_LOADING) return;
+
+  const asOf=document.getElementById('publicStatsAsOf');
+
+  // Show last successful browser copy immediately.
+  const cached=barangayStatsCacheGet(true);
+
+  if(cached){
+    renderEnhancedBarangayStats(cached);
+    BTO_PUBLIC_BARANGAY_STATS_LOADED=true;
+  }
+
+  // Fresh browser cache: no network request unless forced.
+  const fresh=barangayStatsCacheGet(false);
+
+  if(fresh && !force){
+    return;
+  }
+
+  BTO_PUBLIC_BARANGAY_STATS_LOADING=true;
+
+  if(!BTO_PUBLIC_BARANGAY_STATS_LOADED && asOf){
+    asOf.textContent='Loading barangay statistics...';
+  }
+
+  try{
+    const data=await barangayStatsFetchWithFallback_();
+
+    barangayStatsCacheSet(data);
+    renderEnhancedBarangayStats(data);
+    BTO_PUBLIC_BARANGAY_STATS_LOADED=true;
+
+  }catch(err){
+    console.warn('Barangay statistics load failed:',err);
+
+    // Clean public fallback; no Retry button.
+    if(!BTO_PUBLIC_BARANGAY_STATS_LOADED && asOf){
+      asOf.textContent='Barangay statistics are temporarily unavailable.';
+    }
+
+  }finally{
+    BTO_PUBLIC_BARANGAY_STATS_LOADING=false;
   }
 }
 
