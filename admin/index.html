@@ -1725,6 +1725,212 @@ button.danger,
   font-weight:800;
 }
 
+
+
+/* ===== ANNUAL BARANGAY POPULATION PROFILE ===== */
+.pp-title-card{
+  border-top:4px solid #b91c1c;
+}
+
+.pp-title-row{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:18px;
+  flex-wrap:wrap;
+}
+
+.pp-year-loader{
+  min-width:260px;
+}
+
+.pp-year-loader-row{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+
+.pp-year-loader-row input{
+  min-width:120px;
+  margin:0;
+}
+
+.pp-year-loader-row button{
+  width:auto;
+  white-space:nowrap;
+  margin:0;
+}
+
+.pp-saved-years{
+  margin-top:14px;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:7px;
+}
+
+.pp-year-chip{
+  width:auto !important;
+  padding:7px 11px !important;
+  border-radius:999px !important;
+  background:#f3f4f6 !important;
+  color:#374151 !important;
+  border:1px solid #d1d5db !important;
+}
+
+.pp-year-chip.active{
+  background:#991b1b !important;
+  color:#fff !important;
+  border-color:#991b1b !important;
+}
+
+.pp-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+}
+
+.pp-field.wide{
+  grid-column:1 / -1;
+}
+
+.pp-field label{
+  display:block;
+  font-weight:700;
+  margin-bottom:5px;
+}
+
+.pp-calc-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+  margin-top:14px;
+}
+
+.pp-calc{
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  background:#f9fafb;
+  padding:11px 12px;
+}
+
+.pp-calc small{
+  display:block;
+  color:#6b7280;
+  line-height:1.25;
+}
+
+.pp-calc strong{
+  display:block;
+  margin-top:4px;
+  font-size:17px;
+  color:#111827;
+}
+
+.pp-table-wrap{
+  width:100%;
+  overflow:auto;
+  margin-top:12px;
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+}
+
+.pp-table{
+  width:100%;
+  border-collapse:collapse;
+  min-width:760px;
+  background:#fff;
+}
+
+.pp-table th,
+.pp-table td{
+  padding:8px 9px;
+  border-bottom:1px solid #e5e7eb;
+  text-align:center;
+  vertical-align:middle;
+}
+
+.pp-table th{
+  background:#f3f4f6;
+  font-size:12px;
+}
+
+.pp-table td:first-child,
+.pp-table th:first-child{
+  text-align:left;
+}
+
+.pp-table input{
+  min-width:90px;
+  margin:0;
+  padding:8px;
+}
+
+.pp-table tfoot th{
+  background:#f9fafb;
+  font-weight:900;
+}
+
+.pp-age-label{
+  font-weight:700;
+  white-space:nowrap;
+}
+
+.pp-dependency-table{
+  min-width:560px;
+}
+
+.pp-ok,
+.pp-warning{
+  margin-top:12px;
+  padding:10px 12px;
+  border-radius:10px;
+  font-size:13px;
+  font-weight:700;
+}
+
+.pp-ok{
+  background:#ecfdf5;
+  color:#166534;
+  border:1px solid #bbf7d0;
+}
+
+.pp-warning{
+  background:#fff7ed;
+  color:#9a3412;
+  border:1px solid #fed7aa;
+}
+
+@media(max-width:900px){
+  .pp-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .pp-calc-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+@media(max-width:600px){
+  .pp-grid,
+  .pp-calc-grid{
+    grid-template-columns:1fr;
+  }
+
+  .pp-year-loader{
+    min-width:100%;
+  }
+
+  .pp-year-loader-row{
+    flex-direction:column;
+    align-items:stretch;
+  }
+
+  .pp-year-loader-row button{
+    width:100%;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -2528,249 +2734,928 @@ async function saveAboutBarangay(btn){
 window.BTO_ENHANCED_STATS={basic:[],demographics:[],asOfDate:''};
 window.BTO_LAST_SEX_EDIT='MALE';
 
-async function loadStats(){
-  const r=await api('getEnhancedBarangayStats');
-  if(!r.success){showModuleError(r.message);return}
 
-  window.BTO_ENHANCED_STATS=r;
-  renderEnhancedStatsAdmin();
+const BTO_PP_AGE_GROUPS=[
+  ['BELOW_1','Below 1'],
+  ['AGE_1_4','1 - 4'],
+  ['AGE_5_9','5 - 9'],
+  ['AGE_10_14','10 - 14'],
+  ['AGE_15_19','15 - 19'],
+  ['AGE_20_24','20 - 24'],
+  ['AGE_25_29','25 - 29'],
+  ['AGE_30_34','30 - 34'],
+  ['AGE_35_39','35 - 39'],
+  ['AGE_40_44','40 - 44'],
+  ['AGE_45_49','45 - 49'],
+  ['AGE_50_54','50 - 54'],
+  ['AGE_55_59','55 - 59'],
+  ['AGE_60_64','60 - 64'],
+  ['AGE_65_69','65 - 69'],
+  ['AGE_70_74','70 - 74'],
+  ['AGE_75_79','75 - 79'],
+  ['AGE_80_PLUS','80 and above']
+];
+
+window.BTO_POPULATION_PROFILE=null;
+
+async function loadStats(year){
+  const payload={};
+
+  if(year){
+    payload.year=Number(year);
+  }
+
+  const r=await api('getPopulationProfile',payload);
+
+  if(!r.success){
+    showModuleError(r.message);
+    return;
+  }
+
+  window.BTO_POPULATION_PROFILE=r;
+  renderPopulationProfileAdmin();
 }
 
-function statValue(key){
-  const row=(window.BTO_ENHANCED_STATS.basic||[]).find(x=>x.key===key);
-  return row ? (row.value ?? '') : '';
+function ppVal(key){
+  const p=window.BTO_POPULATION_PROFILE?.profile||{};
+  const v=p[key];
+
+  return (
+    v===null ||
+    v===undefined
+  ) ? '' : v;
 }
 
-function renderEnhancedStatsAdmin(){
-  const d=window.BTO_ENHANCED_STATS||{};
-  const demographics=d.demographics||[];
-  const defaultDate=d.asOfDate||new Date().toISOString().slice(0,10);
+function ppInput(id,label,opts={}){
+  const type=opts.type||'number';
+  const step=opts.step||'1';
+  const min=opts.min===undefined?'0':opts.min;
+  const value=ppVal(opts.key||id);
 
-  const ageRows=demographics.length ? demographics : [{
-    id:'',label:'',value:'',displayOrder:1,status:'ACTIVE'
-  }];
+  return `
+    <div class="pp-field ${opts.wide?'wide':''}">
+      <label>${label}</label>
+      <input
+        id="pp_${id}"
+        type="${type}"
+        ${type==='number' ? `min="${min}" step="${step}"` : ''}
+        value="${esc(value)}"
+        placeholder="${esc(opts.placeholder||'')}"
+        oninput="ppRecalculate()"
+      >
+      ${opts.help?`<div class="help">${opts.help}</div>`:''}
+    </div>
+  `;
+}
+
+function ppNumber(id){
+  const el=document.getElementById('pp_'+id);
+  if(!el) return null;
+
+  const raw=String(el.value||'').trim();
+  if(raw==='') return null;
+
+  const n=Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
+function ppFormat(value,digits=2){
+  if(
+    value===null ||
+    value===undefined ||
+    !Number.isFinite(Number(value))
+  ){
+    return '—';
+  }
+
+  return Number(value).toLocaleString(undefined,{
+    minimumFractionDigits:0,
+    maximumFractionDigits:digits
+  });
+}
+
+function ppRate(numerator,denominator,multiplier=1,digits=2){
+  if(
+    numerator===null ||
+    denominator===null ||
+    !Number.isFinite(Number(numerator)) ||
+    !Number.isFinite(Number(denominator)) ||
+    Number(denominator)<=0
+  ){
+    return null;
+  }
+
+  return (
+    Number(numerator) /
+    Number(denominator) *
+    multiplier
+  );
+}
+
+function ppAgeRowsFromForm(){
+  return Array.from(
+    document.querySelectorAll('#ppAgeSexBody tr[data-age-key]')
+  ).map((tr,index)=>({
+    key:tr.dataset.ageKey,
+    label:tr.dataset.ageLabel,
+    displayOrder:index+1,
+    male:(()=>{
+      const raw=tr.querySelector('.pp-age-male').value.trim();
+      return raw==='' ? null : Number(raw);
+    })(),
+    female:(()=>{
+      const raw=tr.querySelector('.pp-age-female').value.trim();
+      return raw==='' ? null : Number(raw);
+    })()
+  }));
+}
+
+function ppSetText(id,text){
+  const el=document.getElementById(id);
+  if(el) el.textContent=text;
+}
+
+function ppDependencyFromRows(rows,keys){
+  const selected=rows.filter(r=>keys.includes(r.key));
+
+  const maleVals=selected.map(r=>r.male);
+  const femaleVals=selected.map(r=>r.female);
+
+  const hasMale=maleVals.some(v=>v!==null && Number.isFinite(v));
+  const hasFemale=femaleVals.some(v=>v!==null && Number.isFinite(v));
+
+  const male=hasMale
+    ? maleVals.reduce((s,v)=>s+(Number.isFinite(v)?v:0),0)
+    : null;
+
+  const female=hasFemale
+    ? femaleVals.reduce((s,v)=>s+(Number.isFinite(v)?v:0),0)
+    : null;
+
+  return {
+    male,
+    female,
+    total:(male===null && female===null)
+      ? null
+      : (male||0)+(female||0)
+  };
+}
+
+function ppRecalculate(){
+  const total=ppNumber('totalPopulation');
+  const male=ppNumber('male');
+  const female=ppNumber('female');
+  const previous=ppNumber('previousPopulation');
+  const year=ppNumber('year');
+
+  const households=ppNumber('totalHouseholds');
+  const families=ppNumber('totalFamilies');
+  const land=ppNumber('landAreaSqKm');
+
+  const birthsMale=ppNumber('liveBirthsMale');
+  const birthsFemale=ppNumber('liveBirthsFemale');
+  const births=(
+    birthsMale===null &&
+    birthsFemale===null
+  ) ? null : (birthsMale||0)+(birthsFemale||0);
+
+  const deathsMale=ppNumber('deathsMale');
+  const deathsFemale=ppNumber('deathsFemale');
+  const deaths=(
+    deathsMale===null &&
+    deathsFemale===null
+  ) ? null : (deathsMale||0)+(deathsFemale||0);
+
+  const inMale=ppNumber('inMigrantsMale');
+  const inFemale=ppNumber('inMigrantsFemale');
+  const inTotal=(
+    inMale===null &&
+    inFemale===null
+  ) ? null : (inMale||0)+(inFemale||0);
+
+  const outMale=ppNumber('outMigrantsMale');
+  const outFemale=ppNumber('outMigrantsFemale');
+  const outTotal=(
+    outMale===null &&
+    outFemale===null
+  ) ? null : (outMale||0)+(outFemale||0);
+
+  const youthMale=ppNumber('youthMale');
+  const youthFemale=ppNumber('youthFemale');
+  const youthTotal=(
+    youthMale===null &&
+    youthFemale===null
+  ) ? null : (youthMale||0)+(youthFemale||0);
+
+  const growth=(
+    total!==null &&
+    previous!==null &&
+    previous>0
+  ) ? ((total-previous)/previous)*100 : null;
+
+  const doubling=(
+    growth!==null &&
+    growth>0
+  ) ? 70/growth : null;
+
+  ppSetText(
+    'ppCalcSexRatio',
+    male!==null && female!==null && female>0
+      ? `${Math.round((male/female)*100)} : 100`
+      : '—'
+  );
+
+  ppSetText(
+    'ppCalcGrowth',
+    growth===null ? '—' : `${ppFormat(growth,3)}%`
+  );
+
+  ppSetText(
+    'ppCalcDoublingTime',
+    doubling===null ? '—' : `${ppFormat(doubling,2)} years`
+  );
+
+  ppSetText(
+    'ppCalcDoublingYear',
+    doubling!==null && year
+      ? String(Math.round(year+doubling))
+      : '—'
+  );
+
+  ppSetText(
+    'ppCalcAvgHousehold',
+    ppFormat(ppRate(total,households),2)
+  );
+
+  ppSetText(
+    'ppCalcAvgFamily',
+    ppFormat(ppRate(total,families),2)
+  );
+
+  ppSetText(
+    'ppCalcDensity',
+    ppFormat(ppRate(total,land),2)
+  );
+
+  ppSetText(
+    'ppCalcMarriageRate',
+    ppFormat(ppRate(ppNumber('totalMarriages'),total,1000),2)
+  );
+
+  ppSetText(
+    'ppCalcBirths',
+    ppFormat(births,0)
+  );
+
+  ppSetText(
+    'ppCalcCrudeBirthRate',
+    ppFormat(ppRate(births,total,1000),2)
+  );
+
+  ppSetText(
+    'ppCalcGeneralFertility',
+    ppFormat(ppRate(births,ppNumber('wra'),1000),2)
+  );
+
+  ppSetText(
+    'ppCalcAdolescentPct',
+    (()=>{
+      const v=ppRate(ppNumber('adolescentBirths'),births,100);
+      return v===null?'—':`${ppFormat(v,2)}%`;
+    })()
+  );
+
+  ppSetText(
+    'ppCalcNonMaritalPct',
+    (()=>{
+      const v=ppRate(ppNumber('nonMaritalBirths'),births,100);
+      return v===null?'—':`${ppFormat(v,2)}%`;
+    })()
+  );
+
+  ppSetText(
+    'ppCalcDeaths',
+    ppFormat(deaths,0)
+  );
+
+  ppSetText(
+    'ppCalcCrudeDeathRate',
+    ppFormat(ppRate(deaths,total,1000),2)
+  );
+
+  ppSetText(
+    'ppCalcInfantMortality',
+    ppFormat(ppRate(ppNumber('infantDeaths'),births,1000),2)
+  );
+
+  ppSetText(
+    'ppCalcInMigrants',
+    ppFormat(inTotal,0)
+  );
+
+  ppSetText(
+    'ppCalcOutMigrants',
+    ppFormat(outTotal,0)
+  );
+
+  ppSetText(
+    'ppCalcNetMigration',
+    (
+      inTotal!==null &&
+      outTotal!==null
+    )
+      ? ppFormat(ppRate(inTotal-outTotal,total,1000),2)
+      : '—'
+  );
+
+  ppSetText(
+    'ppCalcYouth',
+    ppFormat(youthTotal,0)
+  );
+
+  const rows=ppAgeRowsFromForm();
+
+  let ageMale=0;
+  let ageFemale=0;
+  let hasAge=false;
+
+  rows.forEach((row,index)=>{
+    const tr=document.querySelector(
+      `#ppAgeSexBody tr[data-age-key="${row.key}"]`
+    );
+
+    const rowTotal=(
+      row.male===null &&
+      row.female===null
+    ) ? null : (row.male||0)+(row.female||0);
+
+    if(row.male!==null){
+      ageMale+=row.male;
+      hasAge=true;
+    }
+
+    if(row.female!==null){
+      ageFemale+=row.female;
+      hasAge=true;
+    }
+
+    if(tr){
+      const totalCell=tr.querySelector('.pp-age-total');
+      const malePct=tr.querySelector('.pp-age-male-pct');
+      const femalePct=tr.querySelector('.pp-age-female-pct');
+      const totalPct=tr.querySelector('.pp-age-total-pct');
+
+      if(totalCell) totalCell.textContent=ppFormat(rowTotal,0);
+
+      if(malePct){
+        const v=ppRate(row.male,total,100);
+        malePct.textContent=v===null?'—':`${ppFormat(v,2)}%`;
+      }
+
+      if(femalePct){
+        const v=ppRate(row.female,total,100);
+        femalePct.textContent=v===null?'—':`${ppFormat(v,2)}%`;
+      }
+
+      if(totalPct){
+        const v=ppRate(rowTotal,total,100);
+        totalPct.textContent=v===null?'—':`${ppFormat(v,2)}%`;
+      }
+    }
+  });
+
+  ppSetText('ppAgeMaleTotal',hasAge?ppFormat(ageMale,0):'—');
+  ppSetText('ppAgeFemaleTotal',hasAge?ppFormat(ageFemale,0):'—');
+  ppSetText('ppAgeGrandTotal',hasAge?ppFormat(ageMale+ageFemale,0):'—');
+
+  const young=ppDependencyFromRows(
+    rows,
+    ['BELOW_1','AGE_1_4','AGE_5_9','AGE_10_14']
+  );
+
+  const working=ppDependencyFromRows(
+    rows,
+    [
+      'AGE_15_19','AGE_20_24','AGE_25_29','AGE_30_34',
+      'AGE_35_39','AGE_40_44','AGE_45_49','AGE_50_54',
+      'AGE_55_59','AGE_60_64'
+    ]
+  );
+
+  const old=ppDependencyFromRows(
+    rows,
+    ['AGE_65_69','AGE_70_74','AGE_75_79','AGE_80_PLUS']
+  );
+
+  ppSetText('ppDepYoungMale',ppFormat(young.male,0));
+  ppSetText('ppDepYoungFemale',ppFormat(young.female,0));
+  ppSetText('ppDepYoungTotal',ppFormat(young.total,0));
+
+  ppSetText('ppDepWorkingMale',ppFormat(working.male,0));
+  ppSetText('ppDepWorkingFemale',ppFormat(working.female,0));
+  ppSetText('ppDepWorkingTotal',ppFormat(working.total,0));
+
+  ppSetText('ppDepOldMale',ppFormat(old.male,0));
+  ppSetText('ppDepOldFemale',ppFormat(old.female,0));
+  ppSetText('ppDepOldTotal',ppFormat(old.total,0));
+
+  const childRatio=ppRate(young.total,working.total,100);
+  const oldRatio=ppRate(old.total,working.total,100);
+  const ageRatio=(
+    young.total!==null &&
+    old.total!==null
+  )
+    ? ppRate((young.total||0)+(old.total||0),working.total,100)
+    : null;
+
+  ppSetText(
+    'ppDepChildRatio',
+    childRatio===null?'—':`${Math.round(childRatio)} : 100`
+  );
+
+  ppSetText(
+    'ppDepOldRatio',
+    oldRatio===null?'—':`${Math.round(oldRatio)} : 100`
+  );
+
+  ppSetText(
+    'ppDepAgeRatio',
+    ageRatio===null?'—':`${Math.round(ageRatio)} : 100`
+  );
+
+  const validation=document.getElementById('ppValidationMessage');
+
+  if(validation){
+    const issues=[];
+
+    if(
+      total!==null &&
+      male!==null &&
+      female!==null &&
+      male+female!==total
+    ){
+      issues.push(
+        `Population check: Male + Female = ${male+female}, but Total Population = ${total}.`
+      );
+    }
+
+    const allAgeComplete=rows.every(r=>
+      r.male!==null &&
+      r.female!==null
+    );
+
+    if(allAgeComplete && total!==null){
+      const ageTotal=ageMale+ageFemale;
+
+      if(ageTotal!==total){
+        issues.push(
+          `Age-Sex grand total = ${ageTotal}, but Total Population = ${total}.`
+        );
+      }
+
+      if(male!==null && ageMale!==male){
+        issues.push(
+          `Age-Sex Male total = ${ageMale}, but Population Male = ${male}.`
+        );
+      }
+
+      if(female!==null && ageFemale!==female){
+        issues.push(
+          `Age-Sex Female total = ${ageFemale}, but Population Female = ${female}.`
+        );
+      }
+    }
+
+    validation.innerHTML=issues.length
+      ? `<div class="pp-warning">${issues.map(esc).join('<br>')}</div>`
+      : `<div class="pp-ok">✓ Current totals are consistent.</div>`;
+  }
+}
+
+function ppAgeRowHtml(row,index){
+  const male=(
+    row?.male===null ||
+    row?.male===undefined
+  ) ? '' : row.male;
+
+  const female=(
+    row?.female===null ||
+    row?.female===undefined
+  ) ? '' : row.female;
+
+  return `
+    <tr
+      data-age-key="${esc(row.key)}"
+      data-age-label="${esc(row.label)}"
+    >
+      <td class="pp-age-label">${esc(row.label)}</td>
+      <td>
+        <input
+          class="pp-age-male"
+          type="number"
+          min="0"
+          step="1"
+          value="${esc(male)}"
+          oninput="ppRecalculate()"
+        >
+      </td>
+      <td class="pp-age-male-pct">—</td>
+      <td>
+        <input
+          class="pp-age-female"
+          type="number"
+          min="0"
+          step="1"
+          value="${esc(female)}"
+          oninput="ppRecalculate()"
+        >
+      </td>
+      <td class="pp-age-female-pct">—</td>
+      <td class="pp-age-total">—</td>
+      <td class="pp-age-total-pct">—</td>
+    </tr>
+  `;
+}
+
+function renderPopulationProfileAdmin(){
+  const d=window.BTO_POPULATION_PROFILE||{};
+  const p=d.profile||{};
+  const ageSex=Array.isArray(d.ageSex)?d.ageSex:[];
+
+  const ageByKey={};
+  ageSex.forEach(r=>ageByKey[r.key]=r);
+
+  const selectedYear=Number(
+    d.selectedYear ||
+    p.year ||
+    new Date().getFullYear()
+  );
+
+  const years=Array.isArray(d.years)?d.years:[];
+
+  const ageRows=BTO_PP_AGE_GROUPS.map(([key,label],index)=>({
+    key,
+    label,
+    male:ageByKey[key]?.male ?? null,
+    female:ageByKey[key]?.female ?? null,
+    displayOrder:index+1
+  }));
 
   document.getElementById('moduleArea').innerHTML=`
-    <div class="card">
-      <h2>Barangay Statistics</h2>
-      <div class="help">General barangay population and demographic data only. Farmers and livestock are not included here.</div>
-
-      <label>As of Date</label>
-      <div class="help">Displayed publicly and in the sheet as MM/DD/YYYY.</div>
-      <input id="statsAsOfDate" type="date" value="${esc(defaultDate)}">
-
-      <div class="stats-admin-grid">
-        ${[
-          ['TOTAL_POPULATION','Total Population'],
-          ['MALE','Male'],
-          ['FEMALE','Female'],
-          ['TOTAL_HOUSEHOLDS','Total Households'],
-          ['TOTAL_FAMILIES','Total Families'],
-          ['REGISTERED_VOTERS','Registered Voters'],
-          ['SENIOR_CITIZENS','Senior Citizens'],
-          ['PWD','Persons with Disability']
-        ].map(([key,label])=>`
-          <div class="stats-admin-item">
-            <label>${label}</label>
-            <input
-              id="bs_${key}"
-              type="number"
-              min="0"
-              step="1"
-              value="${esc(statValue(key))}"
-              placeholder="Leave blank until validated"
-              ${key==='TOTAL_POPULATION' ? `oninput="autoBalanceSex('TOTAL')"` : ''}
-              ${key==='MALE' ? `oninput="autoBalanceSex('MALE')"` : ''}
-              ${key==='FEMALE' ? `oninput="autoBalanceSex('FEMALE')"` : ''}
-            >
+    <div class="card pp-title-card">
+      <div class="pp-title-row">
+        <div>
+          <h2>Barangay Basic Population Profile</h2>
+          <div class="help">
+            Official annual population profile. Encode the validated RAW figures;
+            totals, percentages, rates and dependency ratios are calculated automatically.
           </div>
-        `).join('')}
+        </div>
+
+        <div class="pp-year-loader">
+          <label>Profile Year</label>
+          <div class="pp-year-loader-row">
+            <input
+              id="pp_year"
+              type="number"
+              min="1900"
+              max="2200"
+              step="1"
+              value="${selectedYear}"
+              oninput="ppRecalculate()"
+            >
+            <button
+              type="button"
+              class="secondary"
+              onclick="loadStats(document.getElementById('pp_year').value)"
+            >
+              Load Year
+            </button>
+          </div>
+        </div>
+      </div>
+
+      ${years.length?`
+        <div class="pp-saved-years">
+          <strong>Saved Years:</strong>
+          ${years.map(y=>`
+            <button
+              type="button"
+              class="pp-year-chip ${Number(y)===selectedYear?'active':''}"
+              onclick="loadStats(${Number(y)})"
+            >${Number(y)}</button>
+          `).join('')}
+        </div>
+      `:''}
+
+      <div id="ppValidationMessage"></div>
+    </div>
+
+    <div class="card">
+      <h3>1. Profile Information</h3>
+      <div class="pp-grid">
+        ${ppInput('asOfDate','As of Date',{
+          key:'asOfDate',
+          type:'date',
+          min:'',
+          help:'Use the official validation/reference date when available.'
+        })}
+        ${ppInput('previousPopulationYear','Previous Population Year',{
+          key:'previousPopulationYear',
+          min:'1900'
+        })}
+        ${ppInput('previousPopulation','Previous Population',{
+          key:'previousPopulation'
+        })}
+        ${ppInput('registeredVoters','Registered Voters',{
+          key:'registeredVoters'
+        })}
+        ${ppInput('registeredVotersReferenceYear','Registered Voters Reference Year',{
+          key:'registeredVotersReferenceYear',
+          min:'1900'
+        })}
+        ${ppInput('noOfPurok','No. of Purok',{
+          key:'noOfPurok'
+        })}
+        ${ppInput('landAreaSqKm','Land Area (sq. km.)',{
+          key:'landAreaSqKm',
+          step:'0.001'
+        })}
       </div>
     </div>
 
     <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-        <div>
-          <h2 style="margin-bottom:4px">Demographic / Age Groups</h2>
-          <div class="help">Add as many age-group fields as needed. Blank rows are ignored.</div>
-        </div>
-        <button type="button" class="secondary" style="width:auto" onclick="addAgeGroupRow()">+ Add Row</button>
+      <h3>2. Population & Household Data</h3>
+      <div class="pp-grid">
+        ${ppInput('totalPopulation','Total Population',{key:'totalPopulation'})}
+        ${ppInput('male','Male',{key:'male'})}
+        ${ppInput('female','Female',{key:'female'})}
+        ${ppInput('totalHouseholds','Total No. of Households',{key:'totalHouseholds'})}
+        ${ppInput('totalFamilies','Total No. of Families',{key:'totalFamilies'})}
       </div>
 
-      <div id="ageGroupRows" class="age-group-editor">
-        ${ageRows.map((x,i)=>ageGroupRowHtml(x,i)).join('')}
+      <div class="pp-calc-grid">
+        <div class="pp-calc"><small>Sex Ratio</small><strong id="ppCalcSexRatio">—</strong></div>
+        <div class="pp-calc"><small>Population Growth Rate</small><strong id="ppCalcGrowth">—</strong></div>
+        <div class="pp-calc"><small>Doubling Time</small><strong id="ppCalcDoublingTime">—</strong></div>
+        <div class="pp-calc"><small>Doubling Year</small><strong id="ppCalcDoublingYear">—</strong></div>
+        <div class="pp-calc"><small>Average Household Size</small><strong id="ppCalcAvgHousehold">—</strong></div>
+        <div class="pp-calc"><small>Average Family Size</small><strong id="ppCalcAvgFamily">—</strong></div>
+        <div class="pp-calc"><small>Population Density / sq. km.</small><strong id="ppCalcDensity">—</strong></div>
       </div>
+    </div>
+
+    <div class="card">
+      <h3>3. Vital Statistics</h3>
+      <div class="pp-grid">
+        ${ppInput('totalMarriages','Total No. of Marriages',{key:'totalMarriages'})}
+        ${ppInput('liveBirthsMale','Live Births - Male',{key:'liveBirthsMale'})}
+        ${ppInput('liveBirthsFemale','Live Births - Female',{key:'liveBirthsFemale'})}
+        ${ppInput('adolescentBirths','Adolescent Births (<20 yrs.)',{key:'adolescentBirths'})}
+        ${ppInput('nonMaritalBirths','Non-Marital Births',{key:'nonMaritalBirths'})}
+        ${ppInput('deathsMale','Deaths - Male',{key:'deathsMale'})}
+        ${ppInput('deathsFemale','Deaths - Female',{key:'deathsFemale'})}
+        ${ppInput('infantDeaths','Infant Deaths',{key:'infantDeaths'})}
+      </div>
+
+      <div class="pp-calc-grid">
+        <div class="pp-calc"><small>Total Live Births</small><strong id="ppCalcBirths">—</strong></div>
+        <div class="pp-calc"><small>Marriage Rate / 1,000</small><strong id="ppCalcMarriageRate">—</strong></div>
+        <div class="pp-calc"><small>Crude Birth Rate / 1,000</small><strong id="ppCalcCrudeBirthRate">—</strong></div>
+        <div class="pp-calc"><small>General Fertility Rate / 1,000 WRA</small><strong id="ppCalcGeneralFertility">—</strong></div>
+        <div class="pp-calc"><small>% Adolescent Births</small><strong id="ppCalcAdolescentPct">—</strong></div>
+        <div class="pp-calc"><small>% Non-Marital Births</small><strong id="ppCalcNonMaritalPct">—</strong></div>
+        <div class="pp-calc"><small>Total Deaths</small><strong id="ppCalcDeaths">—</strong></div>
+        <div class="pp-calc"><small>Crude Death Rate / 1,000</small><strong id="ppCalcCrudeDeathRate">—</strong></div>
+        <div class="pp-calc"><small>Infant Mortality Rate / 1,000 births</small><strong id="ppCalcInfantMortality">—</strong></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>4. Migration, Women & Youth</h3>
+      <div class="pp-grid">
+        ${ppInput('inMigrantsMale','In-Migrants - Male',{key:'inMigrantsMale'})}
+        ${ppInput('inMigrantsFemale','In-Migrants - Female',{key:'inMigrantsFemale'})}
+        ${ppInput('outMigrantsMale','Out-Migrants - Male',{key:'outMigrantsMale'})}
+        ${ppInput('outMigrantsFemale','Out-Migrants - Female',{key:'outMigrantsFemale'})}
+        ${ppInput('wra','Total WRA (15-49 yrs. old)',{key:'wra'})}
+        ${ppInput('mwra','Total MWRA',{key:'mwra'})}
+        ${ppInput('youthMale','Youth (10-30 yrs.) - Male',{key:'youthMale'})}
+        ${ppInput('youthFemale','Youth (10-30 yrs.) - Female',{key:'youthFemale'})}
+        ${ppInput('totalFertilityRate','Official Total Fertility Rate',{
+          key:'totalFertilityRate',
+          step:'0.001',
+          help:'Manual official value because it cannot be accurately derived from the basic counts alone.'
+        })}
+        ${ppInput('totalAsfr','Official Total ASFR',{
+          key:'totalAsfr',
+          step:'0.001',
+          help:'Manual official value when provided in the validated profile.'
+        })}
+      </div>
+
+      <div class="pp-calc-grid">
+        <div class="pp-calc"><small>Total In-Migrants</small><strong id="ppCalcInMigrants">—</strong></div>
+        <div class="pp-calc"><small>Total Out-Migrants</small><strong id="ppCalcOutMigrants">—</strong></div>
+        <div class="pp-calc"><small>Net Migration Rate / 1,000</small><strong id="ppCalcNetMigration">—</strong></div>
+        <div class="pp-calc"><small>Total Youth (10-30 yrs.)</small><strong id="ppCalcYouth">—</strong></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>5. Age-Sex Distribution</h3>
+      <div class="help">
+        Barangay Encoder enters Male and Female only. Total and percentages are automatic.
+        When all age groups are complete, the system validates them against Total Population.
+      </div>
+
+      <div class="pp-table-wrap">
+        <table class="pp-table">
+          <thead>
+            <tr>
+              <th>Age Group</th>
+              <th>Male</th>
+              <th>Male %</th>
+              <th>Female</th>
+              <th>Female %</th>
+              <th>Total</th>
+              <th>Total %</th>
+            </tr>
+          </thead>
+          <tbody id="ppAgeSexBody">
+            ${ageRows.map(ppAgeRowHtml).join('')}
+          </tbody>
+          <tfoot>
+            <tr>
+              <th>TOTAL</th>
+              <th id="ppAgeMaleTotal">—</th>
+              <th></th>
+              <th id="ppAgeFemaleTotal">—</th>
+              <th></th>
+              <th id="ppAgeGrandTotal">—</th>
+              <th>100%</th>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>6. Age Dependency</h3>
+
+      <div class="pp-table-wrap">
+        <table class="pp-table pp-dependency-table">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Male</th>
+              <th>Female</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Young Dependents (0-14)</td>
+              <td id="ppDepYoungMale">—</td>
+              <td id="ppDepYoungFemale">—</td>
+              <td id="ppDepYoungTotal">—</td>
+            </tr>
+            <tr>
+              <td>Working Age (15-64)</td>
+              <td id="ppDepWorkingMale">—</td>
+              <td id="ppDepWorkingFemale">—</td>
+              <td id="ppDepWorkingTotal">—</td>
+            </tr>
+            <tr>
+              <td>Old Dependents (65+)</td>
+              <td id="ppDepOldMale">—</td>
+              <td id="ppDepOldFemale">—</td>
+              <td id="ppDepOldTotal">—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pp-calc-grid">
+        <div class="pp-calc"><small>Child Dependency Ratio</small><strong id="ppDepChildRatio">—</strong></div>
+        <div class="pp-calc"><small>Old Dependency Ratio</small><strong id="ppDepOldRatio">—</strong></div>
+        <div class="pp-calc"><small>Age Dependency Ratio</small><strong id="ppDepAgeRatio">—</strong></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>7. Source / Remarks</h3>
+      <textarea
+        id="pp_remarks"
+        rows="4"
+        placeholder="Example: Validated Barangay Basic Population Profile; source/reference notes."
+      >${esc(p.remarks||'')}</textarea>
 
       <div class="admin-actions">
-        <button id="saveAllStatsBtn" onclick="saveAllBarangayStats(this)">Save All Barangay Statistics</button>
-        <button class="danger" onclick="btoClearModule('STATISTICS',loadStats,'all Barangay Statistics')">Delete / Clear All</button>
+        <button
+          id="ppSaveBtn"
+          onclick="savePopulationProfile(this)"
+        >
+          Save Population Profile
+        </button>
       </div>
-    </div>`;
-}
 
-function ageGroupRowHtml(x,index){
-  const order=x.displayOrder || index+1;
-  return `
-    <div class="age-group-edit-row" data-demo-id="${esc(x.id||'')}">
-      <div>
-        <label>Age Group / Demographic Label</label>
-        <input class="demo-label" value="${esc(x.label||'')}" placeholder="Example: 0–5 years old">
+      <div class="help">
+        One Save button stores the entire selected year. Historical years are retained.
       </div>
-      <div>
-        <label>Value</label>
-        <input class="demo-value" type="number" min="0" step="1" value="${esc(x.value||'')}" placeholder="Actual count">
-      </div>
-      <div>
-        <label>Order</label>
-        <input class="demo-order" type="number" min="0" step="1" value="${esc(order)}">
-      </div>
-      <div>
-        <label>Status</label>
-        <select class="demo-status">
-          <option value="ACTIVE" ${(x.status||'ACTIVE')==='ACTIVE'?'selected':''}>ACTIVE</option>
-          <option value="INACTIVE" ${x.status==='INACTIVE'?'selected':''}>INACTIVE</option>
-        </select>
-      </div>
-      <div class="age-group-remove-wrap">
-        <button type="button" class="secondary" onclick="removeAgeGroupRow(this)">Remove</button>
-      </div>
-    </div>`;
+    </div>
+  `;
+
+  setTimeout(ppRecalculate,0);
 }
 
-function addAgeGroupRow(){
-  const root=document.getElementById('ageGroupRows');
-  const count=root.querySelectorAll('.age-group-edit-row').length;
-  root.insertAdjacentHTML('beforeend',ageGroupRowHtml({
-    id:'',label:'',value:'',displayOrder:count+1,status:'ACTIVE'
-  },count));
+function ppProfilePayload(){
+  return {
+    year:ppNumber('year'),
+    asOfDate:String(document.getElementById('pp_asOfDate')?.value||'').trim(),
+    previousPopulationYear:ppNumber('previousPopulationYear'),
+    previousPopulation:ppNumber('previousPopulation'),
+    totalPopulation:ppNumber('totalPopulation'),
+    male:ppNumber('male'),
+    female:ppNumber('female'),
+    totalHouseholds:ppNumber('totalHouseholds'),
+    totalFamilies:ppNumber('totalFamilies'),
+    landAreaSqKm:ppNumber('landAreaSqKm'),
+    registeredVoters:ppNumber('registeredVoters'),
+    registeredVotersReferenceYear:ppNumber('registeredVotersReferenceYear'),
+    noOfPurok:ppNumber('noOfPurok'),
+    totalMarriages:ppNumber('totalMarriages'),
+    liveBirthsMale:ppNumber('liveBirthsMale'),
+    liveBirthsFemale:ppNumber('liveBirthsFemale'),
+    adolescentBirths:ppNumber('adolescentBirths'),
+    nonMaritalBirths:ppNumber('nonMaritalBirths'),
+    deathsMale:ppNumber('deathsMale'),
+    deathsFemale:ppNumber('deathsFemale'),
+    infantDeaths:ppNumber('infantDeaths'),
+    inMigrantsMale:ppNumber('inMigrantsMale'),
+    inMigrantsFemale:ppNumber('inMigrantsFemale'),
+    outMigrantsMale:ppNumber('outMigrantsMale'),
+    outMigrantsFemale:ppNumber('outMigrantsFemale'),
+    wra:ppNumber('wra'),
+    mwra:ppNumber('mwra'),
+    youthMale:ppNumber('youthMale'),
+    youthFemale:ppNumber('youthFemale'),
+    totalFertilityRate:ppNumber('totalFertilityRate'),
+    totalAsfr:ppNumber('totalAsfr'),
+    remarks:String(document.getElementById('pp_remarks')?.value||'').trim()
+  };
 }
 
-function removeAgeGroupRow(btn){
-  const row=btn.closest('.age-group-edit-row');
-  const root=document.getElementById('ageGroupRows');
-  if(root.querySelectorAll('.age-group-edit-row').length<=1){
-    row.querySelector('.demo-label').value='';
-    row.querySelector('.demo-value').value='';
-    row.querySelector('.demo-order').value='1';
-    row.querySelector('.demo-status').value='ACTIVE';
-    row.dataset.demoId='';
-    return;
-  }
-  row.remove();
-}
+async function savePopulationProfile(btn){
+  return withButtonSpinner(
+    btn,
+    'Saving Profile...',
+    async()=>{
+      const profile=ppProfilePayload();
 
-function numberOrBlank(id){
-  const el=document.getElementById(id);
-  return el ? el.value.trim() : '';
-}
-
-function autoBalanceSex(changed){
-  const totalEl=document.getElementById('bs_TOTAL_POPULATION');
-  const maleEl=document.getElementById('bs_MALE');
-  const femaleEl=document.getElementById('bs_FEMALE');
-  if(!totalEl||!maleEl||!femaleEl) return;
-
-  const total=Number(totalEl.value);
-  if(!Number.isFinite(total) || total<0 || totalEl.value==='') return;
-
-  if(changed==='MALE'){
-    window.BTO_LAST_SEX_EDIT='MALE';
-    const male=Number(maleEl.value);
-    if(Number.isFinite(male) && male>=0){
-      femaleEl.value=Math.max(0,total-male);
-    }
-    return;
-  }
-
-  if(changed==='FEMALE'){
-    window.BTO_LAST_SEX_EDIT='FEMALE';
-    const female=Number(femaleEl.value);
-    if(Number.isFinite(female) && female>=0){
-      maleEl.value=Math.max(0,total-female);
-    }
-    return;
-  }
-
-  // Total Population changed.
-  // Recalculate the opposite sex based on whichever sex the user last edited.
-  if(window.BTO_LAST_SEX_EDIT==='FEMALE' && femaleEl.value!==''){
-    const female=Number(femaleEl.value);
-    if(Number.isFinite(female) && female>=0){
-      maleEl.value=Math.max(0,total-female);
-      return;
-    }
-  }
-
-  if(maleEl.value!==''){
-    const male=Number(maleEl.value);
-    if(Number.isFinite(male) && male>=0){
-      femaleEl.value=Math.max(0,total-male);
-      return;
-    }
-  }
-
-  if(femaleEl.value!==''){
-    const female=Number(femaleEl.value);
-    if(Number.isFinite(female) && female>=0){
-      maleEl.value=Math.max(0,total-female);
-    }
-  }
-}
-
-function collectAgeGroupRows(){
-  return Array.from(document.querySelectorAll('#ageGroupRows .age-group-edit-row')).map((row,index)=>({
-    id:row.dataset.demoId||'',
-    label:row.querySelector('.demo-label').value.trim(),
-    value:row.querySelector('.demo-value').value.trim(),
-    displayOrder:row.querySelector('.demo-order').value || String(index+1),
-    status:row.querySelector('.demo-status').value
-  })).filter(x=>x.label || x.value);
-}
-
-async function saveAllBarangayStats(btn){
-  return withButtonSpinner(btn,'Saving All...',async()=>{
-    const asOfDate=document.getElementById('statsAsOfDate').value;
-
-    const total=numberOrBlank('bs_TOTAL_POPULATION');
-    const male=numberOrBlank('bs_MALE');
-    const female=numberOrBlank('bs_FEMALE');
-
-    if(total!=='' && male!=='' && female!==''){
-      if(Number(male)+Number(female)!==Number(total)){
-        throw new Error('Male + Female must equal Total Population.');
+      if(!profile.year){
+        throw new Error('Profile Year is required.');
       }
-    }
 
-    const core=await api('saveEnhancedStatsBatch',{
-      asOfDate,
-      values:{
-        TOTAL_POPULATION:total,
-        MALE:male,
-        FEMALE:female,
-        TOTAL_HOUSEHOLDS:numberOrBlank('bs_TOTAL_HOUSEHOLDS'),
-        TOTAL_FAMILIES:numberOrBlank('bs_TOTAL_FAMILIES'),
-        REGISTERED_VOTERS:numberOrBlank('bs_REGISTERED_VOTERS'),
-        SENIOR_CITIZENS:numberOrBlank('bs_SENIOR_CITIZENS'),
-        PWD:numberOrBlank('bs_PWD')
+      if(
+        profile.totalPopulation!==null &&
+        profile.male!==null &&
+        profile.female!==null &&
+        profile.male+profile.female!==profile.totalPopulation
+      ){
+        throw new Error(
+          'Male + Female must equal Total Population.'
+        );
       }
-    });
 
-    if(!core.success) throw new Error(core.message||'Unable to save Barangay Statistics.');
+      const ageSex=ppAgeRowsFromForm();
 
-    const demographics=await api('saveDemographicsBatch',{
-      asOfDate,
-      rows:collectAgeGroupRows()
-    });
+      const r=await api(
+        'savePopulationProfile',
+        {
+          year:profile.year,
+          profile,
+          ageSex
+        }
+      );
 
-    if(!demographics.success) throw new Error(demographics.message||'Unable to save age groups.');
+      if(!r.success){
+        throw new Error(
+          r.message ||
+          'Unable to save Population Profile.'
+        );
+      }
 
-    await loadStats();
+      window.BTO_POPULATION_PROFILE=r;
+      renderPopulationProfileAdmin();
 
-    return {
-      success:true,
-      message:'All Barangay Statistics saved.'
-    };
-  },'All Barangay Statistics saved.');
+      return {
+        success:true,
+        message:`Population Profile ${profile.year} saved successfully.`
+      };
+    },
+    'Population Profile saved.'
+  );
 }
 
 
