@@ -2995,26 +2995,62 @@ function btoContentTimeInputValue(v){
   const s=String(v||'').trim();
   if(!s) return '';
 
-  // Plain HH:mm / HH:mm:ss.
-  const m=s.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  let m=s.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
   if(m){
-    const h=String(Math.max(0,Math.min(23,Number(m[1])))).padStart(2,'0');
+    const h=String(
+      Math.max(0,Math.min(23,Number(m[1])))
+    ).padStart(2,'0');
+
     return `${h}:${m[2]}`;
   }
 
-  // Google Sheets time values often serialize as 1899-12-30T...
+  m=s.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if(m){
+    let h=Number(m[1])%12;
+    if(String(m[3]).toUpperCase()==='PM') h+=12;
+    return `${String(h).padStart(2,'0')}:${m[2]}`;
+  }
+
+  // Defensive support for an old serialized Google Sheets time.
+  // Use Asia/Singapore because the spreadsheet's 1899 Date object
+  // historically carries Singapore Standard Time in this project.
+  if(/^1899-\d{2}-\d{2}T/i.test(s)){
+    try{
+      const d=new Date(s);
+
+      if(!isNaN(d)){
+        const parts=new Intl.DateTimeFormat('en-GB',{
+          timeZone:'Asia/Singapore',
+          hour:'2-digit',
+          minute:'2-digit',
+          hourCycle:'h23'
+        }).formatToParts(d);
+
+        const get=t=>
+          parts.find(p=>p.type===t)?.value||'';
+
+        const hh=get('hour');
+        const mm=get('minute');
+
+        if(hh && mm) return `${hh}:${mm}`;
+      }
+    }catch(e){}
+  }
+
   try{
     const d=new Date(s);
     if(isNaN(d)) return '';
 
-    const parts=new Intl.DateTimeFormat('en-US',{
+    const parts=new Intl.DateTimeFormat('en-GB',{
       timeZone:'Asia/Manila',
       hour:'2-digit',
       minute:'2-digit',
       hourCycle:'h23'
     }).formatToParts(d);
 
-    const get=t=>parts.find(p=>p.type===t)?.value||'';
+    const get=t=>
+      parts.find(p=>p.type===t)?.value||'';
+
     return `${get('hour')}:${get('minute')}`;
   }catch(e){
     return '';
