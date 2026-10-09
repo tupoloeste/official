@@ -4804,6 +4804,16 @@ function showView(name){
       }
     },0);
   }
+
+  // BTO_ORGANIZATIONS_AUTOLOAD
+  // Works for card click, direct #organizations URL and browser refresh.
+  if(name==='organizations'){
+    setTimeout(()=>{
+      if(typeof loadPublicOrganizationsCloudflare==='function'){
+        loadPublicOrganizationsCloudflare(false);
+      }
+    },0);
+  }
 }
 
 function switchTab(scope,panelId,btn){
@@ -7104,7 +7114,6 @@ function applyPublicData(data){
   renderPublicOfficersOfTheDay(data);
   renderPublicContactInformation(data);
   renderAboutBarangay(data);
-  renderPublicOrganizations(data);
   renderHighlightsLive(data);
   renderHighlightsActivityGallery(data);
   renderAnnouncementTicker(data);
@@ -7735,6 +7744,150 @@ async function loadPublicBarangayStatsCloudflare(force=false){
 
   }finally{
     BTO_PUBLIC_BARANGAY_STATS_LOADING=false;
+  }
+}
+
+
+/* ===== CLOUDFLARE BARANGAY ORGANIZATIONS PUBLIC DATA ===== */
+let BTO_PUBLIC_ORGANIZATIONS_LOADING=false;
+let BTO_PUBLIC_ORGANIZATIONS_LOADED=false;
+
+const BTO_ORGANIZATIONS_CACHE_KEY='bto_organizations_cloudflare_v1';
+const BTO_ORGANIZATIONS_CACHE_MS=10*60*1000;
+const BTO_ORGANIZATIONS_CF_URL=BTO_DOG_STATS_CF_URL;
+
+function organizationsCacheGet(allowStale=false){
+  try{
+    const raw=localStorage.getItem(BTO_ORGANIZATIONS_CACHE_KEY);
+    if(!raw) return null;
+
+    const obj=JSON.parse(raw);
+    if(!obj || !obj.data) return null;
+
+    const age=Date.now()-Number(obj.savedAt||0);
+    if(!allowStale && age>BTO_ORGANIZATIONS_CACHE_MS) return null;
+
+    return obj.data;
+  }catch(e){
+    return null;
+  }
+}
+
+function organizationsCacheSet(data){
+  try{
+    localStorage.setItem(
+      BTO_ORGANIZATIONS_CACHE_KEY,
+      JSON.stringify({
+        savedAt:Date.now(),
+        data:data
+      })
+    );
+  }catch(e){}
+}
+
+async function organizationsFetchJson_(url,timeoutMs){
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),timeoutMs);
+
+  try{
+    const res=await fetch(url,{
+      method:'GET',
+      cache:'no-store',
+      signal:controller.signal
+    });
+
+    if(!res.ok){
+      throw new Error('HTTP '+res.status);
+    }
+
+    const data=await res.json();
+
+    if(!data || !data.success){
+      throw new Error(
+        data?.message || 'Barangay organizations are unavailable.'
+      );
+    }
+
+    return data;
+
+  }finally{
+    clearTimeout(timer);
+  }
+}
+
+async function organizationsFetchWithFallback_(){
+  const cfBase=String(BTO_ORGANIZATIONS_CF_URL||'')
+    .trim()
+    .replace(/\/+$/,'');
+
+  // Cloudflare first.
+  if(cfBase){
+    try{
+      return await organizationsFetchJson_(
+        cfBase+'/organizations',
+        10000
+      );
+    }catch(err){
+      console.warn(
+        'Cloudflare organizations request failed; using Apps Script fallback.',
+        err
+      );
+    }
+  }
+
+  // Lightweight Apps Script fallback.
+  const base=BTO_PUBLIC_API.split('?')[0];
+
+  return organizationsFetchJson_(
+    base+'?action=organizationsPublic&_ts='+Date.now(),
+    15000
+  );
+}
+
+async function loadPublicOrganizationsCloudflare(force=false){
+  if(BTO_PUBLIC_ORGANIZATIONS_LOADING) return;
+
+  const root=document.getElementById('publicOrganizationsGrid');
+
+  // Show last successful browser copy immediately.
+  const cached=organizationsCacheGet(true);
+
+  if(cached){
+    renderPublicOrganizations(cached);
+    BTO_PUBLIC_ORGANIZATIONS_LOADED=true;
+  }
+
+  // Fresh browser cache: no new network request unless forced.
+  const fresh=organizationsCacheGet(false);
+
+  if(fresh && !force){
+    return;
+  }
+
+  BTO_PUBLIC_ORGANIZATIONS_LOADING=true;
+
+  if(!BTO_PUBLIC_ORGANIZATIONS_LOADED && root){
+    root.innerHTML=
+      '<div class="live-empty">Loading barangay organizations...</div>';
+  }
+
+  try{
+    const data=await organizationsFetchWithFallback_();
+
+    organizationsCacheSet(data);
+    renderPublicOrganizations(data);
+    BTO_PUBLIC_ORGANIZATIONS_LOADED=true;
+
+  }catch(err){
+    console.warn('Barangay organizations load failed:',err);
+
+    if(!BTO_PUBLIC_ORGANIZATIONS_LOADED && root){
+      root.innerHTML=
+        '<div class="live-empty">Barangay organizations are temporarily unavailable.</div>';
+    }
+
+  }finally{
+    BTO_PUBLIC_ORGANIZATIONS_LOADING=false;
   }
 }
 
