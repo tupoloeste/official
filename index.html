@@ -4849,6 +4849,201 @@ body.bto-site-loading{overflow:hidden!important}
   }
 }
 
+
+
+/* ===== HEALTH CENTER PUBLIC ===== */
+.health-public-card{
+  background:#fff;
+  border:1px solid #e4e7ec;
+  border-radius:18px;
+  overflow:hidden;
+  box-shadow:0 6px 18px rgba(16,24,40,.06);
+  display:grid;
+  grid-template-columns:minmax(280px,42%) 1fr;
+}
+
+.health-public-photo{
+  min-height:430px;
+  background:#f3f4f6;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+}
+
+.health-public-photo img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+
+.health-photo-placeholder{
+  font-size:74px;
+  opacity:.5;
+}
+
+.health-public-body{
+  padding:24px;
+}
+
+.health-public-type{
+  display:inline-flex;
+  padding:4px 8px;
+  border-radius:999px;
+  background:#fff1f3;
+  color:#c5162e;
+  border:1px solid #ffc7d0;
+  font-size:10px;
+  font-weight:900;
+  margin-bottom:8px;
+}
+
+.health-public-body h2{
+  margin:0;
+  color:#101828;
+  font-size:27px;
+  line-height:1.2;
+}
+
+.health-public-description{
+  color:#475467;
+  font-size:14px;
+  line-height:1.6;
+  margin:12px 0 0;
+}
+
+.health-public-stats{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  margin-top:18px;
+}
+
+.health-public-stats > div{
+  background:#f9fafb;
+  border:1px solid #e4e7ec;
+  border-radius:11px;
+  padding:12px;
+  text-align:center;
+}
+
+.health-public-stats small{
+  display:block;
+  color:#667085;
+  font-size:10px;
+}
+
+.health-public-stats strong{
+  display:block;
+  margin-top:4px;
+  color:#991b1b;
+  font-size:20px;
+}
+
+.health-public-details{
+  display:grid;
+  gap:9px;
+  margin-top:18px;
+}
+
+.health-public-details > div{
+  display:grid;
+  gap:2px;
+  padding-bottom:9px;
+  border-bottom:1px solid #f0f1f3;
+}
+
+.health-public-details span{
+  color:#667085;
+  font-size:10px;
+  font-weight:700;
+}
+
+.health-public-details strong{
+  color:#344054;
+  font-size:13px;
+}
+
+.health-services-block{
+  margin-top:18px;
+}
+
+.health-services-block h3{
+  margin:0 0 8px;
+  color:#101828;
+  font-size:15px;
+}
+
+.health-public-services{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+}
+
+.health-public-services span{
+  display:inline-flex;
+  padding:6px 9px;
+  border-radius:999px;
+  background:#f2f4f7;
+  color:#344054;
+  border:1px solid #e4e7ec;
+  font-size:11px;
+  font-weight:700;
+}
+
+.health-public-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:18px;
+}
+
+.health-public-actions a{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:38px;
+  padding:8px 12px;
+  border-radius:9px;
+  background:#c5162e;
+  color:#fff;
+  text-decoration:none;
+  font-size:12px;
+  font-weight:800;
+}
+
+.health-public-actions a.outline{
+  background:#fff;
+  color:#344054;
+  border:1px solid #d0d5dd;
+}
+
+@media(max-width:850px){
+  .health-public-card{
+    grid-template-columns:1fr;
+  }
+
+  .health-public-photo{
+    min-height:280px;
+    max-height:360px;
+  }
+}
+
+@media(max-width:560px){
+  .health-public-body{
+    padding:17px;
+  }
+
+  .health-public-body h2{
+    font-size:22px;
+  }
+
+  .health-public-stats{
+    grid-template-columns:1fr 1fr;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -5015,6 +5210,13 @@ body.bto-site-loading{overflow:hidden!important}
         <div class="icon">🏫</div>
         <h3>School Profiles</h3>
         <p>Official profiles of the Child Development Center and Elementary School.</p>
+        <span class="module-link">Open</span>
+      </button>
+
+      <button class="module-card" onclick="showView('health-center')">
+        <div class="icon">🏥</div>
+        <h3>Health Center</h3>
+        <p>Official profile, health services, schedule, and contact information.</p>
         <span class="module-link">Open</span>
       </button>
       <button class="module-card" onclick="showView('livestock-statistics')">
@@ -5416,6 +5618,28 @@ body.bto-site-loading{overflow:hidden!important}
 </div>
 
 <!-- STATISTICS -->
+
+
+<div class="view" id="view-health-center">
+  <div class="page-head">
+    <div class="container page-head-row">
+      <div>
+        <h1>Health Center</h1>
+        <p>Official barangay health facility profile and community health information.</p>
+      </div>
+      <button class="back-btn" onclick="showView('barangay')">← Back to Barangay</button>
+    </div>
+  </div>
+
+  <div class="page-content">
+    <div class="container">
+      <div id="publicHealthCenter">
+        <div class="live-empty">Loading Health Center profile...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 <div class="view" id="view-school-profiles">
   <div class="page-head">
@@ -7989,6 +8213,148 @@ function btoPopulationIndicatorCard_(label,value,suffix=''){
 }
 
 
+
+function btoHealthPublicNum_(value){
+  const n=btoNumberOrNull(value);
+  return n===null ? '—' : n.toLocaleString();
+}
+
+function btoHealthServicesHtml_(text){
+  const raw=String(text||'').trim();
+  if(!raw) return '';
+
+  const parts=raw
+    .split(/\r?\n|,|;/)
+    .map(x=>x.trim())
+    .filter(Boolean);
+
+  if(!parts.length) return '';
+
+  return `
+    <div class="health-public-services">
+      ${parts.map(x=>`<span>${btoEsc(x)}</span>`).join('')}
+    </div>
+  `;
+}
+
+function renderPublicHealthCenter(data){
+  const root=document.getElementById('publicHealthCenter');
+  if(!root) return;
+
+  const x=data?.healthCenter?.profile||null;
+
+  if(!x){
+    root.innerHTML=`
+      <div class="live-empty">
+        Health Center profile has not been encoded yet.
+      </div>
+    `;
+    return;
+  }
+
+  const facilityName=String(x.healthCenterName||'').trim();
+
+  root.innerHTML=`
+    <article class="health-public-card">
+      <div class="health-public-photo">
+        ${x.photoUrl
+          ? `<img
+              src="${btoEsc(publicImageUrl(x.photoUrl))}"
+              alt="${btoEsc(facilityName||'Health Center')}"
+              loading="lazy"
+              onerror="this.style.display='none';this.parentElement.classList.add('empty')"
+            >`
+          : '<div class="health-photo-placeholder">🏥</div>'
+        }
+      </div>
+
+      <div class="health-public-body">
+        <span class="health-public-type">BARANGAY HEALTH CENTER</span>
+
+        <h2>${btoEsc(facilityName||'Health Center')}</h2>
+
+        ${x.description
+          ? `<p class="health-public-description">${btoEsc(x.description)}</p>`
+          : ''
+        }
+
+        <div class="health-public-stats">
+          <div>
+            <small>Barangay Health Workers</small>
+            <strong>${btoHealthPublicNum_(x.bhwCount)}</strong>
+          </div>
+
+          <div>
+            <small>Barangay Nutrition Scholars</small>
+            <strong>${btoHealthPublicNum_(x.bnsCount)}</strong>
+          </div>
+        </div>
+
+        <div class="health-public-details">
+          ${x.healthPersonnel
+            ? `<div>
+                <span>Assigned Midwife / Health Personnel</span>
+                <strong>${btoEsc(x.healthPersonnel)}</strong>
+              </div>`
+            : ''
+          }
+
+          ${x.address
+            ? `<div>
+                <span>Address</span>
+                <strong>${btoEsc(x.address)}</strong>
+              </div>`
+            : ''
+          }
+
+          ${x.contactNumber
+            ? `<div>
+                <span>Contact Number</span>
+                <strong>${btoEsc(x.contactNumber)}</strong>
+              </div>`
+            : ''
+          }
+
+          ${x.operatingHours
+            ? `<div>
+                <span>Operating Days / Hours</span>
+                <strong>${btoEsc(x.operatingHours)}</strong>
+              </div>`
+            : ''
+          }
+        </div>
+
+        ${x.servicesOffered
+          ? `<div class="health-services-block">
+              <h3>Services Offered</h3>
+              ${btoHealthServicesHtml_(x.servicesOffered)}
+            </div>`
+          : ''
+        }
+
+        ${x.pdfUrl
+          ? `<div class="health-public-actions">
+              <a
+                href="${btoEsc(publicViewUrl(x.pdfUrl))}"
+                target="_blank"
+                rel="noopener"
+              >View Health Center Profile PDF</a>
+
+              <a
+                class="outline"
+                href="${btoEsc(publicDownloadUrl(x.pdfUrl))}"
+                target="_blank"
+                rel="noopener"
+              >Download PDF</a>
+            </div>`
+          : ''
+        }
+      </div>
+    </article>
+  `;
+}
+
+
 function btoSchoolPublicNum_(value){
   const n=btoNumberOrNull(value);
   return n===null ? '—' : n.toLocaleString();
@@ -9054,6 +9420,7 @@ function applyPublicData(data){
   renderHomeRecentActivities(data);
   renderAllAnnouncements(data);
   btoScheduleAnnouncementBoundaryRefresh_();
+  renderPublicHealthCenter(data);
   renderPublicSchoolProfiles(data);
 }
 
