@@ -4814,6 +4814,17 @@ function showView(name){
       }
     },0);
   }
+
+  // BTO_UPDATES_VIEW_LIVE_REFRESH
+  if(
+    name==='announcements' &&
+    BTO_PUBLIC_LAST_DATA &&
+    typeof refreshPublicUpdatesFromCloudflare==='function'
+  ){
+    setTimeout(()=>{
+      refreshPublicUpdatesFromCloudflare(false);
+    },0);
+  }
 }
 
 function switchTab(scope,panelId,btn){
@@ -7011,8 +7022,11 @@ function openPublicOrganization(id){
 }
 
 
+let BTO_PUBLIC_LAST_DATA=null;
+
 function applyPublicData(data){
   if(!data || !data.success) return;
+  BTO_PUBLIC_LAST_DATA=data;
   renderOfficialsPersonnel(data);
   renderPublicLegislative(data);
   renderPublicDisclosure(data);
@@ -7030,6 +7044,95 @@ function applyPublicData(data){
   renderHomeAnnouncements(data);
   renderHomeRecentActivities(data);
   renderAllAnnouncements(data);
+}
+
+
+/* ===== LIVE ANNOUNCEMENTS / ACTIVITIES REFRESH =====
+   This does NOT control the Welcome loader.
+   It only refreshes the public Updates content from Cloudflare.
+*/
+let BTO_PUBLIC_UPDATES_REFRESHING=false;
+let BTO_PUBLIC_UPDATES_LAST_CHECK=0;
+const BTO_PUBLIC_UPDATES_MIN_INTERVAL=10000;
+
+async function refreshPublicUpdatesFromCloudflare(force=false){
+  if(BTO_PUBLIC_UPDATES_REFRESHING) return;
+
+  const now=Date.now();
+  if(
+    !force &&
+    now-BTO_PUBLIC_UPDATES_LAST_CHECK < BTO_PUBLIC_UPDATES_MIN_INTERVAL
+  ){
+    return;
+  }
+
+  BTO_PUBLIC_UPDATES_REFRESHING=true;
+  BTO_PUBLIC_UPDATES_LAST_CHECK=now;
+
+  try{
+    const url=BTO_PUBLIC_CF_BASE +
+      '/updates?_ts=' + Date.now();
+
+    const res=await fetch(url,{
+      method:'GET',
+      cache:'no-store'
+    });
+
+    if(!res.ok){
+      throw new Error('HTTP '+res.status);
+    }
+
+    const fresh=await res.json();
+
+    if(!fresh || !fresh.success){
+      throw new Error(
+        fresh?.message || 'Unable to refresh barangay updates.'
+      );
+    }
+
+    const merged=Object.assign(
+      {},
+      BTO_PUBLIC_LAST_DATA || {},
+      {
+        success:true,
+        content:Array.isArray(fresh.content)
+          ? fresh.content
+          : [],
+        committees:Array.isArray(fresh.committees)
+          ? fresh.committees
+          : (
+              Array.isArray(BTO_PUBLIC_LAST_DATA?.committees)
+                ? BTO_PUBLIC_LAST_DATA.committees
+                : []
+            )
+      }
+    );
+
+    BTO_PUBLIC_LAST_DATA=merged;
+
+    // Refresh every visible area that is driven by Announcements/Activities.
+    renderAnnouncementTicker(merged);
+    renderHighlightsLive(merged);
+    renderHighlightsActivityGallery(merged);
+    renderHeroActivityCarousel(merged);
+    renderHomeAnnouncements(merged);
+    renderHomeRecentActivities(merged);
+    renderAllAnnouncements(merged);
+
+    console.log(
+      '[BTO PUBLIC UPDATES] Refreshed from Cloudflare',
+      fresh.edgeCachedAt || ''
+    );
+
+  }catch(err){
+    // Silent public fallback: keep the last good data already on screen.
+    console.warn(
+      '[BTO PUBLIC UPDATES] Refresh failed; keeping current display.',
+      err
+    );
+  }finally{
+    BTO_PUBLIC_UPDATES_REFRESHING=false;
+  }
 }
 
 let BTO_PUBLIC_LOAD_STARTED=false;
@@ -7756,6 +7859,18 @@ async function loadPublicOrganizationsCloudflare(force=false){
     BTO_PUBLIC_ORGANIZATIONS_LOADING=false;
   }
 }
+
+
+
+document.addEventListener('visibilitychange',()=>{
+  if(
+    document.visibilityState==='visible' &&
+    BTO_PUBLIC_LAST_DATA &&
+    typeof refreshPublicUpdatesFromCloudflare==='function'
+  ){
+    refreshPublicUpdatesFromCloudflare(false);
+  }
+});
 
 </script>
 
