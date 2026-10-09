@@ -5044,6 +5044,9 @@ body.bto-site-loading{overflow:hidden!important}
   }
 }
 
+
+/* ===== PUBLIC PERSONNEL / ORGANIZATIONAL PHOTO CHART ===== */
+.public-personnel-chart{margin-top:20px;padding-top:18px;border-top:1px solid #eaecf0}.public-personnel-chart>h3{margin:0 0 14px;text-align:center;color:#101828;font-size:16px}.public-personnel-grid{display:flex;justify-content:center;align-items:stretch;flex-wrap:wrap;gap:12px}.public-person-card{width:170px;border:1px solid #e4e7ec;border-radius:14px;background:#fff;padding:13px 10px;text-align:center;box-shadow:0 5px 14px rgba(16,24,40,.05)}.public-person-photo{width:94px;height:94px;margin:0 auto 9px}.public-person-photo img,.public-person-avatar{width:94px;height:94px;border-radius:50%;object-fit:cover;object-position:center;border:3px solid #fff;box-shadow:0 0 0 2px #f1b4bd}.public-person-avatar{display:grid;place-items:center;background:#fff1f3;color:#991b1b;font-size:31px;font-weight:900}.public-person-card strong{display:block;color:#101828;font-size:13px;line-height:1.25}.public-person-card span{display:block;margin-top:4px;color:#991b1b;font-size:11px;line-height:1.3;font-weight:800}.public-person-card small{display:block;margin-top:5px;color:#667085;font-size:9px}.organization-officer-avatar{overflow:hidden}.organization-officer-avatar img{width:100%;height:100%;object-fit:cover;object-position:center;border-radius:inherit;display:block}@media(max-width:560px){.public-personnel-grid{gap:9px}.public-person-card{width:calc(50% - 5px);min-width:135px}.public-person-photo,.public-person-photo img,.public-person-avatar{width:82px;height:82px}}
 </style>
 </head>
 <body>
@@ -8214,6 +8217,18 @@ function btoPopulationIndicatorCard_(label,value,suffix=''){
 
 
 
+function btoPublicPersonnelChartHtml_(rows,title){
+  rows=Array.isArray(rows)?rows:[];
+  if(!rows.length) return '';
+  return `<section class="public-personnel-chart"><h3>${btoEsc(title||'Personnel')}</h3><div class="public-personnel-grid">${rows.map(person=>{
+    const name=String(person.name||'').trim();
+    const position=String(person.position||'').trim();
+    const photo=String(person.photoUrl||'').trim();
+    const initial=(name.charAt(0)||'P').toUpperCase();
+    return `<article class="public-person-card"><div class="public-person-photo">${photo?`<img src="${btoEsc(publicImageUrl(photo))}" alt="${btoEsc(name||'Personnel')}" loading="lazy" onerror="this.outerHTML='<div class=&quot;public-person-avatar&quot;>${btoEsc(initial)}</div>'">`:`<div class="public-person-avatar">${btoEsc(initial)}</div>`}</div><strong>${btoEsc(name)}</strong><span>${btoEsc(position)}</span>${person.contactNumber?`<small>${btoEsc(person.contactNumber)}</small>`:''}</article>`;
+  }).join('')}</div></section>`;
+}
+
 function btoHealthPublicNum_(value){
   const n=btoNumberOrNull(value);
   return n===null ? '—' : n.toLocaleString();
@@ -8291,14 +8306,6 @@ function renderPublicHealthCenter(data){
         </div>
 
         <div class="health-public-details">
-          ${x.healthPersonnel
-            ? `<div>
-                <span>Assigned Midwife / Health Personnel</span>
-                <strong>${btoEsc(x.healthPersonnel)}</strong>
-              </div>`
-            : ''
-          }
-
           ${x.address
             ? `<div>
                 <span>Address</span>
@@ -8323,6 +8330,8 @@ function renderPublicHealthCenter(data){
             : ''
           }
         </div>
+
+        ${btoPublicPersonnelChartHtml_(data?.healthCenterPersonnel || [],'Health Center Personnel / Organizational Chart')}
 
         ${x.servicesOffered
           ? `<div class="health-services-block">
@@ -8431,12 +8440,7 @@ function renderPublicSchoolProfiles(data){
           </div>
 
           <div class="school-public-details">
-            ${s.schoolHead
-              ? `<div><span>${isCdc?'Child Development Worker / Teacher':'School Head / Principal'}</span><strong>${btoEsc(s.schoolHead)}</strong></div>`
-              : ''
-            }
-
-            ${s.address
+              ${s.address
               ? `<div><span>Address</span><strong>${btoEsc(s.address)}</strong></div>`
               : ''
             }
@@ -8446,6 +8450,8 @@ function renderPublicSchoolProfiles(data){
               : ''
             }
           </div>
+
+          ${btoPublicPersonnelChartHtml_((data?.schoolPersonnel && data.schoolPersonnel[String(s.id||'')]) || [],'Personnel / Organizational Chart')}
 
           ${s.pdfUrl
             ? `<div class="school-public-actions">
@@ -9374,19 +9380,12 @@ function openPublicOrganization(id){
 
         return `
           <section class="organization-detail-card organization-officers-section">
-            <h3>Officers</h3>
+            <h3>Officers / Personnel</h3>
             <div class="organization-officers-grid">
-              ${officers.map(o=>`
-                <div class="organization-officer-card">
-                  <div class="organization-officer-avatar">
-                    ${publicEsc((o.name||'O').trim().charAt(0).toUpperCase())}
-                  </div>
-                  <div>
-                    <strong>${publicEsc(o.name||'')}</strong>
-                    <span>${publicEsc(o.position||'')}</span>
-                    ${o.contactNumber?`<small>${publicEsc(o.contactNumber)}</small>`:''}
-                  </div>
-                </div>`).join('')}
+              ${officers.map(o=>{
+                const initial=(o.name||'O').trim().charAt(0).toUpperCase()||'O';
+                return `<div class="organization-officer-card"><div class="organization-officer-avatar">${o.photoUrl?`<img src="${publicEsc(normalizePublicImageUrl(o.photoUrl))}" alt="${publicEsc(o.name||'Officer / Personnel')}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'">`:publicEsc(initial)}</div><div><strong>${publicEsc(o.name||'')}</strong><span>${publicEsc(o.position||'')}</span>${o.contactNumber?`<small>${publicEsc(o.contactNumber)}</small>`:''}</div></div>`;
+              }).join('')}
             </div>
           </section>`;
       })()}
