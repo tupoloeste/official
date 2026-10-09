@@ -3937,6 +3937,226 @@ body.bto-site-loading{overflow:hidden!important}
   flex:0 0 auto;
 }
 
+
+
+/* ===== PUBLIC POPULATION STATISTICS DONUT DASHBOARD ===== */
+.population-donut-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:16px;
+  margin-top:18px;
+}
+
+.population-donut-card{
+  background:#fff;
+  border:1px solid #e4e7ec;
+  border-radius:18px;
+  padding:18px;
+  min-width:0;
+}
+
+.population-donut-head h3{
+  margin:0 0 5px;
+  color:#111827;
+}
+
+.population-donut-head p{
+  margin:0 0 16px;
+  color:#667085;
+  font-size:13px;
+  line-height:1.45;
+}
+
+.population-donut-layout{
+  display:grid;
+  grid-template-columns:170px minmax(0,1fr);
+  gap:18px;
+  align-items:center;
+}
+
+.population-donut-wrap{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.population-donut{
+  width:164px;
+  height:164px;
+  border-radius:50%;
+  position:relative;
+  flex:0 0 auto;
+}
+
+.population-donut-hole{
+  position:absolute;
+  inset:31px;
+  border-radius:50%;
+  background:#fff;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:8px;
+  box-shadow:0 0 0 1px rgba(17,24,39,.04);
+}
+
+.population-donut-hole small{
+  color:#667085;
+  font-size:10px;
+  line-height:1.15;
+  font-weight:800;
+}
+
+.population-donut-hole strong{
+  color:#991b1b;
+  font-size:21px;
+  line-height:1.1;
+  margin-top:3px;
+}
+
+.population-donut-legend{
+  display:grid;
+  gap:8px;
+  min-width:0;
+}
+
+.population-donut-legend-row{
+  display:grid;
+  grid-template-columns:12px minmax(0,1fr) auto;
+  gap:8px;
+  align-items:center;
+  border-bottom:1px solid #f0f1f3;
+  padding-bottom:7px;
+}
+
+.population-donut-dot{
+  width:11px;
+  height:11px;
+  border-radius:50%;
+}
+
+.population-donut-name{
+  min-width:0;
+  font-size:12px;
+  font-weight:700;
+  line-height:1.25;
+  color:#344054;
+}
+
+.population-donut-value{
+  font-size:12px;
+  font-weight:900;
+  white-space:nowrap;
+  text-align:right;
+  color:#101828;
+}
+
+.population-donut-value small{
+  display:block;
+  color:#667085;
+  font-size:10px;
+  margin-top:1px;
+}
+
+.population-indicators-section{
+  margin-top:18px;
+  background:#fff;
+  border:1px solid #e4e7ec;
+  border-radius:18px;
+  padding:18px;
+}
+
+.population-section-title h3{
+  margin:0 0 4px;
+}
+
+.population-section-title p{
+  margin:0;
+  color:#667085;
+  font-size:13px;
+}
+
+.population-indicators-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+  margin-top:14px;
+}
+
+.population-indicator{
+  background:#fff7f8;
+  border:1px solid #f2d8dc;
+  border-radius:13px;
+  padding:12px;
+}
+
+.population-indicator small{
+  display:block;
+  color:#667085;
+  font-size:11px;
+  font-weight:700;
+  line-height:1.3;
+}
+
+.population-indicator strong{
+  display:block;
+  margin-top:5px;
+  color:#991b1b;
+  font-size:17px;
+  line-height:1.25;
+}
+
+@media(max-width:1100px){
+  .population-donut-grid{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .population-donut-card:last-child{
+    grid-column:1 / -1;
+  }
+}
+
+@media(max-width:820px){
+  .population-donut-grid{
+    grid-template-columns:1fr;
+  }
+
+  .population-donut-card:last-child{
+    grid-column:auto;
+  }
+
+  .population-indicators-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+@media(max-width:560px){
+  .population-donut-layout{
+    grid-template-columns:1fr;
+  }
+
+  .population-donut-legend{
+    width:100%;
+  }
+
+  .population-indicators-grid{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .population-donut-card,
+  .population-indicators-section{
+    padding:14px;
+  }
+}
+
+@media(max-width:390px){
+  .population-indicators-grid{
+    grid-template-columns:1fr;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -4520,19 +4740,47 @@ body.bto-site-loading{overflow:hidden!important}
         <div class="live-empty">Loading barangay statistics...</div>
       </div>
 
-      <div class="public-stats-chart-grid">
-        <section class="public-chart-card" id="sexChartCard" style="display:none">
-          <h3>Population by Sex</h3>
-          <p>Male and female population based on available validated data.</p>
+      <div class="population-donut-grid">
+        <section class="population-donut-card" id="sexChartCard" style="display:none">
+          <div class="population-donut-head">
+            <h3>Population by Sex</h3>
+            <p>Male and female population distribution.</p>
+          </div>
           <div id="sexChartBody"></div>
         </section>
 
-        <section class="public-chart-card" id="ageChartCard" style="display:none">
-          <h3>Population by Age Group / Demographic</h3>
-          <p>Each age group is shown as a distinct color in the demographic distribution.</p>
+        <section class="population-donut-card" id="dependencyChartCard" style="display:none">
+          <div class="population-donut-head">
+            <h3>Age Dependency</h3>
+            <p>Young dependents, working-age population, and older dependents.</p>
+          </div>
+          <div id="dependencyChartBody"></div>
+        </section>
+
+        <section class="population-donut-card" id="ageChartCard" style="display:none">
+          <div class="population-donut-head">
+            <h3>Age Group Distribution</h3>
+            <p>Population grouped into broader age ranges for easier viewing.</p>
+          </div>
           <div id="ageChartBody"></div>
         </section>
       </div>
+
+      <section id="populationIndicatorsCard" class="population-indicators-section" style="display:none">
+        <div class="population-section-title">
+          <h3>Population Indicators</h3>
+          <p>Automatically calculated from the latest validated Population Profile.</p>
+        </div>
+        <div id="populationIndicatorsGrid" class="population-indicators-grid"></div>
+      </section>
+
+      <section id="populationVitalCard" class="population-indicators-section" style="display:none">
+        <div class="population-section-title">
+          <h3>Vital, Migration & Youth Statistics</h3>
+          <p>Latest encoded official figures and calculated totals.</p>
+        </div>
+        <div id="populationVitalGrid" class="population-indicators-grid"></div>
+      </section>
 
       <div id="publicStatsEmpty" class="live-empty" style="display:none">
         Barangay statistics have not been encoded yet.
@@ -6707,22 +6955,251 @@ function btoFormatDateMDY(value){
   return s;
 }
 
+function btoStatsPct_(value,total){
+  const v=btoNumberOrNull(value);
+  const t=btoNumberOrNull(total);
+
+  if(v===null || t===null || t<=0) return null;
+  return (v/t)*100;
+}
+
+function btoStatsFormat_(value,digits=2){
+  const n=btoNumberOrNull(value);
+  if(n===null) return '—';
+
+  return n.toLocaleString(undefined,{
+    minimumFractionDigits:0,
+    maximumFractionDigits:digits
+  });
+}
+
+function btoStatsDonutHtml_(segments,totalLabel,totalValue){
+  const clean=(segments||[])
+    .map(x=>({
+      ...x,
+      value:btoNumberOrNull(x.value)
+    }))
+    .filter(x=>x.value!==null && x.value>=0);
+
+  const total=clean.reduce((sum,x)=>sum+x.value,0);
+
+  if(!clean.length || total<=0){
+    return '<div class="live-empty">No validated data available for this chart.</div>';
+  }
+
+  let cursor=0;
+
+  const mapped=clean.map((x,i)=>{
+    const pct=(x.value/total)*100;
+    const start=cursor;
+    cursor+=pct;
+
+    return {
+      ...x,
+      pct,
+      start,
+      end:cursor
+    };
+  });
+
+  const gradient=mapped.map(x=>
+    `${x.color} ${x.start.toFixed(4)}% ${x.end.toFixed(4)}%`
+  ).join(', ');
+
+  const centerValue=(
+    btoNumberOrNull(totalValue)!==null
+      ? Number(totalValue)
+      : total
+  );
+
+  return `
+    <div class="population-donut-layout">
+      <div class="population-donut-wrap">
+        <div
+          class="population-donut"
+          style="background:conic-gradient(${gradient})"
+          aria-label="${btoEsc(totalLabel||'Population distribution')}"
+        >
+          <div class="population-donut-hole">
+            <small>${btoEsc(totalLabel||'Total')}</small>
+            <strong>${centerValue.toLocaleString()}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="population-donut-legend">
+        ${mapped.map(x=>`
+          <div class="population-donut-legend-row">
+            <span class="population-donut-dot" style="background:${x.color}"></span>
+            <span class="population-donut-name">${btoEsc(x.label||'')}</span>
+            <span class="population-donut-value">
+              ${x.value.toLocaleString()}
+              <small>${x.pct.toFixed(1)}%</small>
+            </span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function btoPopulationAgeMap_(ageSex){
+  const map={};
+
+  (Array.isArray(ageSex)?ageSex:[]).forEach(row=>{
+    const key=String(row?.key||'').trim().toUpperCase();
+    if(!key) return;
+
+    const male=btoNumberOrNull(row?.male);
+    const female=btoNumberOrNull(row?.female);
+
+    map[key]={
+      male,
+      female,
+      total:(
+        male===null &&
+        female===null
+      ) ? null : (male||0)+(female||0)
+    };
+  });
+
+  return map;
+}
+
+function btoPopulationSumAgeKeys_(map,keys){
+  const values=(keys||[])
+    .map(k=>btoNumberOrNull(map?.[k]?.total))
+    .filter(v=>v!==null);
+
+  if(!values.length) return null;
+
+  return values.reduce((sum,v)=>sum+v,0);
+}
+
+function btoPopulationDependencyFromAge_(ageMap){
+  const youngKeys=[
+    'BELOW_1','AGE_1_4','AGE_5_9','AGE_10_14'
+  ];
+
+  const workingKeys=[
+    'AGE_15_19','AGE_20_24','AGE_25_29','AGE_30_34',
+    'AGE_35_39','AGE_40_44','AGE_45_49','AGE_50_54',
+    'AGE_55_59','AGE_60_64'
+  ];
+
+  const oldKeys=[
+    'AGE_65_69','AGE_70_74','AGE_75_79','AGE_80_PLUS'
+  ];
+
+  return {
+    young:btoPopulationSumAgeKeys_(ageMap,youngKeys),
+    working:btoPopulationSumAgeKeys_(ageMap,workingKeys),
+    old:btoPopulationSumAgeKeys_(ageMap,oldKeys)
+  };
+}
+
+function btoPopulationBroadAgeGroups_(ageMap){
+  const defs=[
+    {
+      label:'0–14',
+      keys:['BELOW_1','AGE_1_4','AGE_5_9','AGE_10_14'],
+      color:'#ef233c'
+    },
+    {
+      label:'15–29',
+      keys:['AGE_15_19','AGE_20_24','AGE_25_29'],
+      color:'#ff8c42'
+    },
+    {
+      label:'30–44',
+      keys:['AGE_30_34','AGE_35_39','AGE_40_44'],
+      color:'#f6c945'
+    },
+    {
+      label:'45–59',
+      keys:['AGE_45_49','AGE_50_54','AGE_55_59'],
+      color:'#2a9d8f'
+    },
+    {
+      label:'60+',
+      keys:['AGE_60_64','AGE_65_69','AGE_70_74','AGE_75_79','AGE_80_PLUS'],
+      color:'#3a6ea5'
+    }
+  ];
+
+  return defs
+    .map(def=>({
+      label:def.label,
+      value:btoPopulationSumAgeKeys_(ageMap,def.keys),
+      color:def.color
+    }))
+    .filter(x=>x.value!==null);
+}
+
+function btoPopulationIndicatorCard_(label,value,suffix=''){
+  if(
+    value===null ||
+    value===undefined ||
+    value==='' ||
+    (typeof value==='number' && !Number.isFinite(value))
+  ){
+    return '';
+  }
+
+  return `
+    <div class="population-indicator">
+      <small>${btoEsc(label)}</small>
+      <strong>${btoEsc(String(value))}${btoEsc(suffix)}</strong>
+    </div>
+  `;
+}
+
 function renderEnhancedBarangayStats(data){
   const s=data?.enhancedBarangayStats||{};
   const basic=Array.isArray(s.basic)?s.basic:[];
   const demographics=Array.isArray(s.demographics)?s.demographics:[];
 
+  const populationProfile=(
+    data?.populationProfile &&
+    data.populationProfile.success!==false
+  ) ? data.populationProfile : null;
+
+  const profile=populationProfile?.profile||null;
+  const calculations=populationProfile?.calculations||{};
+  const ageSex=Array.isArray(populationProfile?.ageSex)
+    ? populationProfile.ageSex
+    : [];
+
   const root=document.getElementById('publicBasicStats');
   const empty=document.getElementById('publicStatsEmpty');
   const asOf=document.getElementById('publicStatsAsOf');
 
+  const profileYear=btoNumberOrNull(profile?.year);
+  const profileDate=String(
+    profile?.asOfDate ||
+    s.asOfDate ||
+    ''
+  ).trim();
+
   if(asOf){
-    asOf.textContent=s.asOfDate
-      ? `As of ${btoFormatDateMDY(s.asOfDate)}`
+    const parts=[];
+
+    if(profileYear!==null){
+      parts.push(`Population Profile ${profileYear}`);
+    }
+
+    if(profileDate){
+      parts.push(`As of ${btoFormatDateMDY(profileDate)}`);
+    }
+
+    asOf.textContent=parts.length
+      ? parts.join(' • ')
       : 'Validated figures will appear once encoded.';
   }
 
-  const available=basic.filter(x=>btoNumberOrNull(x.value)!==null);
+  const available=basic.filter(x=>
+    btoNumberOrNull(x.value)!==null
+  );
 
   if(root){
     if(available.length){
@@ -6737,116 +7214,317 @@ function renderEnhancedBarangayStats(data){
     }
   }
 
-  if(empty) empty.style.display=available.length||demographics.length?'none':'';
+  const hasProfile=Boolean(profile);
+  const hasAny=(
+    available.length ||
+    demographics.length ||
+    hasProfile
+  );
 
-  // Male / Female chart: show only when both have actual values.
+  if(empty){
+    empty.style.display=hasAny?'none':'';
+  }
+
+  /* ========================================================
+     1. POPULATION BY SEX DONUT
+     ======================================================== */
+
   const male=basic.find(x=>x.key==='MALE');
   const female=basic.find(x=>x.key==='FEMALE');
-  const maleN=btoNumberOrNull(male?.value);
-  const femaleN=btoNumberOrNull(female?.value);
+
+  const maleN=(
+    btoNumberOrNull(profile?.male)!==null
+      ? btoNumberOrNull(profile?.male)
+      : btoNumberOrNull(male?.value)
+  );
+
+  const femaleN=(
+    btoNumberOrNull(profile?.female)!==null
+      ? btoNumberOrNull(profile?.female)
+      : btoNumberOrNull(female?.value)
+  );
+
   const sexCard=document.getElementById('sexChartCard');
   const sexBody=document.getElementById('sexChartBody');
 
-  if(sexCard && sexBody && maleN!==null && femaleN!==null && (maleN+femaleN)>0){
-    const total=maleN+femaleN;
-    const malePct=(maleN/total)*100;
-    const femalePct=100-malePct;
+  if(
+    sexCard &&
+    sexBody &&
+    maleN!==null &&
+    femaleN!==null &&
+    (maleN+femaleN)>0
+  ){
+    sexBody.innerHTML=btoStatsDonutHtml_(
+      [
+        {label:'Male',value:maleN,color:'#ef233c'},
+        {label:'Female',value:femaleN,color:'#252525'}
+      ],
+      'Total Population',
+      maleN+femaleN
+    );
 
-    sexBody.innerHTML=`
-      <div class="sex-chart">
-        <div class="sex-donut" style="background:conic-gradient(#f8324b 0 ${malePct}%, #242424 ${malePct}% 100%)"></div>
-        <div class="sex-chart-legend">
-          <div class="sex-legend-row"><span>Male</span><strong>${maleN.toLocaleString()} (${malePct.toFixed(1)}%)</strong></div>
-          <div class="sex-legend-row"><span>Female</span><strong>${femaleN.toLocaleString()} (${femalePct.toFixed(1)}%)</strong></div>
-          <div class="sex-legend-row"><span>Total</span><strong>${total.toLocaleString()}</strong></div>
-        </div>
-      </div>`;
     sexCard.style.display='';
   }else if(sexCard){
     sexCard.style.display='none';
   }
 
-  // Dynamic age / demographic color-wheel donut chart.
+  /* ========================================================
+     2. AGE DEPENDENCY DONUT
+     ======================================================== */
+
+  const dependencyCard=document.getElementById('dependencyChartCard');
+  const dependencyBody=document.getElementById('dependencyChartBody');
+
+  const ageMap=btoPopulationAgeMap_(ageSex);
+  const fallbackDependency=btoPopulationDependencyFromAge_(ageMap);
+
+  const depYoung=(
+    btoNumberOrNull(calculations?.dependency?.young?.total)!==null
+      ? btoNumberOrNull(calculations.dependency.young.total)
+      : fallbackDependency.young
+  );
+
+  const depWorking=(
+    btoNumberOrNull(calculations?.dependency?.working?.total)!==null
+      ? btoNumberOrNull(calculations.dependency.working.total)
+      : fallbackDependency.working
+  );
+
+  const depOld=(
+    btoNumberOrNull(calculations?.dependency?.old?.total)!==null
+      ? btoNumberOrNull(calculations.dependency.old.total)
+      : fallbackDependency.old
+  );
+
+  if(
+    dependencyCard &&
+    dependencyBody &&
+    [depYoung,depWorking,depOld].some(v=>v!==null) &&
+    ((depYoung||0)+(depWorking||0)+(depOld||0))>0
+  ){
+    dependencyBody.innerHTML=btoStatsDonutHtml_(
+      [
+        {
+          label:'Young Dependents (0–14)',
+          value:depYoung||0,
+          color:'#ef233c'
+        },
+        {
+          label:'Working Age (15–64)',
+          value:depWorking||0,
+          color:'#2a9d8f'
+        },
+        {
+          label:'Old Dependents (65+)',
+          value:depOld||0,
+          color:'#3a6ea5'
+        }
+      ],
+      'Population',
+      (depYoung||0)+(depWorking||0)+(depOld||0)
+    );
+
+    dependencyCard.style.display='';
+  }else if(dependencyCard){
+    dependencyCard.style.display='none';
+  }
+
+  /* ========================================================
+     3. BROAD AGE-GROUP DONUT
+     ======================================================== */
+
   const ageCard=document.getElementById('ageChartCard');
   const ageBody=document.getElementById('ageChartBody');
 
-  const looksLikeDateLabel=(label)=>{
-    const s=String(label||'').trim();
-    return (
-      /^\d{4}-\d{1,2}-\d{1,2}/.test(s) ||
-      /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s/i.test(s) ||
-      /\bGMT[+-]?\d*/i.test(s) ||
-      /\b(Standard|Daylight)\s+Time\b/i.test(s)
-    );
-  };
+  let broadAge=btoPopulationBroadAgeGroups_(ageMap);
 
-  const demoRows=demographics
-    .map(x=>({...x,num:btoNumberOrNull(x.value)}))
-    .filter(x=>x.num!==null && x.num>=0 && !looksLikeDateLabel(x.label));
+  // Fallback: when the annual profile has not yet been installed/saved,
+  // keep using the existing public demographic rows.
+  if(!broadAge.length){
+    const looksLikeDateLabel=(label)=>{
+      const text=String(label||'').trim();
 
-  if(ageCard && ageBody && demoRows.length){
-    const total=demoRows.reduce((sum,x)=>sum+x.num,0);
+      return (
+        /^\d{4}-\d{1,2}-\d{1,2}/.test(text) ||
+        /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s/i.test(text) ||
+        /\bGMT[+-]?\d*/i.test(text) ||
+        /\b(Standard|Daylight)\s+Time\b/i.test(text)
+      );
+    };
 
-    // Color-wheel palette; repeats only if there are more categories.
     const palette=[
-      '#ff3b30',
-      '#ff9500',
-      '#ffcc00',
-      '#34c759',
-      '#00c7be',
-      '#007aff',
-      '#5856d6',
-      '#af52de',
-      '#ff2d55',
-      '#a2845e'
+      '#ef233c',
+      '#ff8c42',
+      '#f6c945',
+      '#2a9d8f',
+      '#3a6ea5',
+      '#6d597a',
+      '#9b5de5',
+      '#00b4d8',
+      '#6a994e',
+      '#bc6c25'
     ];
 
-    let cursor=0;
-    const segments=demoRows.map((x,i)=>{
-      const pct=total>0 ? (x.num/total)*100 : 0;
-      const start=cursor;
-      cursor+=pct;
-      return {
-        ...x,
-        pct,
-        start,
-        end:cursor,
-        color:palette[i % palette.length]
-      };
-    });
+    broadAge=demographics
+      .map((x,i)=>({
+        label:String(x.label||'').trim(),
+        value:btoNumberOrNull(x.value),
+        color:palette[i%palette.length]
+      }))
+      .filter(x=>
+        x.label &&
+        x.value!==null &&
+        x.value>=0 &&
+        !looksLikeDateLabel(x.label)
+      );
+  }
 
-    const gradient=segments.map(s=>
-      `${s.color} ${s.start.toFixed(4)}% ${s.end.toFixed(4)}%`
-    ).join(', ');
+  if(
+    ageCard &&
+    ageBody &&
+    broadAge.length &&
+    broadAge.reduce((sum,x)=>sum+(x.value||0),0)>0
+  ){
+    ageBody.innerHTML=btoStatsDonutHtml_(
+      broadAge,
+      'Age Population',
+      broadAge.reduce((sum,x)=>sum+(x.value||0),0)
+    );
 
-    ageBody.innerHTML=`
-      <div class="demographic-chart">
-        <div class="demographic-donut"
-             style="background:conic-gradient(${gradient})"></div>
-
-        <div class="demographic-legend">
-          ${segments.map(s=>`
-            <div class="demographic-legend-row">
-              <span class="demographic-dot" style="background:${s.color}"></span>
-              <span class="demographic-label">${btoEsc(s.label)}</span>
-              <span class="demographic-value">
-                ${s.num.toLocaleString()}${total>0 ? ` (${s.pct.toFixed(1)}%)` : ''}
-              </span>
-            </div>
-          `).join('')}
-
-          ${total>0 ? `
-            <div class="demographic-legend-row">
-              <span></span>
-              <span class="demographic-label">Total represented</span>
-              <span class="demographic-value">${total.toLocaleString()}</span>
-            </div>
-          ` : ''}
-        </div>
-      </div>`;
     ageCard.style.display='';
   }else if(ageCard){
     ageCard.style.display='none';
+  }
+
+  /* ========================================================
+     POPULATION INDICATORS
+     ======================================================== */
+
+  const indicatorsCard=document.getElementById('populationIndicatorsCard');
+  const indicatorsGrid=document.getElementById('populationIndicatorsGrid');
+
+  if(indicatorsCard && indicatorsGrid && hasProfile){
+    const indicatorCards=[
+      btoPopulationIndicatorCard_(
+        'Sex Ratio',
+        btoNumberOrNull(calculations.sexRatio)!==null
+          ? `${btoStatsFormat_(calculations.sexRatio,1)} males / 100 females`
+          : null
+      ),
+      btoPopulationIndicatorCard_(
+        'Population Growth Rate',
+        btoNumberOrNull(calculations.populationGrowthRate)!==null
+          ? btoStatsFormat_(calculations.populationGrowthRate,3)
+          : null,
+        btoNumberOrNull(calculations.populationGrowthRate)!==null ? '%' : ''
+      ),
+      btoPopulationIndicatorCard_(
+        'Average Household Size',
+        btoNumberOrNull(calculations.averageHouseholdSize)!==null
+          ? btoStatsFormat_(calculations.averageHouseholdSize,2)
+          : null
+      ),
+      btoPopulationIndicatorCard_(
+        'Average Family Size',
+        btoNumberOrNull(calculations.averageFamilySize)!==null
+          ? btoStatsFormat_(calculations.averageFamilySize,2)
+          : null
+      ),
+      btoPopulationIndicatorCard_(
+        'Population Density',
+        btoNumberOrNull(calculations.populationDensity)!==null
+          ? `${btoStatsFormat_(calculations.populationDensity,2)} / km²`
+          : null
+      ),
+      btoPopulationIndicatorCard_(
+        'Child Dependency Ratio',
+        btoNumberOrNull(calculations?.dependency?.childDependencyRatio)!==null
+          ? `${btoStatsFormat_(calculations.dependency.childDependencyRatio,1)} : 100`
+          : null
+      ),
+      btoPopulationIndicatorCard_(
+        'Old Dependency Ratio',
+        btoNumberOrNull(calculations?.dependency?.oldDependencyRatio)!==null
+          ? `${btoStatsFormat_(calculations.dependency.oldDependencyRatio,1)} : 100`
+          : null
+      ),
+      btoPopulationIndicatorCard_(
+        'Overall Age Dependency',
+        btoNumberOrNull(calculations?.dependency?.ageDependencyRatio)!==null
+          ? `${btoStatsFormat_(calculations.dependency.ageDependencyRatio,1)} : 100`
+          : null
+      )
+    ].filter(Boolean);
+
+    indicatorsGrid.innerHTML=indicatorCards.join('');
+    indicatorsCard.style.display=indicatorCards.length?'':'none';
+  }else if(indicatorsCard){
+    indicatorsCard.style.display='none';
+  }
+
+  /* ========================================================
+     VITAL / MIGRATION / YOUTH SUMMARY
+     ======================================================== */
+
+  const vitalCard=document.getElementById('populationVitalCard');
+  const vitalGrid=document.getElementById('populationVitalGrid');
+
+  if(vitalCard && vitalGrid && hasProfile){
+    const vitalCards=[
+      btoPopulationIndicatorCard_(
+        'Total Live Births',
+        btoNumberOrNull(calculations.totalBirths)!==null
+          ? btoStatsFormat_(calculations.totalBirths,0)
+          : null
+      ),
+      btoPopulationIndicatorCard_(
+        'Total Deaths',
+        btoNumberOrNull(calculations.totalDeaths)!==null
+          ? btoStatsFormat_(calculations.totalDeaths,0)
+          : null
+      ),
+      btoPopulationIndicatorCard_(
+        'Crude Birth Rate',
+        btoNumberOrNull(calculations.crudeBirthRate)!==null
+          ? `${btoStatsFormat_(calculations.crudeBirthRate,2)} / 1,000`
+          : null
+      ),
+      btoPopulationIndicatorCard_(
+        'Crude Death Rate',
+        btoNumberOrNull(calculations.crudeDeathRate)!==null
+          ? `${btoStatsFormat_(calculations.crudeDeathRate,2)} / 1,000`
+          : null
+      ),
+      btoPopulationIndicatorCard_(
+        'Total In-Migrants',
+        btoNumberOrNull(calculations.totalInMigrants)!==null
+          ? btoStatsFormat_(calculations.totalInMigrants,0)
+          : null
+      ),
+      btoPopulationIndicatorCard_(
+        'Total Out-Migrants',
+        btoNumberOrNull(calculations.totalOutMigrants)!==null
+          ? btoStatsFormat_(calculations.totalOutMigrants,0)
+          : null
+      ),
+      btoPopulationIndicatorCard_(
+        'Net Migration Rate',
+        btoNumberOrNull(calculations.netMigrationRate)!==null
+          ? `${btoStatsFormat_(calculations.netMigrationRate,2)} / 1,000`
+          : null
+      ),
+      btoPopulationIndicatorCard_(
+        'Youth (10–30)',
+        btoNumberOrNull(calculations.totalYouth)!==null
+          ? btoStatsFormat_(calculations.totalYouth,0)
+          : null
+      )
+    ].filter(Boolean);
+
+    vitalGrid.innerHTML=vitalCards.join('');
+    vitalCard.style.display=vitalCards.length?'':'none';
+  }else if(vitalCard){
+    vitalCard.style.display='none';
   }
 }
 
