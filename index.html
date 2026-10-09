@@ -5907,6 +5907,49 @@ function renderOfficialCard(o,primary=false){
   </div>`;
 }
 
+
+function normalizedOfficialName(o){
+  return String(
+    o?.['Full Name'] ||
+    o?.fullName ||
+    o?.name ||
+    ''
+  )
+    .trim()
+    .toUpperCase()
+    .replace(/[.,]/g,'')
+    .replace(/\s+/g,' ');
+}
+
+function deDuplicateOfficials(rows){
+  const byName=new Map();
+
+  (Array.isArray(rows) ? rows : []).forEach(o=>{
+    const name=normalizedOfficialName(o);
+    if(!name) return;
+
+    const current=byName.get(name);
+
+    if(!current){
+      byName.set(name,o);
+      return;
+    }
+
+    // Prefer the richer live record if the same person is returned twice.
+    const score=x=>
+      (x?.['Photo URL'] || x?.photoUrl ? 4 : 0) +
+      (Array.isArray(x?.committees) && x.committees.length ? 3 : 0) +
+      (x?.['Official ID'] || x?.officialId ? 2 : 0) +
+      (x?.['Contact Number'] || x?.contactNumber ? 1 : 0);
+
+    if(score(o)>score(current)){
+      byName.set(name,o);
+    }
+  });
+
+  return Array.from(byName.values());
+}
+
 function renderOfficialsPersonnel(data){
   console.log('[BTO PUBLIC PERSONNEL — LIVE ONLY]',{
     officials:(data.officials||[]).length,
