@@ -1665,20 +1665,6 @@ button.danger,
   }
 }
 
-
-.dog-connection-status{margin-top:13px;padding:12px 13px;border-radius:10px;display:grid;gap:3px}
-.dog-connection-status.ok{background:#ecfdf3;border:1px solid #b7e4c7;color:#166534}
-.dog-connection-status.err{background:#fff0f3;border:1px solid #fac8d0;color:#9f1239}
-.dog-connection-status span{font-size:12px}
-.dog-sitio-admin-list{display:grid;gap:8px}
-.dog-sitio-admin-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--border);border-radius:11px;background:#fff}
-.dog-sitio-admin-row strong{display:block}
-.dog-sitio-admin-row small{display:block;color:var(--muted);margin-top:2px}
-.dog-unmatched-warning{margin-top:14px;padding:12px;border:1px solid #f1d397;background:#fff9e8;border-radius:10px;display:flex;gap:7px;flex-wrap:wrap;align-items:center}
-.dog-unmatched-warning strong,.dog-unmatched-warning small{width:100%}
-.dog-unmatched-warning span{padding:5px 8px;background:#fff;border:1px solid #ecd9aa;border-radius:999px;font-size:11px;font-weight:800}
-@media(max-width:700px){.dog-sitio-admin-row{grid-template-columns:1fr}}
-
 </style>
 </head>
 <body>
@@ -2018,10 +2004,6 @@ async function api(action,data={}){
     action==='uploadBase64' ? 120000 :
     action==='login' ? 60000 :
     (
-      action==='getDogStatsAdmin' ||
-      action==='saveDogStatsEndpoint' ||
-      action==='saveDogStatsSitio' ||
-      action==='deleteDogStatsSitio' ||
       action==='saveLivestockStat' ||
       action==='saveLivestockBatch' ||
       action==='deleteLivestockStat' ||
@@ -2271,7 +2253,6 @@ function renderApp(){
   if(hasModule('ABOUT_BARANGAY')) items.push(['About Barangay','aboutBarangay']);
   if(hasModule('BARANGAY_STATISTICS')) items.push(['Barangay Statistics','stats']);
   if(hasModule('LIVESTOCK')) items.push(['Livestock Statistics','livestock']);
-  if(hasModule('DOG_STATS')) items.push(['Dog / Rabies Statistics','dogStats']);
   if(hasModule('ORGANIZATIONS')) items.push(['Barangay Organizations','organizations']);
 
   if(hasModule('CONTENT') || (me.assignedModules||'').includes('COM-'))
@@ -2365,7 +2346,6 @@ async function btoOpenModuleRaw(name,title='Module'){
   if(name==='aboutBarangay') return aboutBarangayForm();
   if(name==='stats') return loadStats();
   if(name==='livestock') return loadLivestock();
-  if(name==='dogStats') return dogStatsForm();
   if(name==='organizations') return organizationsForm();
   if(name==='content') return contentForm();
   if(name==='programsProjects') return programsProjectsForm();
@@ -2956,152 +2936,6 @@ async function saveAllLivestock(btn){
   });
 }
 
-
-window.BTO_DOG_STATS_ADMIN=null;
-window.BTO_EDIT_DOG_SITIO=null;
-
-async function dogStatsForm(){
-  const r=await api('getDogStatsAdmin');
-  if(!r.success){showModuleError(r.message);return}
-  window.BTO_DOG_STATS_ADMIN=r;
-  window.BTO_EDIT_DOG_SITIO=null;
-  renderDogStatsAdmin();
-}
-
-function renderDogStatsAdmin(){
-  const d=window.BTO_DOG_STATS_ADMIN||{};
-  const sitios=d.sitios||[];
-  const e=window.BTO_EDIT_DOG_SITIO||{};
-  const c=d.connection||{};
-
-  document.getElementById('moduleArea').innerHTML=`
-    <div class="card">
-      <h2>BRCC-DMS Connection</h2>
-      <div class="help">
-        Only aggregate public statistics are read from BRCC-DMS. Owner names,
-        addresses, contact numbers and individual dog records are not published.
-      </div>
-
-      <label>BRCC Public Statistics Web App URL</label>
-      <input id="dogStatsEndpoint" value="${esc(d.endpointUrl||'')}"
-        placeholder="https://script.google.com/macros/s/.../exec">
-
-      <div class="admin-actions">
-        <button onclick="saveDogStatsEndpoint(this)">Save Connection</button>
-        <button class="secondary" onclick="dogStatsForm()">Test / Refresh Connection</button>
-      </div>
-
-      <div class="dog-connection-status ${c.success?'ok':'err'}">
-        <strong>${c.success?'Connected to BRCC-DMS':'Connection not ready'}</strong>
-        <span>${esc(c.success
-          ? `Registered Dogs: ${c.totalRegisteredDogs||0} • Vaccination Rate: ${Number(c.vaccinationRate||0).toFixed(1)}%`
-          : (c.message||'Configure the BRCC public statistics endpoint.'))}</span>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>${e.id?'Edit':'Add'} Official Sitio</h2>
-      <div class="help">
-        Only Sitios you add here will appear in the public Dogs per Sitio color wheel.
-      </div>
-
-      <input id="dogSitioId" type="hidden" value="${esc(e.id||'')}">
-
-      <div class="grid">
-        <div>
-          <label>Sitio Name</label>
-          <input id="dogSitioName" value="${esc(e.name||'')}" placeholder="Official Sitio name">
-        </div>
-        <div>
-          <label>Display Order</label>
-          <input id="dogSitioOrder" type="number" min="0" value="${esc(e.displayOrder??sitios.length+1)}">
-        </div>
-      </div>
-
-      <label>Status</label>
-      <select id="dogSitioStatus">
-        <option value="ACTIVE" ${String(e.status||'ACTIVE').toUpperCase()==='ACTIVE'?'selected':''}>ACTIVE</option>
-        <option value="INACTIVE" ${String(e.status||'').toUpperCase()==='INACTIVE'?'selected':''}>INACTIVE</option>
-      </select>
-
-      <div class="admin-actions">
-        <button onclick="saveDogStatsSitio(this)">${e.id?'Update Sitio':'Add Sitio'}</button>
-        ${e.id?`<button class="secondary" onclick="window.BTO_EDIT_DOG_SITIO=null;renderDogStatsAdmin()">Cancel Edit</button>`:''}
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>Official Sitio List</h2>
-      <div class="dog-sitio-admin-list">
-        ${sitios.length?sitios.map((s,i)=>`
-          <div class="dog-sitio-admin-row">
-            <div>
-              <strong>${esc(s.name||'')}</strong>
-              <small>Order ${esc(String(s.displayOrder||0))} • ${esc(s.status||'ACTIVE')}</small>
-            </div>
-            <div class="admin-actions">
-              <button class="secondary" onclick="editDogStatsSitio(${i})">Edit</button>
-              <button class="danger" onclick="deleteDogStatsSitio('${esc(s.id||'')}','${esc(s.name||'Sitio')}')">Delete</button>
-            </div>
-          </div>`).join(''):'<div class="help">No official Sitio names encoded yet.</div>'}
-      </div>
-
-      ${c.success&&(c.unmatchedSitios||[]).length?`
-        <div class="dog-unmatched-warning">
-          <strong>BRCC Sitio names not yet mapped:</strong>
-          ${(c.unmatchedSitios||[]).map(x=>`
-            <span>${esc(x.sitio)} (${esc(String(x.count||0))})</span>`).join('')}
-          <small>Add the correct official Sitio name above if it should appear publicly.</small>
-        </div>`:''}
-    </div>`;
-}
-
-async function saveDogStatsEndpoint(btn){
-  return withButtonSpinner(btn,'Saving...',async()=>{
-    const r=await api('saveDogStatsEndpoint',{
-      url:document.getElementById('dogStatsEndpoint').value.trim()
-    });
-    if(!r.success) throw new Error(r.message||'Unable to save BRCC connection.');
-    await dogStatsForm();
-    return r;
-  },'BRCC connection saved.');
-}
-
-function editDogStatsSitio(index){
-  window.BTO_EDIT_DOG_SITIO=(window.BTO_DOG_STATS_ADMIN?.sitios||[])[index]||null;
-  renderDogStatsAdmin();
-  window.scrollTo({top:0,behavior:'smooth'});
-}
-
-async function saveDogStatsSitio(btn){
-  return withButtonSpinner(btn,'Saving...',async()=>{
-    const payload={
-      id:document.getElementById('dogSitioId').value,
-      name:document.getElementById('dogSitioName').value.trim(),
-      displayOrder:document.getElementById('dogSitioOrder').value,
-      status:document.getElementById('dogSitioStatus').value
-    };
-
-    if(!payload.name) throw new Error('Sitio Name is required.');
-
-    const r=await api('saveDogStatsSitio',payload);
-    if(!r.success) throw new Error(r.message||'Unable to save Sitio.');
-    await dogStatsForm();
-    return r;
-  },'Sitio saved.');
-}
-
-async function deleteDogStatsSitio(id,name){
-  if(!confirm(`Delete ${name||'this Sitio'} from the official Dog Statistics Sitio list?`)) return;
-  const r=await api('deleteDogStatsSitio',{id});
-  if(!r.success){
-    showGlobalActionStatus(r.message||'Delete failed.','err');
-    return;
-  }
-  showGlobalActionStatus(r.message||'Sitio deleted.','ok');
-  await dogStatsForm();
-}
-
 window.BTO_CONTENT_ADMIN_ROWS=[];
 window.BTO_EDIT_CONTENT=null;
 
@@ -3131,6 +2965,140 @@ function btoContentVal(r,...keys){
   return '';
 }
 
+
+function btoContentDateInputValue(v){
+  const s=String(v||'').trim();
+  if(!s) return '';
+
+  // Already a valid date input value.
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+
+  try{
+    const d=new Date(s);
+    if(isNaN(d)) return '';
+
+    const parts=new Intl.DateTimeFormat('en-US',{
+      timeZone:'Asia/Manila',
+      year:'numeric',
+      month:'2-digit',
+      day:'2-digit'
+    }).formatToParts(d);
+
+    const get=t=>parts.find(p=>p.type===t)?.value||'';
+    return `${get('year')}-${get('month')}-${get('day')}`;
+  }catch(e){
+    return '';
+  }
+}
+
+function btoContentTimeInputValue(v){
+  const s=String(v||'').trim();
+  if(!s) return '';
+
+  // Plain HH:mm / HH:mm:ss.
+  const m=s.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if(m){
+    const h=String(Math.max(0,Math.min(23,Number(m[1])))).padStart(2,'0');
+    return `${h}:${m[2]}`;
+  }
+
+  // Google Sheets time values often serialize as 1899-12-30T...
+  try{
+    const d=new Date(s);
+    if(isNaN(d)) return '';
+
+    const parts=new Intl.DateTimeFormat('en-US',{
+      timeZone:'Asia/Manila',
+      hour:'2-digit',
+      minute:'2-digit',
+      hourCycle:'h23'
+    }).formatToParts(d);
+
+    const get=t=>parts.find(p=>p.type===t)?.value||'';
+    return `${get('hour')}:${get('minute')}`;
+  }catch(e){
+    return '';
+  }
+}
+
+function btoContentDisplayDate(v){
+  const value=btoContentDateInputValue(v);
+  if(!value) return '';
+  const [y,m,d]=value.split('-').map(Number);
+  try{
+    return new Date(y,m-1,d).toLocaleDateString('en-PH',{
+      year:'numeric',
+      month:'short',
+      day:'numeric'
+    });
+  }catch(e){
+    return value;
+  }
+}
+
+function btoContentDisplayTime(v){
+  const value=btoContentTimeInputValue(v);
+  if(!value) return '';
+
+  const m=value.match(/^(\d{2}):(\d{2})$/);
+  if(!m) return value;
+
+  let h=Number(m[1]);
+  const min=m[2];
+  const ap=h>=12?'PM':'AM';
+  h=h%12||12;
+  return `${h}:${min} ${ap}`;
+}
+
+function btoContentPhotoUrl(row){
+  return String(
+    btoContentVal(
+      row,
+      'Featured Photo URL',
+      'Photo URL',
+      'Image URL',
+      'Featured Image URL'
+    ) || ''
+  ).trim();
+}
+
+function btoContentPhotoPreviewHtml(url,title='Featured photo'){
+  url=String(url||'').trim();
+  if(!url) return '';
+
+  const display=normalizePortalImageUrl(url);
+
+  return `
+    <div style="margin-top:10px">
+      <div class="help" style="margin-bottom:6px">Current / uploaded photo</div>
+      <img
+        src="${esc(display)}"
+        alt="${esc(title)}"
+        style="width:100%;max-width:360px;max-height:220px;object-fit:cover;border:1px solid #e5e7eb;border-radius:12px;background:#f8fafc"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+      <div class="help" style="display:none;color:#b42318">
+        Photo URL is saved, but the browser could not display the image.
+      </div>
+    </div>`;
+}
+
+function previewContentPhotoInput(input){
+  const wrap=document.getElementById('cPhotoLocalPreview');
+  const img=document.getElementById('cPhotoLocalPreviewImg');
+  if(!wrap || !img) return;
+
+  const file=input?.files?.[0];
+  if(!file){
+    wrap.style.display='none';
+    img.removeAttribute('src');
+    return;
+  }
+
+  const localUrl=URL.createObjectURL(file);
+  img.src=localUrl;
+  wrap.style.display='block';
+}
+
 function renderContentAdmin(){
   const list=window.BTO_COMMITTEES_CACHE||[];
   const rows=window.BTO_CONTENT_ADMIN_ROWS||[];
@@ -3154,8 +3122,8 @@ function renderContentAdmin(){
       <input id="cTitle" value="${esc(btoContentVal(e,'Title'))}">
 
       <div class="grid">
-        <div><label>Date</label><input id="cDate" type="date" value="${esc(String(btoContentVal(e,'Event Date','Date')||'').slice(0,10))}"></div>
-        <div><label>Time</label><input id="cTime" type="time" value="${esc(btoContentVal(e,'Time'))}"></div>
+        <div><label>Date</label><input id="cDate" type="date" value="${esc(btoContentDateInputValue(btoContentVal(e,'Event Date','Date')))}"></div>
+        <div><label>Time</label><input id="cTime" type="time" value="${esc(btoContentTimeInputValue(btoContentVal(e,'Time')))}"></div>
       </div>
 
       <label>Venue</label><input id="cVenue" value="${esc(btoContentVal(e,'Venue'))}">
@@ -3173,8 +3141,20 @@ function renderContentAdmin(){
       <textarea id="cDesc">${esc(btoContentVal(e,'Description'))}</textarea>
 
       <label>Featured Photo</label>
-      <input id="cPhoto" type="file" accept="image/*">
+      <input id="cPhoto" type="file" accept="image/*" onchange="previewContentPhotoInput(this)">
       <div class="help">When editing, leave blank to keep the current photo.</div>
+
+      ${btoContentPhotoPreviewHtml(
+        btoContentPhotoUrl(e),
+        btoContentVal(e,'Title')||'Featured photo'
+      )}
+
+      <div id="cPhotoLocalPreview" style="display:none;margin-top:10px">
+        <div class="help" style="margin-bottom:6px">New photo selected</div>
+        <img id="cPhotoLocalPreviewImg"
+          alt="New selected photo"
+          style="width:100%;max-width:360px;max-height:220px;object-fit:cover;border:1px solid #e5e7eb;border-radius:12px;background:#f8fafc">
+      </div>
 
       <div class="admin-actions">
         <button onclick="saveContent(this)">${btoContentId(e)?'Update':'Save & Publish'}</button>
@@ -3186,15 +3166,29 @@ function renderContentAdmin(){
       <h2>Existing Announcements & Activities</h2>
       ${rows.length ? rows.map((r,i)=>{
         const id=btoContentId(r);
+        const photo=btoContentPhotoUrl(r);
+        const photoDisplay=photo ? normalizePortalImageUrl(photo) : '';
+        const dateText=btoContentDisplayDate(btoContentVal(r,'Event Date','Date'));
+        const timeText=btoContentDisplayTime(btoContentVal(r,'Time'));
+
         return `<div class="doc-row">
-          <div class="doc-row-main">
-            <strong>${esc(btoContentVal(r,'Title')||'Untitled')}</strong>
-            <div class="help">
-              ${esc(btoContentVal(r,'Type'))}
-              ${btoContentVal(r,'Event Date','Date')?'• '+esc(btoContentVal(r,'Event Date','Date')):''}
-              ${String(btoContentVal(r,'Type')).toUpperCase()==='COMMITTEE UPDATE'
-                ? ' • '+esc((list.find(c=>String(c.committeeId)===String(btoContentVal(r,'Committee ID','Related Committee')))||{}).committeeName||'Committee')
-                : ''}
+          <div class="doc-row-main" style="display:flex;align-items:center;gap:12px;min-width:0">
+            ${photoDisplay
+              ? `<img src="${esc(photoDisplay)}"
+                   alt="${esc(btoContentVal(r,'Title')||'Update photo')}"
+                   style="width:62px;height:62px;object-fit:cover;border-radius:10px;border:1px solid #e5e7eb;flex:0 0 62px"
+                   onerror="this.style.display='none'">`
+              : ''}
+            <div style="min-width:0">
+              <strong>${esc(btoContentVal(r,'Title')||'Untitled')}</strong>
+              <div class="help">
+                ${esc(btoContentVal(r,'Type'))}
+                ${dateText?' • '+esc(dateText):''}
+                ${timeText?' • '+esc(timeText):''}
+                ${String(btoContentVal(r,'Type')).toUpperCase()==='COMMITTEE UPDATE'
+                  ? ' • '+esc((list.find(c=>String(c.committeeId)===String(btoContentVal(r,'Committee ID','Related Committee')))||{}).committeeName||'Committee')
+                  : ''}
+              </div>
             </div>
           </div>
           <div class="admin-actions">
@@ -3230,53 +3224,80 @@ function editContentAdmin(index){
 
 async function saveContent(btn){
   return btoSingleSave('CONTENT',async()=>{
-
-  return withButtonSpinner(btn,'Saving...',async()=>{
     const id=document.getElementById('cId').value.trim();
-    let photoUrl=document.getElementById('cExistingPhoto').value||'';
-    const file=document.getElementById('cPhoto').files[0];
+    const successMessage=id
+      ? 'Announcement / Activity updated.'
+      : 'Published successfully.';
 
-    if(file){
-      const base64=await fileToBase64(file);
-      const u=await api('uploadBase64',{fileName:file.name,mimeType:file.type,base64});
-      if(!u.success) throw new Error(u.message||'Photo upload failed.');
-      photoUrl=u.url||'';
-    }
+    return withButtonSpinner(btn,'Saving...',async()=>{
+      const existingInput=document.getElementById('cExistingPhoto');
+      const photoInput=document.getElementById('cPhoto');
 
-    const contentType=document.getElementById('cType').value;
-    const committeeId=
-      String(contentType).toUpperCase()==='COMMITTEE UPDATE'
-        ? document.getElementById('cCommittee').value
-        : '';
+      let photoUrl=String(existingInput?.value||'').trim();
+      const file=photoInput?.files?.[0];
 
-    if(String(contentType).toUpperCase()==='COMMITTEE UPDATE' && !committeeId){
-      throw new Error('Please select the committee for this Committee Update.');
-    }
+      if(file){
+        const base64=await fileToBase64(file);
+        const u=await api('uploadBase64',{
+          fileName:file.name,
+          mimeType:file.type,
+          base64
+        });
 
-    const payload={
-      id:id,
-      contentId:id,
-      type:contentType,
-      title:document.getElementById('cTitle').value,
-      eventDate:document.getElementById('cDate').value,
-      time:document.getElementById('cTime').value,
-      venue:document.getElementById('cVenue').value,
-      committeeId:committeeId,
-      description:document.getElementById('cDesc').value,
-      featuredPhotoUrl:photoUrl,
-      status:'PUBLISHED'
-    };
+        if(!u.success){
+          throw new Error(u.message||'Photo upload failed.');
+        }
 
-    const r=id
-      ? await api('adminCrudUpdateContent',payload)
-      : await api('saveContent',payload);
+        photoUrl=String(u.url||'').trim();
 
-    if(!r.success) throw new Error(r.message||'Unable to save.');
+        // Keep the uploaded URL locally so a retry does not upload
+        // the same file again if the record-save step ever fails.
+        if(existingInput) existingInput.value=photoUrl;
+        if(photoInput) photoInput.value='';
+      }
 
-    await contentForm();
-    return r;
-  }, id ? 'Announcement / Activity updated.' : 'Published successfully.');
+      const contentType=document.getElementById('cType').value;
+      const committeeId=
+        String(contentType).toUpperCase()==='COMMITTEE UPDATE'
+          ? document.getElementById('cCommittee').value
+          : '';
 
+      if(
+        String(contentType).toUpperCase()==='COMMITTEE UPDATE' &&
+        !committeeId
+      ){
+        throw new Error(
+          'Please select the committee for this Committee Update.'
+        );
+      }
+
+      const payload={
+        id:id,
+        contentId:id,
+        type:contentType,
+        title:document.getElementById('cTitle').value,
+        eventDate:document.getElementById('cDate').value,
+        time:document.getElementById('cTime').value,
+        venue:document.getElementById('cVenue').value,
+        committeeId:committeeId,
+        description:document.getElementById('cDesc').value,
+        featuredPhotoUrl:photoUrl,
+        photoUrl:photoUrl,
+        status:'PUBLISHED'
+      };
+
+      const r=id
+        ? await api('adminCrudUpdateContent',payload)
+        : await api('saveContent',payload);
+
+      if(!r.success){
+        throw new Error(r.message||'Unable to save.');
+      }
+
+      await contentForm();
+      return r;
+
+    },successMessage);
   });
 }
 
@@ -4874,7 +4895,6 @@ function renderUsersBundle(bundle){
     ['ABOUT_BARANGAY','About Barangay'],
     ['BARANGAY_STATISTICS','Barangay Statistics'],
     ['LIVESTOCK','Livestock Statistics'],
-    ['DOG_STATS','Dog / Rabies Statistics'],
     ['ORGANIZATIONS','Barangay Organizations'],
     ['CONTENT','Announcements & Activities'],
     ['PROGRAMS_PROJECTS','Programs & Projects'],
