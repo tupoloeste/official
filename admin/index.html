@@ -7717,7 +7717,7 @@ function renderFullDisclosureModule(){
       <div class="help">
         The Barangay Encoder enters the disclosure <strong>Year</strong>,
         selects the disclosure item from the official dropdown,
-        uploads the display photo/image, then uploads the corresponding official PDF.
+        then uploads the display photo/image and corresponding official PDF.
         Published records will appear on the public Full Disclosure board.
       </div>
 
@@ -7748,7 +7748,7 @@ function renderFullDisclosureModule(){
 
             <div>
               <label>Disclosure Item <span class="fd-required">*</span></label>
-              <select id="fdCategory" onchange="btoDisclosureItemChanged()">
+              <select id="fdCategory">
                 <option value="">Select disclosure item</option>
                 <option value="Barangay Budget">Barangay Budget</option>
                 <option value="Summary of Income and Expenditures">Summary of Income and Expenditures</option>
@@ -7761,11 +7761,6 @@ function renderFullDisclosureModule(){
             </div>
           </div>
 
-          <label>Document Title <span class="fd-required">*</span></label>
-          <input
-            id="fdTitle"
-            placeholder="Enter the public document title"
-          >
         </div>
       </div>
 
@@ -7922,18 +7917,7 @@ async function addDisclosureCategory(btn){
 
 
 
-function btoDisclosureItemChanged(){
-  const category=document.getElementById('fdCategory');
-  const title=document.getElementById('fdTitle');
 
-  if(!category || !title) return;
-
-  const selected=String(category.value||'').trim();
-
-  if(selected && !String(title.value||'').trim()){
-    title.value=selected;
-  }
-}
 
 function btoDisclosureImagePreview(input){
   btoResetPendingUpload('disclosureImage');
@@ -8010,7 +7994,6 @@ function editFullDisclosureDocument(json){
 
   sel.value=existingCategory;
 
-  document.getElementById('fdTitle').value=x.title||'';
   document.getElementById('fdStatus').value=x.status||'PUBLISHED';
 
   const img=document.getElementById('fdCurrentImage');
@@ -8065,7 +8048,6 @@ function clearFullDisclosureForm(){
   document.getElementById('fdId').value='';
   document.getElementById('fdYear').value=currentYearValue();
   document.getElementById('fdCategory').value='';
-  document.getElementById('fdTitle').value='';
   document.getElementById('fdImage').value='';
   document.getElementById('fdPdf').value='';
   document.getElementById('fdStatus').value='PUBLISHED';
@@ -8092,7 +8074,6 @@ async function saveFullDisclosureDocument(btn){
   return withButtonSpinner(btn,'Saving...',async()=>{
     const year=String(document.getElementById('fdYear').value||'').trim();
     const category=String(document.getElementById('fdCategory').value||'').trim();
-    const title=String(document.getElementById('fdTitle').value||'').trim();
 
     if(!/^\d{4}$/.test(year)){
       throw new Error('Enter a valid four-digit disclosure year.');
@@ -8100,10 +8081,6 @@ async function saveFullDisclosureDocument(btn){
 
     if(!category){
       throw new Error('Select a Disclosure Item.');
-    }
-
-    if(!title){
-      throw new Error('Document Title is required.');
     }
 
     const imageFile=document.getElementById('fdImage').files[0];
@@ -8127,7 +8104,7 @@ async function saveFullDisclosureDocument(btn){
       id:document.getElementById('fdId').value,
       year:year,
       category:category,
-      title:title,
+      title:category,
       imageUrl,
       pdfUrl,
       status:document.getElementById('fdStatus').value
