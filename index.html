@@ -4822,7 +4822,7 @@ function showView(name){
     typeof refreshPublicUpdatesFromCloudflare==='function'
   ){
     setTimeout(()=>{
-      refreshPublicUpdatesFromCloudflare(false);
+      refreshPublicUpdatesFromCloudflare(true);
     },0);
   }
 }
@@ -7053,12 +7053,22 @@ function applyPublicData(data){
 */
 let BTO_PUBLIC_UPDATES_REFRESHING=false;
 let BTO_PUBLIC_UPDATES_LAST_CHECK=0;
+let BTO_PUBLIC_UPDATES_LAST_FORCE=0;
 const BTO_PUBLIC_UPDATES_MIN_INTERVAL=10000;
+const BTO_PUBLIC_UPDATES_FORCE_INTERVAL=5000;
 
 async function refreshPublicUpdatesFromCloudflare(force=false){
   if(BTO_PUBLIC_UPDATES_REFRESHING) return;
 
   const now=Date.now();
+
+  if(
+    force &&
+    now-BTO_PUBLIC_UPDATES_LAST_FORCE < BTO_PUBLIC_UPDATES_FORCE_INTERVAL
+  ){
+    return;
+  }
+
   if(
     !force &&
     now-BTO_PUBLIC_UPDATES_LAST_CHECK < BTO_PUBLIC_UPDATES_MIN_INTERVAL
@@ -7068,10 +7078,13 @@ async function refreshPublicUpdatesFromCloudflare(force=false){
 
   BTO_PUBLIC_UPDATES_REFRESHING=true;
   BTO_PUBLIC_UPDATES_LAST_CHECK=now;
+  if(force) BTO_PUBLIC_UPDATES_LAST_FORCE=now;
 
   try{
     const url=BTO_PUBLIC_CF_BASE +
-      '/updates?_ts=' + Date.now();
+      '/updates' +
+      (force ? '?fresh=1&' : '?') +
+      '_ts=' + Date.now();
 
     const res=await fetch(url,{
       method:'GET',
@@ -7869,6 +7882,23 @@ document.addEventListener('visibilitychange',()=>{
     typeof refreshPublicUpdatesFromCloudflare==='function'
   ){
     refreshPublicUpdatesFromCloudflare(false);
+  }
+});
+
+
+
+document.addEventListener('DOMContentLoaded',()=>{
+  const ticker=document.getElementById('announcement-ticker-track');
+
+  if(ticker){
+    ticker.addEventListener('mouseenter',()=>{
+      if(
+        BTO_PUBLIC_LAST_DATA &&
+        typeof refreshPublicUpdatesFromCloudflare==='function'
+      ){
+        refreshPublicUpdatesFromCloudflare(true);
+      }
+    });
   }
 });
 
