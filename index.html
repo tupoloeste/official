@@ -32,7 +32,7 @@ button{font:inherit}
 .topbar .container{min-height:34px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 
 .site-header{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.97);border-bottom:1px solid var(--border);box-shadow:0 3px 14px rgba(0,0,0,.04)}
-.nav{min-height:78px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.nav{min-height:58px;display:flex;align-items:center;justify-content:space-between;gap:16px}
 .brand{display:flex;align-items:center;gap:12px}
 .brand img{width:58px;height:58px;object-fit:contain}
 .brand strong{display:block;color:var(--red-dark);font-size:17px}
@@ -4357,27 +4357,6 @@ body.bto-site-loading{overflow:hidden!important}
   outline:0;
 }
 
-.fd-board-year-strip{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  gap:10px;
-  background:#008d43;
-  color:#fff;
-  padding:9px 14px;
-  border-bottom:1px solid rgba(255,255,255,.35);
-}
-
-.fd-board-year-strip span{
-  font-size:12px;
-  font-weight:700;
-  opacity:.9;
-}
-
-.fd-board-year-strip strong{
-  font-size:18px;
-  letter-spacing:.04em;
-}
 
 .fd-board-grid{
   display:grid;
@@ -5448,11 +5427,6 @@ body.bto-site-loading{overflow:hidden!important}
               <option value="">—</option>
             </select>
           </div>
-        </div>
-
-        <div class="fd-board-year-strip">
-          <span>Disclosure Year</span>
-          <strong id="fdPublicYearTitle">—</strong>
         </div>
 
         <div id="publicDisclosureList" class="fd-board-grid">
@@ -7376,8 +7350,7 @@ function renderPublicDisclosureFiltered(){
         <div class="fd-board-item-heading">
           <span class="fd-board-item-number">${String(index+1).padStart(2,'0')}</span>
           <div>
-            <div class="fd-board-item-category">${btoEsc(category)}</div>
-            <h3>${btoEsc(title)}</h3>
+            <h3>${btoEsc(category||title)}</h3>
           </div>
         </div>
 
