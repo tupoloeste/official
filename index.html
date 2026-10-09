@@ -3815,6 +3815,12 @@ body.bto-site-loading{overflow:hidden!important}
   50%{opacity:1;transform:scale(1)}
 }
 
+
+/* Dog Statistics loader is hidden until an actual data request starts. */
+#dogStatsMiniLoading{
+  display:none;
+}
+
 </style>
 </head>
 <body>
@@ -4096,7 +4102,7 @@ body.bto-site-loading{overflow:hidden!important}
 
             <button type="button"
                     class="dog-service-btn dog-stats-view-btn"
-                    onclick="showView('dog-statistics');loadPublicDogStats()">
+                    onclick="showView('dog-statistics')">
               View Dog &amp; Rabies Statistics
             </button>
 
@@ -4163,7 +4169,7 @@ body.bto-site-loading{overflow:hidden!important}
   <div class="page-content">
     <div class="container">
       <div class="dog-stats-asof">As of: <strong id="dogStatsAsOf">—</strong></div>
-      <div id="dogStatsMiniLoading" class="dog-stats-mini-loading">
+      <div id="dogStatsMiniLoading" class="dog-stats-mini-loading" style="display:none">
         Loading dog statistics...
       </div>
       <div id="dogStatsError" class="dog-stats-error hidden"></div>
@@ -4766,6 +4772,17 @@ function showView(name){
         window.scrollTo({top:0,left:0,behavior:'instant'});
       });
     });
+  }
+
+  // BTO_DOG_STATS_AUTOLOAD
+  // Load Dog/Rabies statistics whenever this view is opened,
+  // including direct #dog-statistics links and browser refresh.
+  if(name==='dog-statistics'){
+    setTimeout(()=>{
+      if(typeof loadPublicDogStats==='function'){
+        loadPublicDogStats(false);
+      }
+    },0);
   }
 }
 
