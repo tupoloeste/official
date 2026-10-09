@@ -2192,6 +2192,97 @@ button.danger,
   }
 }
 
+
+
+/* ===== HEALTH CENTER ADMIN ===== */
+.health-admin-card{
+  border-top:4px solid #991b1b;
+}
+
+.health-admin-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
+.health-type-badge{
+  display:inline-flex;
+  padding:4px 8px;
+  border-radius:999px;
+  background:#fff1f3;
+  color:#c5162e;
+  border:1px solid #ffc7d0;
+  font-size:10px;
+  font-weight:900;
+  margin-bottom:6px;
+}
+
+.health-status-select{
+  width:auto;
+  min-width:140px;
+}
+
+.health-admin-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  margin-top:14px;
+}
+
+.health-admin-grid .wide{
+  grid-column:1 / -1;
+}
+
+.health-upload-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  margin-top:16px;
+}
+
+.health-admin-photo{
+  width:100%;
+  max-width:520px;
+  height:260px;
+  object-fit:cover;
+  border-radius:12px;
+  border:1px solid #e4e7ec;
+  background:#f8fafc;
+  display:block;
+  margin:8px 0 10px;
+}
+
+.health-admin-empty-photo{
+  min-height:160px;
+  border:1px dashed #d0d5dd;
+  border-radius:12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#98a2b3;
+  background:#f8fafc;
+  margin:8px 0 10px;
+  text-align:center;
+  padding:12px;
+}
+
+@media(max-width:720px){
+  .health-admin-grid,
+  .health-upload-grid{
+    grid-template-columns:1fr;
+  }
+
+  .health-admin-grid .wide{
+    grid-column:auto;
+  }
+
+  .health-status-select{
+    width:100%;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -2781,6 +2872,7 @@ function renderApp(){
   if(hasModule('BARANGAY_STATISTICS')){
     items.push(['Barangay Statistics','stats']);
     items.push(['School Profiles','schoolProfiles']);
+    items.push(['Health Center','healthCenter']);
   }
   if(hasModule('LIVESTOCK')) items.push(['Livestock Statistics','livestock']);
   if(hasModule('ORGANIZATIONS')) items.push(['Barangay Organizations','organizations']);
@@ -2876,6 +2968,7 @@ async function btoOpenModuleRaw(name,title='Module'){
   if(name==='aboutBarangay') return aboutBarangayForm();
   if(name==='stats') return loadStats();
   if(name==='schoolProfiles') return schoolProfilesForm();
+  if(name==='healthCenter') return healthCenterForm();
   if(name==='livestock') return loadLivestock();
   if(name==='organizations') return organizationsForm();
   if(name==='content') return contentForm();
@@ -3925,6 +4018,276 @@ async function savePopulationProfile(btn){
 }
 
 
+
+
+
+/* ============================================================
+   HEALTH CENTER PROFILE
+   ============================================================ */
+
+window.BTO_HEALTH_CENTER_PROFILE=null;
+
+function btoHealthValue_(v){
+  return (
+    v===null ||
+    v===undefined
+  ) ? '' : v;
+}
+
+async function healthCenterForm(){
+  document.getElementById('moduleArea').innerHTML=
+    '<div class="bto-loading"><span class="bto-spinner"></span><span>Loading Health Center profile...</span></div>';
+
+  const r=await api('getHealthCenter');
+
+  if(!r.success){
+    showModuleError(r.message);
+    return;
+  }
+
+  window.BTO_HEALTH_CENTER_PROFILE=r.profile||{
+    id:'HEALTH-CENTER-001',
+    healthCenterName:'',
+    address:'',
+    contactNumber:'',
+    healthPersonnel:'',
+    bhwCount:null,
+    bnsCount:null,
+    operatingHours:'',
+    servicesOffered:'',
+    description:'',
+    photoUrl:'',
+    pdfUrl:'',
+    status:'ACTIVE'
+  };
+
+  renderHealthCenterAdmin();
+}
+
+function renderHealthCenterAdmin(){
+  const x=window.BTO_HEALTH_CENTER_PROFILE||{};
+
+  document.getElementById('moduleArea').innerHTML=`
+    <div class="card">
+      <h2>Health Center Profile</h2>
+      <div class="help">
+        Barangay Encoder enters and maintains the official Health Center information.
+        No facility or personnel name is hardcoded.
+      </div>
+    </div>
+
+    <div class="card health-admin-card">
+      <div class="health-admin-head">
+        <div>
+          <span class="health-type-badge">BARANGAY HEALTH CENTER</span>
+          <h2>${esc(x.healthCenterName||'Health Center Profile')}</h2>
+        </div>
+
+        <select id="hc_status" class="health-status-select">
+          <option value="ACTIVE" ${x.status==='ACTIVE'?'selected':''}>Active</option>
+          <option value="INACTIVE" ${x.status==='INACTIVE'?'selected':''}>Inactive</option>
+        </select>
+      </div>
+
+      <div class="health-admin-grid">
+        <div class="wide">
+          <label>Health Center Name <span style="color:#c5162e">*</span></label>
+          <input
+            id="hc_name"
+            value="${esc(x.healthCenterName||'')}"
+            placeholder="Enter official Health Center name"
+          >
+          <div class="help">Barangay Encoder enters the official facility name.</div>
+        </div>
+
+        <div class="wide">
+          <label>Sitio / Address</label>
+          <input id="hc_address" value="${esc(x.address||'')}">
+        </div>
+
+        <div>
+          <label>Contact Number</label>
+          <input id="hc_contact" value="${esc(x.contactNumber||'')}">
+        </div>
+
+        <div>
+          <label>Assigned Midwife / Health Personnel</label>
+          <input id="hc_personnel" value="${esc(x.healthPersonnel||'')}">
+        </div>
+
+        <div>
+          <label>No. of BHWs</label>
+          <input
+            id="hc_bhw"
+            type="number"
+            min="0"
+            step="1"
+            value="${esc(btoHealthValue_(x.bhwCount))}"
+          >
+        </div>
+
+        <div>
+          <label>No. of BNS</label>
+          <input
+            id="hc_bns"
+            type="number"
+            min="0"
+            step="1"
+            value="${esc(btoHealthValue_(x.bnsCount))}"
+          >
+        </div>
+
+        <div class="wide">
+          <label>Operating Days / Hours</label>
+          <input
+            id="hc_hours"
+            value="${esc(x.operatingHours||'')}"
+            placeholder="Example: Monday-Friday, 8:00 AM-5:00 PM"
+          >
+        </div>
+
+        <div class="wide">
+          <label>Services Offered</label>
+          <textarea
+            id="hc_services"
+            rows="4"
+            placeholder="Enter available health services"
+          >${esc(x.servicesOffered||'')}</textarea>
+        </div>
+
+        <div class="wide">
+          <label>Description / Profile Notes</label>
+          <textarea
+            id="hc_description"
+            rows="4"
+          >${esc(x.description||'')}</textarea>
+        </div>
+      </div>
+
+      <div class="health-upload-grid">
+        <div>
+          <label>Health Center Photo</label>
+
+          ${x.photoUrl
+            ? `<img
+                class="health-admin-photo"
+                src="${esc(normalizePortalImageUrl(x.photoUrl))}"
+                alt="${esc(x.healthCenterName||'Health Center')}"
+                onerror="this.style.display='none'"
+              >`
+            : '<div class="health-admin-empty-photo">No Health Center photo uploaded yet.</div>'
+          }
+
+          <input
+            id="hc_photo"
+            type="file"
+            accept="image/*"
+          >
+
+          <div class="help">
+            Existing photo is kept when no new photo is selected.
+          </div>
+        </div>
+
+        <div>
+          <label>Health Center Profile PDF (optional)</label>
+
+          ${x.pdfUrl
+            ? `<div class="doc-file-current">
+                Current PDF:
+                <a href="${esc(x.pdfUrl)}" target="_blank" rel="noopener">Open</a>
+              </div>`
+            : '<div class="doc-file-current">No PDF uploaded yet.</div>'
+          }
+
+          <input
+            id="hc_pdf"
+            type="file"
+            accept="application/pdf,.pdf"
+          >
+
+          <div class="help">
+            Optional official profile, report, service guide, or related PDF.
+          </div>
+        </div>
+      </div>
+
+      <div class="admin-actions">
+        <button onclick="saveHealthCenterProfile(this)">
+          Save Health Center Profile
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function btoHealthFormNum_(id){
+  const el=document.getElementById(id);
+  if(!el) return null;
+
+  const raw=String(el.value||'').trim();
+  if(raw==='') return null;
+
+  const n=Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
+async function saveHealthCenterProfile(btn){
+  return withButtonSpinner(
+    btn,
+    'Saving Profile...',
+    async()=>{
+      const healthCenterName=String(
+        document.getElementById('hc_name')?.value||''
+      ).trim();
+
+      if(!healthCenterName){
+        throw new Error('Health Center Name is required.');
+      }
+
+      let photoUrl=window.BTO_HEALTH_CENTER_PROFILE?.photoUrl||'';
+      let pdfUrl=window.BTO_HEALTH_CENTER_PROFILE?.pdfUrl||'';
+
+      const photoFile=document.getElementById('hc_photo')?.files?.[0];
+      const pdfFile=document.getElementById('hc_pdf')?.files?.[0];
+
+      if(photoFile){
+        photoUrl=await btoUploadDocumentFile(photoFile,'image');
+      }
+
+      if(pdfFile){
+        pdfUrl=await btoUploadDocumentFile(pdfFile,'pdf');
+      }
+
+      const payload={
+        healthCenterName:healthCenterName,
+        address:String(document.getElementById('hc_address')?.value||'').trim(),
+        contactNumber:String(document.getElementById('hc_contact')?.value||'').trim(),
+        healthPersonnel:String(document.getElementById('hc_personnel')?.value||'').trim(),
+        bhwCount:btoHealthFormNum_('hc_bhw'),
+        bnsCount:btoHealthFormNum_('hc_bns'),
+        operatingHours:String(document.getElementById('hc_hours')?.value||'').trim(),
+        servicesOffered:String(document.getElementById('hc_services')?.value||'').trim(),
+        description:String(document.getElementById('hc_description')?.value||'').trim(),
+        photoUrl:photoUrl,
+        pdfUrl:pdfUrl,
+        status:String(document.getElementById('hc_status')?.value||'ACTIVE').trim()
+      };
+
+      const r=await api('saveHealthCenter',payload);
+
+      if(!r.success){
+        throw new Error(r.message||'Unable to save Health Center Profile.');
+      }
+
+      window.BTO_HEALTH_CENTER_PROFILE=r.profile||payload;
+      renderHealthCenterAdmin();
+
+      return r;
+    },
+    'Health Center Profile saved.'
+  );
+}
 
 
 /* ============================================================
