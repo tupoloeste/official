@@ -2778,7 +2778,10 @@ function renderApp(){
     items.push(['Committee Assignments','assignments']);
 
   if(hasModule('ABOUT_BARANGAY')) items.push(['About Barangay','aboutBarangay']);
-  if(hasModule('BARANGAY_STATISTICS')) items.push(['Barangay Statistics','stats']);
+  if(hasModule('BARANGAY_STATISTICS')){
+    items.push(['Barangay Statistics','stats']);
+    items.push(['School Profiles','schoolProfiles']);
+  }
   if(hasModule('LIVESTOCK')) items.push(['Livestock Statistics','livestock']);
   if(hasModule('ORGANIZATIONS')) items.push(['Barangay Organizations','organizations']);
 
@@ -2872,6 +2875,7 @@ async function btoOpenModuleRaw(name,title='Module'){
 
   if(name==='aboutBarangay') return aboutBarangayForm();
   if(name==='stats') return loadStats();
+  if(name==='schoolProfiles') return schoolProfilesForm();
   if(name==='livestock') return loadLivestock();
   if(name==='organizations') return organizationsForm();
   if(name==='content') return contentForm();
@@ -3592,12 +3596,6 @@ function renderPopulationProfileAdmin(){
             >
               Load Year
             </button>
-
-      <button class="menu-card" onclick="schoolProfilesForm()">
-        <span class="menu-card-icon">🏫</span>
-        <span class="menu-card-title">School Profiles</span>
-        <span class="menu-card-help">CDC and Elementary School profiles</span>
-      </button>
 
           </div>
         </div>
