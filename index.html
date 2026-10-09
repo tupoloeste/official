@@ -4784,6 +4784,16 @@ function showView(name){
       }
     },0);
   }
+
+  // BTO_LIVESTOCK_AUTOLOAD
+  // Works for card click, direct #livestock-statistics URL and browser refresh.
+  if(name==='livestock-statistics'){
+    setTimeout(()=>{
+      if(typeof loadPublicLivestockCloudflare==='function'){
+        loadPublicLivestockCloudflare(false);
+      }
+    },0);
+  }
 }
 
 function switchTab(scope,panelId,btn){
@@ -7085,7 +7095,6 @@ function applyPublicData(data){
   renderPublicContactInformation(data);
   renderAboutBarangay(data);
   renderEnhancedBarangayStats(data);
-  renderPublicLivestock(data);
   renderPublicOrganizations(data);
   renderHighlightsLive(data);
   renderHighlightsActivityGallery(data);
@@ -7429,6 +7438,151 @@ function renderPublicDogStats(data){
             <small>${pct.toFixed(1)}%</small>
           </div>`;
       }).join('')}`;
+  }
+}
+
+
+/* ===== CLOUDFLARE LIVESTOCK PUBLIC DATA ===== */
+let BTO_PUBLIC_LIVESTOCK_LOADING=false;
+let BTO_PUBLIC_LIVESTOCK_LOADED=false;
+
+const BTO_LIVESTOCK_CACHE_KEY='bto_livestock_cloudflare_v1';
+const BTO_LIVESTOCK_CACHE_MS=10*60*1000;
+const BTO_LIVESTOCK_CF_URL=BTO_DOG_STATS_CF_URL;
+
+function livestockCacheGet(allowStale=false){
+  try{
+    const raw=localStorage.getItem(BTO_LIVESTOCK_CACHE_KEY);
+    if(!raw) return null;
+
+    const obj=JSON.parse(raw);
+    if(!obj || !obj.data) return null;
+
+    const age=Date.now()-Number(obj.savedAt||0);
+    if(!allowStale && age>BTO_LIVESTOCK_CACHE_MS) return null;
+
+    return obj.data;
+  }catch(e){
+    return null;
+  }
+}
+
+function livestockCacheSet(data){
+  try{
+    localStorage.setItem(
+      BTO_LIVESTOCK_CACHE_KEY,
+      JSON.stringify({
+        savedAt:Date.now(),
+        data:data
+      })
+    );
+  }catch(e){}
+}
+
+async function livestockFetchJson_(url,timeoutMs){
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),timeoutMs);
+
+  try{
+    const res=await fetch(url,{
+      method:'GET',
+      cache:'no-store',
+      signal:controller.signal
+    });
+
+    if(!res.ok){
+      throw new Error('HTTP '+res.status);
+    }
+
+    const data=await res.json();
+
+    if(!data || !data.success){
+      throw new Error(
+        data?.message || 'Livestock statistics are unavailable.'
+      );
+    }
+
+    return data;
+
+  }finally{
+    clearTimeout(timer);
+  }
+}
+
+async function livestockFetchWithFallback_(){
+  const cfBase=String(BTO_LIVESTOCK_CF_URL||'')
+    .trim()
+    .replace(/\/+$/,'');
+
+  // Cloudflare first.
+  if(cfBase){
+    try{
+      return await livestockFetchJson_(
+        cfBase+'/livestock',
+        10000
+      );
+    }catch(err){
+      console.warn(
+        'Cloudflare livestock request failed; using Apps Script fallback.',
+        err
+      );
+    }
+  }
+
+  // Direct lightweight Apps Script fallback.
+  const base=BTO_PUBLIC_API.split('?')[0];
+
+  return livestockFetchJson_(
+    base+'?action=livestockPublic&_ts='+Date.now(),
+    15000
+  );
+}
+
+async function loadPublicLivestockCloudflare(force=false){
+  if(BTO_PUBLIC_LIVESTOCK_LOADING) return;
+
+  const legend=document.getElementById('publicLivestockLegend');
+
+  // Show last successful browser copy immediately.
+  const cached=livestockCacheGet(true);
+
+  if(cached){
+    renderPublicLivestock(cached);
+    BTO_PUBLIC_LIVESTOCK_LOADED=true;
+  }
+
+  // Fresh browser cache: no new request unless forced.
+  const fresh=livestockCacheGet(false);
+
+  if(fresh && !force){
+    return;
+  }
+
+  BTO_PUBLIC_LIVESTOCK_LOADING=true;
+
+  if(!BTO_PUBLIC_LIVESTOCK_LOADED && legend){
+    legend.innerHTML=
+      '<div class="live-empty">Loading livestock population...</div>';
+  }
+
+  try{
+    const data=await livestockFetchWithFallback_();
+
+    livestockCacheSet(data);
+    renderPublicLivestock(data);
+    BTO_PUBLIC_LIVESTOCK_LOADED=true;
+
+  }catch(err){
+    console.warn('Livestock statistics load failed:',err);
+
+    // Clean public fallback; no Retry button.
+    if(!BTO_PUBLIC_LIVESTOCK_LOADED && legend){
+      legend.innerHTML=
+        '<div class="live-empty">Livestock statistics are temporarily unavailable.</div>';
+    }
+
+  }finally{
+    BTO_PUBLIC_LIVESTOCK_LOADING=false;
   }
 }
 
