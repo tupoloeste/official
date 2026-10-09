@@ -4859,7 +4859,12 @@ function publicDate(v){
   try{
     const d=new Date(v);
     if(isNaN(d)) return String(v);
-    return d.toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'});
+    return d.toLocaleDateString('en-PH',{
+      year:'numeric',
+      month:'long',
+      day:'numeric',
+      timeZone:'Asia/Manila'
+    });
   }catch(e){ return String(v); }
 }
 
@@ -5154,7 +5159,19 @@ function initEventCarousels(){
 }
 
 function contentPhotoUrl(row){
-  return normalizePublicImageUrl(row['Featured Photo URL'] || '');
+  if(!row) return '';
+
+  const raw=
+    row['Featured Photo URL'] ||
+    row['Photo URL'] ||
+    row['Image URL'] ||
+    row['Featured Image URL'] ||
+    row.featuredPhotoUrl ||
+    row.photoUrl ||
+    row.imageUrl ||
+    '';
+
+  return normalizePublicImageUrl(raw);
 }
 
 function photoHtml(row,placeholder='📣'){
