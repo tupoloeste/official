@@ -3135,6 +3135,178 @@ function previewContentPhotoInput(input){
   wrap.style.display='block';
 }
 
+
+const BTO_CONTENT_GALLERY_MAX=10;
+window.BTO_CONTENT_GALLERY_NEW_FILES=[];
+
+function btoContentGalleryUrls(row){
+  const raw=String(
+    btoContentVal(row,'Gallery URLs','Gallery URLs / Photos') || ''
+  ).trim();
+
+  if(!raw) return [];
+
+  return [...new Set(
+    raw
+      .split(/\r?\n|,\s*(?=https?:\/\/)/)
+      .map(x=>String(x||'').trim())
+      .filter(Boolean)
+  )].slice(0,BTO_CONTENT_GALLERY_MAX);
+}
+
+function btoContentGalleryExistingFromInput(){
+  const el=document.getElementById('cExistingGallery');
+  if(!el) return [];
+
+  try{
+    const rows=JSON.parse(el.value||'[]');
+    if(!Array.isArray(rows)) return [];
+
+    return [...new Set(
+      rows
+        .map(x=>String(x||'').trim())
+        .filter(Boolean)
+    )].slice(0,BTO_CONTENT_GALLERY_MAX);
+  }catch(e){
+    return [];
+  }
+}
+
+function btoContentSetGalleryExisting(urls){
+  const el=document.getElementById('cExistingGallery');
+  if(!el) return;
+
+  const clean=[...new Set(
+    (Array.isArray(urls)?urls:[])
+      .map(x=>String(x||'').trim())
+      .filter(Boolean)
+  )].slice(0,BTO_CONTENT_GALLERY_MAX);
+
+  el.value=JSON.stringify(clean);
+  renderContentGalleryExisting_();
+}
+
+function renderContentGalleryExisting_(){
+  const root=document.getElementById('cGalleryExistingPreview');
+  if(!root) return;
+
+  const urls=btoContentGalleryExistingFromInput();
+
+  root.innerHTML=urls.map((url,i)=>{
+    const display=normalizePortalImageUrl(url);
+
+    return `
+      <div class="preview-item">
+        <img src="${esc(display)}"
+          alt="Existing gallery photo ${i+1}"
+          onerror="this.style.display='none'">
+        <small>Existing photo ${i+1}</small>
+        <button type="button"
+          class="danger"
+          style="width:calc(100% - 12px);margin:0 6px 6px;padding:7px 8px;font-size:12px"
+          onclick="removeContentGalleryExisting(${i})">
+          Remove
+        </button>
+      </div>
+    `;
+  }).join('');
+
+  const count=document.getElementById('cGalleryCount');
+  if(count){
+    const newCount=(window.BTO_CONTENT_GALLERY_NEW_FILES||[]).length;
+    count.textContent=`${urls.length+newCount} / ${BTO_CONTENT_GALLERY_MAX} gallery photos selected`;
+  }
+}
+
+function removeContentGalleryExisting(index){
+  const urls=btoContentGalleryExistingFromInput();
+  urls.splice(Number(index),1);
+  btoContentSetGalleryExisting(urls);
+  renderContentGalleryNew_();
+}
+
+function previewContentGalleryInput(input){
+  const existing=btoContentGalleryExistingFromInput();
+  const selected=Array.from(input?.files||[]);
+
+  const available=Math.max(
+    0,
+    BTO_CONTENT_GALLERY_MAX-existing.length
+  );
+
+  if(selected.length>available){
+    alert(
+      `Maximum ${BTO_CONTENT_GALLERY_MAX} gallery photos only. ` +
+      `You can add ${available} more photo${available===1?'':'s'}.`
+    );
+  }
+
+  window.BTO_CONTENT_GALLERY_NEW_FILES=
+    selected.slice(0,available);
+
+  // We keep File objects in memory; clear the native input so choosing
+  // the same files again later will still trigger onchange.
+  if(input) input.value='';
+
+  renderContentGalleryNew_();
+  renderContentGalleryExisting_();
+}
+
+function renderContentGalleryNew_(){
+  const root=document.getElementById('cGalleryNewPreview');
+  if(!root) return;
+
+  const files=window.BTO_CONTENT_GALLERY_NEW_FILES||[];
+
+  root.innerHTML=files.map((file,i)=>{
+    let localUrl='';
+    try{
+      localUrl=URL.createObjectURL(file);
+    }catch(e){}
+
+    return `
+      <div class="preview-item">
+        ${localUrl
+          ? `<img src="${esc(localUrl)}" alt="${esc(file.name||`New photo ${i+1}`)}">`
+          : ''}
+        <small>${esc(file.name||`New photo ${i+1}`)}</small>
+        <button type="button"
+          class="danger"
+          style="width:calc(100% - 12px);margin:0 6px 6px;padding:7px 8px;font-size:12px"
+          onclick="removeContentGalleryNew(${i})">
+          Remove
+        </button>
+      </div>
+    `;
+  }).join('');
+
+  const count=document.getElementById('cGalleryCount');
+  if(count){
+    const existingCount=btoContentGalleryExistingFromInput().length;
+    count.textContent=`${existingCount+files.length} / ${BTO_CONTENT_GALLERY_MAX} gallery photos selected`;
+  }
+}
+
+function removeContentGalleryNew(index){
+  const files=window.BTO_CONTENT_GALLERY_NEW_FILES||[];
+  files.splice(Number(index),1);
+  window.BTO_CONTENT_GALLERY_NEW_FILES=files;
+  renderContentGalleryNew_();
+  renderContentGalleryExisting_();
+}
+
+function toggleContentGalleryField_(){
+  const type=document.getElementById('cType');
+  const wrap=document.getElementById('cGalleryWrap');
+  if(!type || !wrap) return;
+
+  const isActivity=
+    String(type.value||'').trim().toUpperCase()==='ACTIVITY';
+
+  wrap.classList.toggle('hidden',!isActivity);
+}
+
+
 function renderContentAdmin(){
   const list=window.BTO_COMMITTEES_CACHE||[];
   const rows=window.BTO_CONTENT_ADMIN_ROWS||[];
@@ -3145,9 +3317,11 @@ function renderContentAdmin(){
       <h2>${btoContentId(e)?'Edit':'Add'} Barangay Update</h2>
       <input id="cId" type="hidden" value="${esc(btoContentId(e))}">
       <input id="cExistingPhoto" type="hidden" value="${esc(btoContentVal(e,'Featured Photo URL','Photo URL'))}">
+      <input id="cExistingGallery" type="hidden"
+        value="${esc(JSON.stringify(btoContentGalleryUrls(e)))}">
 
       <label>Type</label>
-      <select id="cType" onchange="toggleCommitteeUpdateField()">
+      <select id="cType" onchange="toggleCommitteeUpdateField();toggleContentGalleryField_()">
         <option value="ANNOUNCEMENT" ${String(btoContentVal(e,'Type')).toUpperCase()==='ANNOUNCEMENT'?'selected':''}>ANNOUNCEMENT</option>
         <option value="ACTIVITY" ${String(btoContentVal(e,'Type')).toUpperCase()==='ACTIVITY'?'selected':''}>ACTIVITY</option>
         <option value="COMMITTEE UPDATE" ${String(btoContentVal(e,'Type')).toUpperCase()==='COMMITTEE UPDATE'?'selected':''}>COMMITTEE UPDATE</option>
@@ -3192,6 +3366,20 @@ function renderContentAdmin(){
           style="width:100%;max-width:360px;max-height:220px;object-fit:cover;border:1px solid #e5e7eb;border-radius:12px;background:#f8fafc">
       </div>
 
+      <div id="cGalleryWrap" class="hidden" style="margin-top:16px">
+        <label>Activity Gallery Photos</label>
+        <input id="cGallery" type="file" accept="image/*" multiple
+          onchange="previewContentGalleryInput(this)">
+        <div class="help">
+          ACTIVITY only. Select multiple photos at once. Maximum ${BTO_CONTENT_GALLERY_MAX}
+          gallery photos, excluding the Featured Photo.
+        </div>
+        <div id="cGalleryCount" class="help" style="margin-top:6px"></div>
+
+        <div id="cGalleryExistingPreview" class="gallery-upload-preview"></div>
+        <div id="cGalleryNewPreview" class="gallery-upload-preview"></div>
+      </div>
+
       <div class="admin-actions">
         <button onclick="saveContent(this)">${btoContentId(e)?'Update':'Save & Publish'}</button>
         ${btoContentId(e)?`<button class="secondary" onclick="window.BTO_EDIT_CONTENT=null;renderContentAdmin()">Cancel Edit</button>`:''}
@@ -3206,6 +3394,7 @@ function renderContentAdmin(){
         const photoDisplay=photo ? normalizePortalImageUrl(photo) : '';
         const dateText=btoContentDisplayDate(btoContentVal(r,'Event Date','Date'));
         const timeText=btoContentDisplayTime(btoContentVal(r,'Time'));
+        const galleryCount=btoContentGalleryUrls(r).length;
 
         return `<div class="doc-row">
           <div class="doc-row-main" style="display:flex;align-items:center;gap:12px;min-width:0">
@@ -3221,6 +3410,7 @@ function renderContentAdmin(){
                 ${esc(btoContentVal(r,'Type'))}
                 ${dateText?' • '+esc(dateText):''}
                 ${timeText?' • '+esc(timeText):''}
+                ${galleryCount?` • ${galleryCount} gallery photo${galleryCount>1?'s':''}`:''}
                 ${String(btoContentVal(r,'Type')).toUpperCase()==='COMMITTEE UPDATE'
                   ? ' • '+esc((list.find(c=>String(c.committeeId)===String(btoContentVal(r,'Committee ID','Related Committee')))||{}).committeeName||'Committee')
                   : ''}
@@ -3235,7 +3425,13 @@ function renderContentAdmin(){
       }).join('') : '<div class="help">No records yet.</div>'}
     </div>`;
 
-  setTimeout(toggleCommitteeUpdateField,0);
+  window.BTO_CONTENT_GALLERY_NEW_FILES=[];
+  setTimeout(()=>{
+    toggleCommitteeUpdateField();
+    toggleContentGalleryField_();
+    renderContentGalleryExisting_();
+    renderContentGalleryNew_();
+  },0);
 }
 
 function toggleCommitteeUpdateField(){
@@ -3279,6 +3475,13 @@ function btoContentApplySavedPayload_(payload){
   row['Committee ID']=payload.committeeId||'';
   row['Description']=payload.description||'';
 
+  if(Array.isArray(payload.galleryUrls)){
+    row['Gallery URLs']=payload.galleryUrls
+      .map(x=>String(x||'').trim())
+      .filter(Boolean)
+      .join('\n');
+  }
+
   if(String(payload.featuredPhotoUrl||'').trim()){
     row['Featured Photo URL']=payload.featuredPhotoUrl;
     row['Photo URL']=payload.featuredPhotoUrl;
@@ -3315,7 +3518,17 @@ function btoContentRowMatchesPayload_(row,payload){
       payload.time
     ) &&
     same(btoContentVal(row,'Venue'),payload.venue) &&
-    same(btoContentVal(row,'Description'),payload.description)
+    same(btoContentVal(row,'Description'),payload.description) &&
+    (
+      !Array.isArray(payload.galleryUrls) ||
+      same(
+        btoContentGalleryUrls(row).join('\n'),
+        payload.galleryUrls
+          .map(x=>String(x||'').trim())
+          .filter(Boolean)
+          .join('\n')
+      )
+    )
   );
 }
 
@@ -3397,16 +3610,70 @@ async function saveContent(btn){
         );
       }
 
+      let galleryUrls=btoContentGalleryExistingFromInput();
+
+      if(String(contentType).toUpperCase()==='ACTIVITY'){
+        const newGalleryFiles=
+          Array.from(window.BTO_CONTENT_GALLERY_NEW_FILES||[]);
+
+        if(
+          galleryUrls.length+newGalleryFiles.length >
+          BTO_CONTENT_GALLERY_MAX
+        ){
+          throw new Error(
+            `Maximum ${BTO_CONTENT_GALLERY_MAX} gallery photos only.`
+          );
+        }
+
+        if(newGalleryFiles.length){
+          const uploaded=[];
+
+          for(let i=0;i<newGalleryFiles.length;i++){
+            const galleryFile=newGalleryFiles[i];
+            const base64=await fileToBase64(galleryFile);
+
+            const up=await api('uploadBase64',{
+              fileName:galleryFile.name,
+              mimeType:galleryFile.type || 'image/jpeg',
+              base64
+            });
+
+            if(!up.success){
+              throw new Error(
+                up.message ||
+                `Gallery photo ${i+1} upload failed.`
+              );
+            }
+
+            if(String(up.url||'').trim()){
+              uploaded.push(String(up.url).trim());
+            }
+          }
+
+          galleryUrls=[...new Set(
+            galleryUrls.concat(uploaded)
+          )].slice(0,BTO_CONTENT_GALLERY_MAX);
+
+          // Preserve successful uploads locally so Save retry will not
+          // upload the same gallery files again.
+          btoContentSetGalleryExisting(galleryUrls);
+          window.BTO_CONTENT_GALLERY_NEW_FILES=[];
+          renderContentGalleryNew_();
+        }
+      }
+
       const payload={
         id:id,
         contentId:id,
         type:contentType,
+
         title:document.getElementById('cTitle').value,
         eventDate:document.getElementById('cDate').value,
         time:document.getElementById('cTime').value,
         venue:document.getElementById('cVenue').value,
         committeeId:committeeId,
         description:document.getElementById('cDesc').value,
+        galleryUrls:galleryUrls,
         featuredPhotoUrl:photoUrl,
         photoUrl:photoUrl,
         status:'PUBLISHED'
