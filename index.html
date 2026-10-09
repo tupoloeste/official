@@ -4113,9 +4113,6 @@ body.bto-site-loading{overflow:hidden!important}
     grid-template-columns:1fr 1fr;
   }
 
-  .population-donut-card:last-child{
-    grid-column:1 / -1;
-  }
 }
 
 @media(max-width:820px){
@@ -4123,9 +4120,6 @@ body.bto-site-loading{overflow:hidden!important}
     grid-template-columns:1fr;
   }
 
-  .population-donut-card:last-child{
-    grid-column:auto;
-  }
 
   .population-indicators-grid{
     grid-template-columns:repeat(2,minmax(0,1fr));
@@ -4154,6 +4148,134 @@ body.bto-site-loading{overflow:hidden!important}
 @media(max-width:390px){
   .population-indicators-grid{
     grid-template-columns:1fr;
+  }
+}
+
+
+
+/* ===== AGE GROUP DISTRIBUTION — VERTICAL BAR GRAPH ===== */
+.population-age-bar-card{
+  grid-column:1 / -1;
+}
+
+.age-bar-summary{
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  gap:8px;
+  margin-bottom:10px;
+  font-size:12px;
+  color:#667085;
+}
+
+.age-bar-summary strong{
+  color:#991b1b;
+  font-size:16px;
+}
+
+.age-bar-scroll{
+  width:100%;
+  overflow-x:auto;
+  overflow-y:hidden;
+  padding:6px 2px 8px;
+  scrollbar-width:thin;
+}
+
+.age-bar-chart{
+  min-width:max(100%, 980px);
+  height:330px;
+  display:grid;
+  grid-template-columns:repeat(var(--age-bar-count), minmax(42px,1fr));
+  gap:8px;
+  align-items:end;
+  border-bottom:1px solid #dfe3e8;
+  padding:8px 6px 0;
+}
+
+.age-bar-column{
+  height:100%;
+  min-width:42px;
+  display:grid;
+  grid-template-rows:24px 1fr 44px 20px;
+  align-items:end;
+  text-align:center;
+}
+
+.age-bar-value{
+  font-size:11px;
+  font-weight:900;
+  color:#111827;
+  line-height:1;
+  padding-bottom:5px;
+}
+
+.age-bar-track{
+  height:100%;
+  min-height:190px;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  position:relative;
+}
+
+.age-bar-fill{
+  width:min(30px,72%);
+  min-height:4px;
+  border-radius:7px 7px 0 0;
+  background:linear-gradient(
+    to top,
+    #991b1b,
+    #ef233c
+  );
+  transition:height .35s ease;
+  box-shadow:0 1px 2px rgba(153,27,27,.18);
+}
+
+.age-bar-label{
+  align-self:start;
+  padding-top:7px;
+  font-size:10px;
+  line-height:1.15;
+  font-weight:800;
+  color:#344054;
+  white-space:normal;
+}
+
+.age-bar-percent{
+  align-self:start;
+  font-size:9px;
+  color:#667085;
+  font-weight:700;
+}
+
+@media(max-width:820px){
+  .population-age-bar-card{
+    grid-column:auto;
+  }
+
+  .age-bar-chart{
+    min-width:900px;
+    height:300px;
+  }
+}
+
+@media(max-width:560px){
+  .age-bar-chart{
+    min-width:860px;
+    height:285px;
+    gap:6px;
+  }
+
+  .age-bar-column{
+    grid-template-rows:22px 1fr 42px 18px;
+  }
+
+  .age-bar-track{
+    min-height:165px;
+  }
+
+  .age-bar-fill{
+    width:min(27px,72%);
   }
 }
 
@@ -4757,10 +4879,10 @@ body.bto-site-loading{overflow:hidden!important}
           <div id="dependencyChartBody"></div>
         </section>
 
-        <section class="population-donut-card" id="ageChartCard" style="display:none">
+        <section class="population-donut-card population-age-bar-card" id="ageChartCard" style="display:none">
           <div class="population-donut-head">
             <h3>Age Group Distribution</h3>
-            <p>Population grouped into broader age ranges for easier viewing.</p>
+            <p>Population by age group shown as a vertical bar graph.</p>
           </div>
           <div id="ageChartBody"></div>
         </section>
@@ -7136,6 +7258,61 @@ function btoPopulationBroadAgeGroups_(ageMap){
     .filter(x=>x.value!==null);
 }
 
+
+function btoAgeVerticalBarHtml_(rows){
+  const clean=(Array.isArray(rows)?rows:[])
+    .map((x,index)=>({
+      label:String(x?.label||'').trim(),
+      value:btoNumberOrNull(x?.value),
+      order:Number(x?.order||index+1)
+    }))
+    .filter(x=>
+      x.label &&
+      x.value!==null &&
+      x.value>=0
+    )
+    .sort((a,b)=>a.order-b.order);
+
+  if(!clean.length){
+    return '<div class="live-empty">No validated age distribution data available.</div>';
+  }
+
+  const max=Math.max(...clean.map(x=>x.value),1);
+  const total=clean.reduce((sum,x)=>sum+x.value,0);
+
+  return `
+    <div class="age-bar-summary">
+      <span>Total represented</span>
+      <strong>${total.toLocaleString()}</strong>
+    </div>
+
+    <div class="age-bar-scroll">
+      <div class="age-bar-chart" style="--age-bar-count:${clean.length}">
+        ${clean.map(x=>{
+          const pct=(x.value/max)*100;
+          const share=total>0 ? (x.value/total)*100 : 0;
+
+          return `
+            <div class="age-bar-column" title="${btoEsc(x.label)}: ${x.value.toLocaleString()} (${share.toFixed(1)}%)">
+              <div class="age-bar-value">${x.value.toLocaleString()}</div>
+              <div class="age-bar-track">
+                <div
+                  class="age-bar-fill"
+                  style="height:${Math.max(3,pct).toFixed(2)}%"
+                  aria-label="${btoEsc(x.label)} ${x.value.toLocaleString()}"
+                ></div>
+              </div>
+              <div class="age-bar-label">${btoEsc(x.label)}</div>
+              <div class="age-bar-percent">${share.toFixed(1)}%</div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+
 function btoPopulationIndicatorCard_(label,value,suffix=''){
   if(
     value===null ||
@@ -7330,17 +7507,35 @@ function renderEnhancedBarangayStats(data){
   }
 
   /* ========================================================
-     3. BROAD AGE-GROUP DONUT
+     3. AGE GROUP DISTRIBUTION — VERTICAL BAR GRAPH
      ======================================================== */
 
   const ageCard=document.getElementById('ageChartCard');
   const ageBody=document.getElementById('ageChartBody');
 
-  let broadAge=btoPopulationBroadAgeGroups_(ageMap);
+  let ageBars=(Array.isArray(ageSex)?ageSex:[])
+    .map((row,index)=>{
+      const male=btoNumberOrNull(row?.male);
+      const female=btoNumberOrNull(row?.female);
 
-  // Fallback: when the annual profile has not yet been installed/saved,
-  // keep using the existing public demographic rows.
-  if(!broadAge.length){
+      const value=(
+        male===null &&
+        female===null
+      ) ? null : (male||0)+(female||0);
+
+      return {
+        label:String(row?.label||'').trim(),
+        value:value,
+        order:Number(row?.displayOrder||index+1)
+      };
+    })
+    .filter(x=>
+      x.label &&
+      x.value!==null
+    );
+
+  // Legacy fallback when the Annual Population Profile is not available yet.
+  if(!ageBars.length){
     const looksLikeDateLabel=(label)=>{
       const text=String(label||'').trim();
 
@@ -7352,24 +7547,11 @@ function renderEnhancedBarangayStats(data){
       );
     };
 
-    const palette=[
-      '#ef233c',
-      '#ff8c42',
-      '#f6c945',
-      '#2a9d8f',
-      '#3a6ea5',
-      '#6d597a',
-      '#9b5de5',
-      '#00b4d8',
-      '#6a994e',
-      '#bc6c25'
-    ];
-
-    broadAge=demographics
-      .map((x,i)=>({
+    ageBars=demographics
+      .map((x,index)=>({
         label:String(x.label||'').trim(),
         value:btoNumberOrNull(x.value),
-        color:palette[i%palette.length]
+        order:Number(x.displayOrder||index+1)
       }))
       .filter(x=>
         x.label &&
@@ -7382,15 +7564,10 @@ function renderEnhancedBarangayStats(data){
   if(
     ageCard &&
     ageBody &&
-    broadAge.length &&
-    broadAge.reduce((sum,x)=>sum+(x.value||0),0)>0
+    ageBars.length &&
+    ageBars.reduce((sum,x)=>sum+(x.value||0),0)>0
   ){
-    ageBody.innerHTML=btoStatsDonutHtml_(
-      broadAge,
-      'Age Population',
-      broadAge.reduce((sum,x)=>sum+(x.value||0),0)
-    );
-
+    ageBody.innerHTML=btoAgeVerticalBarHtml_(ageBars);
     ageCard.style.display='';
   }else if(ageCard){
     ageCard.style.display='none';
