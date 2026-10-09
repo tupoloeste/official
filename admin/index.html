@@ -2283,6 +2283,19 @@ button.danger,
   }
 }
 
+
+/* ===== PROFILE PERSONNEL / PHOTO CHART ADMIN ===== */
+.profile-person-form-card{border-top:4px solid #991b1b}
+.profile-person-current-photo{display:flex;align-items:center;gap:10px;margin:8px 0 10px;padding:8px;border:1px solid #e4e7ec;border-radius:10px;background:#f8fafc}
+.profile-person-current-photo img{width:76px;height:76px;object-fit:cover;object-position:center;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #d0d5dd}
+.profile-person-current-photo span{color:#667085;font-size:12px;font-weight:700}
+.profile-person-admin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.profile-person-admin-card{border:1px solid #e4e7ec;border-radius:14px;background:#fff;padding:14px;text-align:center}
+.profile-person-admin-photo{display:flex;justify-content:center;margin-bottom:10px}
+.profile-person-admin-photo img,.profile-person-admin-avatar{width:92px;height:92px;border-radius:50%;object-fit:cover;object-position:center;border:3px solid #fff;box-shadow:0 0 0 2px #f1b4bd}
+.profile-person-admin-avatar{display:grid;place-items:center;background:#fff1f3;color:#991b1b;font-size:30px;font-weight:900}
+.profile-person-admin-info{display:grid;gap:3px;margin-bottom:10px}
+.profile-person-admin-info strong{color:#101828}.profile-person-admin-info span{color:#991b1b;font-size:12px;font-weight:800}.profile-person-admin-info small{color:#667085;font-size:10px}
 </style>
 </head>
 <body>
@@ -4022,6 +4035,110 @@ async function savePopulationProfile(btn){
 
 
 /* ============================================================
+   PROFILE PERSONNEL / PHOTO CHART
+   School + Health Center
+   Position / Designation is fully Encoder-controlled.
+   ============================================================ */
+
+window.BTO_PROFILE_PEOPLE=[];
+window.BTO_PROFILE_PEOPLE_CONTEXT=null;
+window.BTO_EDIT_PROFILE_PERSON=null;
+
+async function manageProfilePeople(entityType,entityId,entityLabel,backTarget){
+  window.BTO_PROFILE_PEOPLE_CONTEXT={entityType:String(entityType||'').trim(),entityId:String(entityId||'').trim(),entityLabel:String(entityLabel||'').trim()||'Profile',backTarget:String(backTarget||'').trim()};
+  document.getElementById('moduleArea').innerHTML='<div class="bto-loading"><span class="bto-spinner"></span><span>Loading personnel...</span></div>';
+  const r=await api('getProfilePeople',{entityType:window.BTO_PROFILE_PEOPLE_CONTEXT.entityType,entityId:window.BTO_PROFILE_PEOPLE_CONTEXT.entityId});
+  if(!r.success){showModuleError(r.message);return}
+  window.BTO_PROFILE_PEOPLE=Array.isArray(r.data)?r.data:[];
+  window.BTO_EDIT_PROFILE_PERSON=null;
+  renderProfilePeopleAdmin();
+}
+
+function btoProfilePeopleBack_(){
+  const ctx=window.BTO_PROFILE_PEOPLE_CONTEXT||{};
+  if(ctx.backTarget==='schoolProfiles') return schoolProfilesForm();
+  if(ctx.backTarget==='healthCenter') return healthCenterForm();
+  return backToModules();
+}
+
+function renderProfilePeopleAdmin(){
+  const ctx=window.BTO_PROFILE_PEOPLE_CONTEXT||{};
+  const rows=window.BTO_PROFILE_PEOPLE||[];
+  const e=window.BTO_EDIT_PROFILE_PERSON||{};
+  document.getElementById('moduleArea').innerHTML=`
+    <div class="module-page-header">
+      <div><h2>${esc(ctx.entityLabel||'Personnel')}</h2><div class="help">Personnel / Photo Chart</div></div>
+      <button class="back-btn" type="button" onclick="btoProfilePeopleBack_()">← Back</button>
+    </div>
+    <div class="card profile-person-form-card">
+      <h2>${e.id?'Edit':'Add'} Personnel</h2>
+      <div class="help">The Barangay Encoder enters the person's name and <strong>Position / Designation</strong>. Positions are not hardcoded.</div>
+      <input id="profilePersonId" type="hidden" value="${esc(e.id||'')}">
+      <input id="profilePersonExistingPhoto" type="hidden" value="${esc(e.photoUrl||'')}">
+      <div class="grid">
+        <div><label>Name <span style="color:#c5162e">*</span></label><input id="profilePersonName" value="${esc(e.name||'')}" placeholder="Enter full name"></div>
+        <div><label>Position / Designation <span style="color:#c5162e">*</span></label><input id="profilePersonPosition" value="${esc(e.position||'')}" placeholder="Encoder enters the position"></div>
+      </div>
+      <div class="grid">
+        <div><label>Contact Number (optional)</label><input id="profilePersonContact" value="${esc(e.contactNumber||'')}"></div>
+        <div><label>Display Order</label><input id="profilePersonOrder" type="number" min="0" value="${esc(e.displayOrder||0)}"><div class="help">Lower number appears first in the public photo chart.</div></div>
+      </div>
+      <label>Photo</label>
+      ${e.photoUrl?`<div class="profile-person-current-photo"><img src="${esc(normalizePortalImageUrl(e.photoUrl))}" alt="${esc(e.name||'Personnel')}" onerror="this.style.display='none'"><span>Current photo</span></div>`:''}
+      <input id="profilePersonPhoto" type="file" accept="image/*">
+      <label>Status</label>
+      <select id="profilePersonStatus"><option value="ACTIVE" ${String(e.status||'ACTIVE').toUpperCase()==='ACTIVE'?'selected':''}>ACTIVE</option><option value="INACTIVE" ${String(e.status||'').toUpperCase()==='INACTIVE'?'selected':''}>INACTIVE</option></select>
+      <div class="admin-actions">
+        <button onclick="saveProfilePerson(this)">${e.id?'Update Personnel':'Save Personnel'}</button>
+        ${e.id?`<button class="secondary" type="button" onclick="window.BTO_EDIT_PROFILE_PERSON=null;renderProfilePeopleAdmin()">Cancel Edit</button>`:''}
+      </div>
+    </div>
+    <div class="card">
+      <h2>Personnel / Photo Chart</h2>
+      <div class="profile-person-admin-grid">
+        ${rows.length?rows.map((x,i)=>`<div class="profile-person-admin-card">
+          <div class="profile-person-admin-photo">${x.photoUrl?`<img src="${esc(normalizePortalImageUrl(x.photoUrl))}" alt="${esc(x.name||'Personnel')}" loading="lazy" onerror="this.style.display='none'">`:`<div class="profile-person-admin-avatar">${esc((x.name||'P').trim().charAt(0).toUpperCase())}</div>`}</div>
+          <div class="profile-person-admin-info"><strong>${esc(x.name||'')}</strong><span>${esc(x.position||'')}</span>${x.contactNumber?`<small>${esc(x.contactNumber)}</small>`:''}<small>Order: ${esc(x.displayOrder||0)} • ${esc(x.status||'ACTIVE')}</small></div>
+          <div class="admin-actions"><button class="secondary" onclick="editProfilePerson(${i})">Edit</button><button class="danger" onclick="deleteProfilePerson('${esc(x.id||'')}')">Delete</button></div>
+        </div>`).join(''):'<div class="help">No personnel encoded yet.</div>'}
+      </div>
+    </div>`;
+}
+
+function editProfilePerson(index){
+  window.BTO_EDIT_PROFILE_PERSON=(window.BTO_PROFILE_PEOPLE||[])[index]||null;
+  renderProfilePeopleAdmin();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+async function saveProfilePerson(btn){
+  return btoSingleSave('PROFILE_PERSON',async()=>withButtonSpinner(btn,'Saving...',async()=>{
+    const ctx=window.BTO_PROFILE_PEOPLE_CONTEXT||{};
+    const name=String(document.getElementById('profilePersonName')?.value||'').trim();
+    const position=String(document.getElementById('profilePersonPosition')?.value||'').trim();
+    if(!name) throw new Error('Name is required.');
+    if(!position) throw new Error('Position / Designation is required.');
+    let photoUrl=String(document.getElementById('profilePersonExistingPhoto')?.value||'').trim();
+    const photoFile=document.getElementById('profilePersonPhoto')?.files?.[0];
+    if(photoFile) photoUrl=await btoUploadDocumentFile(photoFile,'image');
+    const payload={id:String(document.getElementById('profilePersonId')?.value||'').trim(),entityType:ctx.entityType,entityId:ctx.entityId,name,position,photoUrl,contactNumber:String(document.getElementById('profilePersonContact')?.value||'').trim(),displayOrder:String(document.getElementById('profilePersonOrder')?.value||'0').trim(),status:String(document.getElementById('profilePersonStatus')?.value||'ACTIVE').trim()};
+    const r=await api('saveProfilePerson',payload);
+    if(!r.success) throw new Error(r.message||'Unable to save personnel.');
+    await manageProfilePeople(ctx.entityType,ctx.entityId,ctx.entityLabel,ctx.backTarget);
+    return r;
+  },'Personnel saved successfully.'));
+}
+
+async function deleteProfilePerson(id){
+  if(!confirm('Delete this personnel record?')) return;
+  const ctx=window.BTO_PROFILE_PEOPLE_CONTEXT||{};
+  const r=await api('deleteProfilePerson',{id});
+  if(!r.success){showGlobalActionStatus(r.message||'Delete failed.','err');return}
+  showGlobalActionStatus(r.message||'Personnel deleted.','ok');
+  await manageProfilePeople(ctx.entityType,ctx.entityId,ctx.entityLabel,ctx.backTarget);
+}
+
+/* ============================================================
    HEALTH CENTER PROFILE
    ============================================================ */
 
@@ -4108,11 +4225,6 @@ function renderHealthCenterAdmin(){
         <div>
           <label>Contact Number</label>
           <input id="hc_contact" value="${esc(x.contactNumber||'')}">
-        </div>
-
-        <div>
-          <label>Assigned Midwife / Health Personnel</label>
-          <input id="hc_personnel" value="${esc(x.healthPersonnel||'')}">
         </div>
 
         <div>
@@ -4216,6 +4328,13 @@ function renderHealthCenterAdmin(){
         <button onclick="saveHealthCenterProfile(this)">
           Save Health Center Profile
         </button>
+        <button
+          class="secondary"
+          type="button"
+          onclick="manageProfilePeople('HEALTH_CENTER','HEALTH-CENTER-001',${JSON.stringify(x.healthCenterName||'Health Center')},'healthCenter')"
+        >
+          Manage Personnel / Photo Chart
+        </button>
       </div>
     </div>
   `;
@@ -4263,7 +4382,7 @@ async function saveHealthCenterProfile(btn){
         healthCenterName:healthCenterName,
         address:String(document.getElementById('hc_address')?.value||'').trim(),
         contactNumber:String(document.getElementById('hc_contact')?.value||'').trim(),
-        healthPersonnel:String(document.getElementById('hc_personnel')?.value||'').trim(),
+        healthPersonnel:window.BTO_HEALTH_CENTER_PROFILE?.healthPersonnel||'',
         bhwCount:btoHealthFormNum_('hc_bhw'),
         bnsCount:btoHealthFormNum_('hc_bns'),
         operatingHours:String(document.getElementById('hc_hours')?.value||'').trim(),
@@ -4383,11 +4502,6 @@ function btoSchoolCard_(school){
         </div>
 
         <div>
-          <label>${school.id==='SCHOOL-CDC'?'Child Development Worker / Teacher':'School Head / Principal'}</label>
-          <input id="${prefix}_head" value="${esc(school.schoolHead||'')}">
-        </div>
-
-        <div>
           <label>Contact Number</label>
           <input id="${prefix}_contact" value="${esc(school.contactNumber||'')}">
         </div>
@@ -4470,6 +4584,13 @@ function btoSchoolCard_(school){
         <button onclick="saveSchoolProfile(this,'${school.id}')">
           Save ${school.id==='SCHOOL-CDC'?'CDC':'Elementary'} Profile
         </button>
+        <button
+          class="secondary"
+          type="button"
+          onclick="manageProfilePeople('SCHOOL','${school.id}',${JSON.stringify(school.schoolName||label)},'schoolProfiles')"
+        >
+          Manage Personnel / Photo Chart
+        </button>
       </div>
     </div>
   `;
@@ -4539,7 +4660,7 @@ async function saveSchoolProfile(btn,schoolId){
         schoolName:schoolName,
         schoolYear:String(document.getElementById(prefix+'_year')?.value||'').trim(),
         address:String(document.getElementById(prefix+'_address')?.value||'').trim(),
-        schoolHead:String(document.getElementById(prefix+'_head')?.value||'').trim(),
+        schoolHead:btoSchoolProfile_(schoolId).schoolHead||'',
         contactNumber:String(document.getElementById(prefix+'_contact')?.value||'').trim(),
         totalEnrollees:btoSchoolFormNumber_(prefix+'_total'),
         maleEnrollees:btoSchoolFormNumber_(prefix+'_male'),
@@ -6267,27 +6388,31 @@ function renderOrganizationOfficersAdmin(){
     <div class="module-page-header">
       <div>
         <h2>${esc(window.BTO_ORG_OFFICER_ORG_NAME)}</h2>
-        <div class="help">Organization Officers</div>
+        <div class="help">Officers / Personnel Photo Chart</div>
       </div>
       <button class="back-btn" onclick="organizationsForm()">← Back to Organizations</button>
     </div>
 
     <div class="card">
-      <h2>${e.id?'Edit':'Add'} Officer</h2>
+      <h2>${e.id?'Edit':'Add'} Officer / Personnel</h2>
 
       <input id="orgOfficerId" type="hidden" value="${esc(e.id||'')}">
 
       <div class="grid">
         <div>
-          <label>Officer Name</label>
+          <label>Name</label>
           <input id="orgOfficerName" value="${esc(e.name||'')}">
         </div>
         <div>
-          <label>Position</label>
+          <label>Position / Designation</label>
           <input id="orgOfficerPosition" value="${esc(e.position||'')}"
-            placeholder="Example: President">
+            placeholder="Encoder enters the position">
         </div>
       </div>
+
+      <label>Photo</label>
+      ${e.photoUrl?`<div class="profile-person-current-photo"><img src="${esc(normalizePortalImageUrl(e.photoUrl))}" alt="${esc(e.name||'Officer / Personnel')}" onerror="this.style.display='none'"><span>Current photo</span></div>`:''}
+      <input id="orgOfficerPhoto" type="file" accept="image/*">
 
       <div class="grid">
         <div>
@@ -6313,13 +6438,13 @@ function renderOrganizationOfficersAdmin(){
     </div>
 
     <div class="card">
-      <h2>Existing Officers</h2>
+      <h2>Existing Officers / Personnel</h2>
       <div class="organization-admin-list">
         ${rows.length ? rows.map((x,i)=>`
           <div class="organization-admin-row">
-            <div>
-              <strong>${esc(x.name||'')}</strong>
-              <small>${esc(x.position||'')} ${x.contactNumber?'• '+esc(x.contactNumber):''}</small>
+            <div class="organization-admin-main">
+              ${x.photoUrl?`<img src="${esc(normalizePortalImageUrl(x.photoUrl))}" alt="${esc(x.name||'Officer / Personnel')}" loading="lazy" onerror="this.style.display='none'">`:`<div class="organization-admin-avatar">${esc((x.name||'O').trim().charAt(0).toUpperCase())}</div>`}
+              <div><strong>${esc(x.name||'')}</strong><small>${esc(x.position||'')} ${x.contactNumber?'• '+esc(x.contactNumber):''}</small></div>
             </div>
             <div class="admin-actions">
               <button class="secondary" onclick="editOrganizationOfficer(${i})">Edit</button>
@@ -6339,18 +6464,24 @@ function editOrganizationOfficer(index){
 async function saveOrganizationOfficer(btn){
   return btoSingleSave('ORG_OFFICER',async()=>{
     return withButtonSpinner(btn,'Saving...',async()=>{
+      const current=window.BTO_EDIT_ORG_OFFICER||{};
+      let photoUrl=String(current.photoUrl||'').trim();
+      const photoFile=document.getElementById('orgOfficerPhoto')?.files?.[0];
+      if(photoFile) photoUrl=await btoUploadDocumentFile(photoFile,'image');
+
       const payload={
         id:document.getElementById('orgOfficerId').value,
         organizationId:window.BTO_ORG_OFFICER_ORG_ID,
         name:document.getElementById('orgOfficerName').value.trim(),
         position:document.getElementById('orgOfficerPosition').value.trim(),
+        photoUrl:photoUrl,
         contactNumber:document.getElementById('orgOfficerContact').value.trim(),
         displayOrder:document.getElementById('orgOfficerOrder').value,
         status:document.getElementById('orgOfficerStatus').value
       };
 
       if(!payload.name) throw new Error('Officer Name is required.');
-      if(!payload.position) throw new Error('Position is required.');
+      if(!payload.position) throw new Error('Position / Designation is required.');
 
       const r=await api('saveOrganizationOfficer',payload);
       if(!r.success) throw new Error(r.message||'Unable to save officer.');
@@ -6361,7 +6492,7 @@ async function saveOrganizationOfficer(btn){
       );
 
       return r;
-    },'Officer saved successfully.');
+    },'Officer / Personnel saved successfully.');
   });
 }
 
