@@ -7703,7 +7703,6 @@ async function fullDisclosureForm(){
 }
 
 function renderFullDisclosureModule(){
-  const cats=window.BTO_DISCLOSURE_CATEGORIES||[];
   const rows=(window.BTO_DISCLOSURE_ROWS||[])
     .slice()
     .sort((a,b)=>
@@ -7717,35 +7716,12 @@ function renderFullDisclosureModule(){
       <h2>Barangay Full Disclosure</h2>
       <div class="help">
         The Barangay Encoder enters the disclosure <strong>Year</strong>,
+        selects the disclosure item from the official dropdown,
         uploads the display photo/image, then uploads the corresponding official PDF.
         Published records will appear on the public Full Disclosure board.
       </div>
 
-      <div class="disclosure-category-box">
-        <strong>Disclosure Items / Categories</strong>
-        <div class="help">
-          Add new disclosure item names here when needed.
-          Existing categories remain reusable for future years.
-        </div>
-
-        <div class="disclosure-category-add">
-          <div>
-            <label>New Item / Category Name</label>
-            <input
-              id="newDisclosureCategory"
-              placeholder="Example: Statement of Receipts and Expenditures"
-            >
-          </div>
-          <button onclick="addDisclosureCategory(this)">+ Add Item</button>
-        </div>
-
-        <div class="help" style="margin-top:8px">
-          Current:
-          ${cats.length
-            ? cats.map(c=>esc(c.name)).join(' • ')
-            : 'No categories yet'}
-        </div>
-      </div>
+      
 
       <input id="fdId" type="hidden">
 
@@ -7771,16 +7747,16 @@ function renderFullDisclosureModule(){
             </div>
 
             <div>
-              <label>Disclosure Item / Category <span class="fd-required">*</span></label>
-              <select id="fdCategory">
-                <option value="">Select item/category</option>
-                ${cats
-                  .filter(c=>c.status==='ACTIVE')
-                  .map(c=>`
-                    <option value="${esc(c.name)}">
-                      ${esc(c.name)}
-                    </option>
-                  `).join('')}
+              <label>Disclosure Item <span class="fd-required">*</span></label>
+              <select id="fdCategory" onchange="btoDisclosureItemChanged()">
+                <option value="">Select disclosure item</option>
+                <option value="Barangay Budget">Barangay Budget</option>
+                <option value="Summary of Income and Expenditures">Summary of Income and Expenditures</option>
+                <option value="20% Component of the IRA Utilization">20% Component of the IRA Utilization</option>
+                <option value="Statement of Receipts and Expenditures">Statement of Receipts and Expenditures</option>
+                <option value="Annual Procurement Plan or Procurement List">Annual Procurement Plan or Procurement List</option>
+                <option value="List of Notices of Award">List of Notices of Award</option>
+                <option value="Itemized Monthly Collections and Disbursements">Itemized Monthly Collections and Disbursements</option>
               </select>
             </div>
           </div>
@@ -7945,6 +7921,20 @@ async function addDisclosureCategory(btn){
 }
 
 
+
+function btoDisclosureItemChanged(){
+  const category=document.getElementById('fdCategory');
+  const title=document.getElementById('fdTitle');
+
+  if(!category || !title) return;
+
+  const selected=String(category.value||'').trim();
+
+  if(selected && !String(title.value||'').trim()){
+    title.value=selected;
+  }
+}
+
 function btoDisclosureImagePreview(input){
   btoResetPendingUpload('disclosureImage');
 
@@ -8006,10 +7996,19 @@ function editFullDisclosureDocument(json){
   document.getElementById('fdYear').value=x.year||currentYearValue();
 
   const sel=document.getElementById('fdCategory');
-  if(x.category && !Array.from(sel.options).some(o=>o.value===x.category)){
-    sel.insertAdjacentHTML('beforeend',`<option value="${esc(x.category)}">${esc(x.category)}</option>`);
+  const existingCategory=String(x.category||'').trim();
+
+  if(
+    existingCategory &&
+    !Array.from(sel.options).some(o=>o.value===existingCategory)
+  ){
+    const opt=document.createElement('option');
+    opt.value=existingCategory;
+    opt.textContent=existingCategory+' (existing)';
+    sel.appendChild(opt);
   }
-  sel.value=x.category||'';
+
+  sel.value=existingCategory;
 
   document.getElementById('fdTitle').value=x.title||'';
   document.getElementById('fdStatus').value=x.status||'PUBLISHED';
@@ -8100,7 +8099,7 @@ async function saveFullDisclosureDocument(btn){
     }
 
     if(!category){
-      throw new Error('Select a Disclosure Item / Category.');
+      throw new Error('Select a Disclosure Item.');
     }
 
     if(!title){
