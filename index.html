@@ -4679,6 +4679,176 @@ body.bto-site-loading{overflow:hidden!important}
   }
 }
 
+
+
+/* ===== SCHOOL PROFILES PUBLIC ===== */
+.school-public-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:18px;
+}
+
+.school-public-card{
+  background:#fff;
+  border:1px solid #e4e7ec;
+  border-radius:18px;
+  overflow:hidden;
+  box-shadow:0 6px 18px rgba(16,24,40,.06);
+}
+
+.school-public-photo{
+  height:290px;
+  background:#f3f4f6;
+  overflow:hidden;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.school-public-photo img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+
+.school-photo-placeholder{
+  font-size:58px;
+  opacity:.55;
+}
+
+.school-public-body{
+  padding:18px;
+}
+
+.school-public-type{
+  display:inline-flex;
+  padding:4px 8px;
+  border-radius:999px;
+  background:#fff1f3;
+  color:#c5162e;
+  border:1px solid #ffc7d0;
+  font-size:10px;
+  font-weight:900;
+  margin-bottom:8px;
+}
+
+.school-public-body h3{
+  margin:0;
+  color:#101828;
+  font-size:21px;
+}
+
+.school-public-year{
+  margin-top:5px;
+  color:#667085;
+  font-size:12px;
+  font-weight:800;
+}
+
+.school-public-description{
+  color:#475467;
+  font-size:13px;
+  line-height:1.55;
+  margin:12px 0 0;
+}
+
+.school-public-stats{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:8px;
+  margin-top:16px;
+}
+
+.school-public-stats > div{
+  background:#f9fafb;
+  border:1px solid #e4e7ec;
+  border-radius:11px;
+  padding:10px;
+  text-align:center;
+}
+
+.school-public-stats small{
+  display:block;
+  color:#667085;
+  font-size:9px;
+  line-height:1.2;
+}
+
+.school-public-stats strong{
+  display:block;
+  margin-top:3px;
+  color:#991b1b;
+  font-size:17px;
+}
+
+.school-public-details{
+  display:grid;
+  gap:8px;
+  margin-top:16px;
+}
+
+.school-public-details > div{
+  display:grid;
+  gap:2px;
+  padding-bottom:8px;
+  border-bottom:1px solid #f0f1f3;
+}
+
+.school-public-details span{
+  color:#667085;
+  font-size:10px;
+  font-weight:700;
+}
+
+.school-public-details strong{
+  color:#344054;
+  font-size:13px;
+}
+
+.school-public-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:16px;
+}
+
+.school-public-actions a{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:38px;
+  padding:8px 12px;
+  border-radius:9px;
+  background:#c5162e;
+  color:#fff;
+  text-decoration:none;
+  font-size:12px;
+  font-weight:800;
+}
+
+.school-public-actions a.outline{
+  background:#fff;
+  color:#344054;
+  border:1px solid #d0d5dd;
+}
+
+@media(max-width:850px){
+  .school-public-grid{
+    grid-template-columns:1fr;
+  }
+}
+
+@media(max-width:560px){
+  .school-public-photo{
+    height:230px;
+  }
+
+  .school-public-stats{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
 </style>
 </head>
 <body>
@@ -4835,7 +5005,16 @@ body.bto-site-loading{overflow:hidden!important}
         <span class="module-link">Open</span>
       </button>
       <button class="module-card" onclick="showView('statistics')">
-        <div class="icon">📊</div><h3>Barangay Statistics</h3>
+        <div class="icon">📊</div>
+
+          <button class="governance-card" onclick="showView('school-profiles')">
+            <span class="icon">🏫</span>
+            <span>
+              <strong>School Profiles</strong>
+              <small>CDC and Elementary School</small>
+            </span>
+          </button>
+<h3>Barangay Statistics</h3>
         <p>Population, households, families, voters, sex distribution, and demographic age groups.</p>
         <span class="module-link">Open</span>
       </button>
@@ -5238,6 +5417,35 @@ body.bto-site-loading{overflow:hidden!important}
 </div>
 
 <!-- STATISTICS -->
+
+<div class="view" id="view-school-profiles">
+  <div class="page-head">
+    <div class="container page-head-row">
+      <div>
+        <h1>School Profiles</h1>
+        <p>Educational institutions serving the community of Barangay Tupol Oeste.</p>
+      </div>
+      <button class="back-btn" onclick="showView('barangay')">← Back to Barangay</button>
+    </div>
+  </div>
+
+  <div class="page-content">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <h2>Our <span>Schools</span></h2>
+          <p>Official school profiles maintained by the Barangay Encoder.</p>
+        </div>
+      </div>
+
+      <div id="publicSchoolProfiles" class="school-public-grid">
+        <div class="live-empty">Loading school profiles...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 <div class="view" id="view-statistics">
   <div class="page-head">
     <div class="container page-head-row">
@@ -7781,6 +7989,122 @@ function btoPopulationIndicatorCard_(label,value,suffix=''){
   `;
 }
 
+
+function btoSchoolPublicNum_(value){
+  const n=btoNumberOrNull(value);
+  return n===null ? '—' : n.toLocaleString();
+}
+
+function renderPublicSchoolProfiles(data){
+  const root=document.getElementById('publicSchoolProfiles');
+  if(!root) return;
+
+  const payload=data?.schoolProfiles||{};
+  const schools=Array.isArray(payload.schools)?payload.schools:[];
+
+  if(!schools.length){
+    root.innerHTML=`
+      <div class="live-empty">
+        School profiles have not been encoded yet.
+      </div>
+    `;
+    return;
+  }
+
+  root.innerHTML=schools.map(s=>{
+    const isCdc=String(s.schoolType||'').toUpperCase()==='CDC';
+
+    const typeLabel=isCdc
+      ? 'Child Development Center (CDC)'
+      : 'Elementary School';
+
+    return `
+      <article class="school-public-card">
+        <div class="school-public-photo">
+          ${s.photoUrl
+            ? `<img
+                src="${btoEsc(publicImageUrl(s.photoUrl))}"
+                alt="${btoEsc(s.schoolName||typeLabel)}"
+                loading="lazy"
+                onerror="this.style.display='none';this.parentElement.classList.add('empty')"
+              >`
+            : `<div class="school-photo-placeholder">🏫</div>`
+          }
+        </div>
+
+        <div class="school-public-body">
+          <span class="school-public-type">${btoEsc(typeLabel)}</span>
+          <h3>${btoEsc(s.schoolName||typeLabel)}</h3>
+
+          ${s.schoolYear
+            ? `<div class="school-public-year">School Year ${btoEsc(s.schoolYear)}</div>`
+            : ''
+          }
+
+          ${s.description
+            ? `<p class="school-public-description">${btoEsc(s.description)}</p>`
+            : ''
+          }
+
+          <div class="school-public-stats">
+            <div>
+              <small>Total Enrollees</small>
+              <strong>${btoSchoolPublicNum_(s.totalEnrollees)}</strong>
+            </div>
+            <div>
+              <small>Male</small>
+              <strong>${btoSchoolPublicNum_(s.maleEnrollees)}</strong>
+            </div>
+            <div>
+              <small>Female</small>
+              <strong>${btoSchoolPublicNum_(s.femaleEnrollees)}</strong>
+            </div>
+            <div>
+              <small>${isCdc?'Workers / Teachers':'Teachers'}</small>
+              <strong>${btoSchoolPublicNum_(s.staffCount)}</strong>
+            </div>
+          </div>
+
+          <div class="school-public-details">
+            ${s.schoolHead
+              ? `<div><span>${isCdc?'Child Development Worker / Teacher':'School Head / Principal'}</span><strong>${btoEsc(s.schoolHead)}</strong></div>`
+              : ''
+            }
+
+            ${s.address
+              ? `<div><span>Address</span><strong>${btoEsc(s.address)}</strong></div>`
+              : ''
+            }
+
+            ${s.contactNumber
+              ? `<div><span>Contact</span><strong>${btoEsc(s.contactNumber)}</strong></div>`
+              : ''
+            }
+          </div>
+
+          ${s.pdfUrl
+            ? `<div class="school-public-actions">
+                <a
+                  href="${btoEsc(publicViewUrl(s.pdfUrl))}"
+                  target="_blank"
+                  rel="noopener"
+                >View School Profile PDF</a>
+                <a
+                  class="outline"
+                  href="${btoEsc(publicDownloadUrl(s.pdfUrl))}"
+                  target="_blank"
+                  rel="noopener"
+                >Download PDF</a>
+              </div>`
+            : ''
+          }
+        </div>
+      </article>
+    `;
+  }).join('');
+}
+
+
 function renderEnhancedBarangayStats(data){
   const s=data?.enhancedBarangayStats||{};
   const basic=Array.isArray(s.basic)?s.basic:[];
@@ -8731,6 +9055,7 @@ function applyPublicData(data){
   renderHomeRecentActivities(data);
   renderAllAnnouncements(data);
   btoScheduleAnnouncementBoundaryRefresh_();
+  renderPublicSchoolProfiles(data);
 }
 
 
