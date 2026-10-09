@@ -1665,6 +1665,66 @@ button.danger,
   }
 }
 
+
+
+/* ===== CONTENT GALLERY VISIBLE PREVIEW ===== */
+.content-gallery-section-title{
+  margin:10px 0 6px;
+  font-size:12px;
+  font-weight:800;
+  color:#374151;
+}
+
+.gallery-upload-preview:empty{
+  display:none;
+}
+
+.content-list-gallery{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-top:8px;
+}
+
+.content-list-gallery img{
+  width:54px;
+  height:54px;
+  object-fit:cover;
+  border-radius:8px;
+  border:1px solid #e5e7eb;
+  background:#f8fafc;
+}
+
+.content-list-gallery-more{
+  width:54px;
+  height:54px;
+  border-radius:8px;
+  border:1px solid #e5e7eb;
+  background:#f3f4f6;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  font-weight:800;
+  color:#4b5563;
+}
+
+.gallery-upload-preview .preview-item{
+  position:relative;
+}
+
+.gallery-upload-preview .preview-item .gallery-state-badge{
+  position:absolute;
+  top:5px;
+  left:5px;
+  padding:3px 6px;
+  border-radius:999px;
+  background:rgba(17,24,39,.78);
+  color:#fff;
+  font-size:10px;
+  font-weight:800;
+}
+
 </style>
 </head>
 <body>
@@ -3138,6 +3198,7 @@ function previewContentPhotoInput(input){
 
 const BTO_CONTENT_GALLERY_MAX=10;
 window.BTO_CONTENT_GALLERY_NEW_FILES=[];
+window.BTO_CONTENT_GALLERY_NEW_PREVIEWS=[];
 
 function btoContentGalleryUrls(row){
   const raw=String(
@@ -3197,10 +3258,11 @@ function renderContentGalleryExisting_(){
 
     return `
       <div class="preview-item">
+        <span class="gallery-state-badge">SAVED</span>
         <img src="${esc(display)}"
           alt="Existing gallery photo ${i+1}"
           onerror="this.style.display='none'">
-        <small>Existing photo ${i+1}</small>
+        <small>Saved photo ${i+1}</small>
         <button type="button"
           class="danger"
           style="width:calc(100% - 12px);margin:0 6px 6px;padding:7px 8px;font-size:12px"
@@ -3210,6 +3272,11 @@ function renderContentGalleryExisting_(){
       </div>
     `;
   }).join('');
+
+  const title=document.getElementById('cGalleryExistingTitle');
+  if(title){
+    title.style.display=urls.length ? 'block' : 'none';
+  }
 
   const count=document.getElementById('cGalleryCount');
   if(count){
@@ -3225,13 +3292,42 @@ function removeContentGalleryExisting(index){
   renderContentGalleryNew_();
 }
 
-function previewContentGalleryInput(input){
+
+function btoGalleryFilePreview_(file){
+  return new Promise(resolve=>{
+    try{
+      const reader=new FileReader();
+
+      reader.onload=()=>{
+        resolve(String(reader.result||''));
+      };
+
+      reader.onerror=()=>{
+        resolve('');
+      };
+
+      reader.readAsDataURL(file);
+
+    }catch(e){
+      resolve('');
+    }
+  });
+}
+
+async function previewContentGalleryInput(input){
   const existing=btoContentGalleryExistingFromInput();
+
+  const currentFiles=
+    Array.from(window.BTO_CONTENT_GALLERY_NEW_FILES||[]);
+
+  const currentPreviews=
+    Array.from(window.BTO_CONTENT_GALLERY_NEW_PREVIEWS||[]);
+
   const selected=Array.from(input?.files||[]);
 
   const available=Math.max(
     0,
-    BTO_CONTENT_GALLERY_MAX-existing.length
+    BTO_CONTENT_GALLERY_MAX-existing.length-currentFiles.length
   );
 
   if(selected.length>available){
@@ -3241,11 +3337,19 @@ function previewContentGalleryInput(input){
     );
   }
 
-  window.BTO_CONTENT_GALLERY_NEW_FILES=
-    selected.slice(0,available);
+  const accepted=selected.slice(0,available);
 
-  // We keep File objects in memory; clear the native input so choosing
-  // the same files again later will still trigger onchange.
+  const previews=await Promise.all(
+    accepted.map(file=>btoGalleryFilePreview_(file))
+  );
+
+  window.BTO_CONTENT_GALLERY_NEW_FILES=
+    currentFiles.concat(accepted);
+
+  window.BTO_CONTENT_GALLERY_NEW_PREVIEWS=
+    currentPreviews.concat(previews);
+
+  // Clear native input so the same photo can be chosen again after removal.
   if(input) input.value='';
 
   renderContentGalleryNew_();
@@ -3257,18 +3361,17 @@ function renderContentGalleryNew_(){
   if(!root) return;
 
   const files=window.BTO_CONTENT_GALLERY_NEW_FILES||[];
+  const previews=window.BTO_CONTENT_GALLERY_NEW_PREVIEWS||[];
 
   root.innerHTML=files.map((file,i)=>{
-    let localUrl='';
-    try{
-      localUrl=URL.createObjectURL(file);
-    }catch(e){}
+    const preview=String(previews[i]||'');
 
     return `
       <div class="preview-item">
-        ${localUrl
-          ? `<img src="${esc(localUrl)}" alt="${esc(file.name||`New photo ${i+1}`)}">`
-          : ''}
+        <span class="gallery-state-badge">NEW</span>
+        ${preview
+          ? `<img src="${esc(preview)}" alt="${esc(file.name||`New photo ${i+1}`)}">`
+          : `<div style="height:90px;display:flex;align-items:center;justify-content:center;background:#f3f4f6">📷</div>`}
         <small>${esc(file.name||`New photo ${i+1}`)}</small>
         <button type="button"
           class="danger"
@@ -3280,6 +3383,11 @@ function renderContentGalleryNew_(){
     `;
   }).join('');
 
+  const title=document.getElementById('cGalleryNewTitle');
+  if(title){
+    title.style.display=files.length ? 'block' : 'none';
+  }
+
   const count=document.getElementById('cGalleryCount');
   if(count){
     const existingCount=btoContentGalleryExistingFromInput().length;
@@ -3288,9 +3396,17 @@ function renderContentGalleryNew_(){
 }
 
 function removeContentGalleryNew(index){
+  const i=Number(index);
+
   const files=window.BTO_CONTENT_GALLERY_NEW_FILES||[];
-  files.splice(Number(index),1);
+  const previews=window.BTO_CONTENT_GALLERY_NEW_PREVIEWS||[];
+
+  files.splice(i,1);
+  previews.splice(i,1);
+
   window.BTO_CONTENT_GALLERY_NEW_FILES=files;
+  window.BTO_CONTENT_GALLERY_NEW_PREVIEWS=previews;
+
   renderContentGalleryNew_();
   renderContentGalleryExisting_();
 }
@@ -3380,7 +3496,18 @@ function renderContentAdmin(){
         </div>
         <div id="cGalleryCount" class="help" style="margin-top:6px"></div>
 
+        <div id="cGalleryExistingTitle"
+          class="content-gallery-section-title"
+          style="display:none">
+          Saved Gallery Photos
+        </div>
         <div id="cGalleryExistingPreview" class="gallery-upload-preview"></div>
+
+        <div id="cGalleryNewTitle"
+          class="content-gallery-section-title"
+          style="display:none">
+          New Selected Gallery Photos
+        </div>
         <div id="cGalleryNewPreview" class="gallery-upload-preview"></div>
       </div>
 
@@ -3419,6 +3546,21 @@ function renderContentAdmin(){
                   ? ' • '+esc((list.find(c=>String(c.committeeId)===String(btoContentVal(r,'Committee ID','Related Committee')))||{}).committeeName||'Committee')
                   : ''}
               </div>
+
+              ${galleryCount ? `
+                <div class="content-list-gallery">
+                  ${btoContentGalleryUrls(r).slice(0,5).map((url,gi)=>`
+                    <img
+                      src="${esc(normalizePortalImageUrl(url))}"
+                      alt="Gallery photo ${gi+1}"
+                      title="Gallery photo ${gi+1}"
+                      onerror="this.style.display='none'">
+                  `).join('')}
+                  ${galleryCount>5
+                    ? `<div class="content-list-gallery-more">+${galleryCount-5}</div>`
+                    : ''}
+                </div>
+              ` : ''}
             </div>
           </div>
           <div class="admin-actions">
@@ -3430,6 +3572,7 @@ function renderContentAdmin(){
     </div>`;
 
   window.BTO_CONTENT_GALLERY_NEW_FILES=[];
+  window.BTO_CONTENT_GALLERY_NEW_PREVIEWS=[];
   setTimeout(()=>{
     toggleCommitteeUpdateField();
     toggleContentGalleryField_();
@@ -3666,7 +3809,9 @@ async function saveContent(btn){
           // upload the same gallery files again.
           btoContentSetGalleryExisting(galleryUrls);
           window.BTO_CONTENT_GALLERY_NEW_FILES=[];
+          window.BTO_CONTENT_GALLERY_NEW_PREVIEWS=[];
           renderContentGalleryNew_();
+          renderContentGalleryExisting_();
         }
       }
 
