@@ -4045,7 +4045,31 @@ window.BTO_PROFILE_PEOPLE_CONTEXT=null;
 window.BTO_EDIT_PROFILE_PERSON=null;
 
 async function manageProfilePeople(entityType,entityId,entityLabel,backTarget){
-  window.BTO_PROFILE_PEOPLE_CONTEXT={entityType:String(entityType||'').trim(),entityId:String(entityId||'').trim(),entityLabel:String(entityLabel||'').trim()||'Profile',backTarget:String(backTarget||'').trim()};
+  entityType=String(entityType||'').trim();
+  entityId=String(entityId||'').trim();
+
+  let actualLabel=String(entityLabel||'').trim();
+
+  if(entityType==='SCHOOL'){
+    const school=(window.BTO_SCHOOL_PROFILES||[]).find(x=>String(x.id||'')===entityId);
+    if(school && String(school.schoolName||'').trim()){
+      actualLabel=String(school.schoolName).trim();
+    }
+  }
+
+  if(entityType==='HEALTH_CENTER'){
+    const hc=window.BTO_HEALTH_CENTER_PROFILE||{};
+    if(String(hc.healthCenterName||'').trim()){
+      actualLabel=String(hc.healthCenterName).trim();
+    }
+  }
+
+  window.BTO_PROFILE_PEOPLE_CONTEXT={
+    entityType:entityType,
+    entityId:entityId,
+    entityLabel:actualLabel||'Profile',
+    backTarget:String(backTarget||'').trim()
+  };
   document.getElementById('moduleArea').innerHTML='<div class="bto-loading"><span class="bto-spinner"></span><span>Loading personnel...</span></div>';
   const r=await api('getProfilePeople',{entityType:window.BTO_PROFILE_PEOPLE_CONTEXT.entityType,entityId:window.BTO_PROFILE_PEOPLE_CONTEXT.entityId});
   if(!r.success){showModuleError(r.message);return}
@@ -4331,7 +4355,7 @@ function renderHealthCenterAdmin(){
         <button
           class="secondary"
           type="button"
-          onclick="manageProfilePeople('HEALTH_CENTER','HEALTH-CENTER-001',${JSON.stringify(x.healthCenterName||'Health Center')},'healthCenter')"
+          onclick="manageProfilePeople('HEALTH_CENTER','HEALTH-CENTER-001','Health Center Personnel','healthCenter')"
         >
           Manage Personnel / Photo Chart
         </button>
@@ -4587,7 +4611,7 @@ function btoSchoolCard_(school){
         <button
           class="secondary"
           type="button"
-          onclick="manageProfilePeople('SCHOOL','${school.id}',${JSON.stringify(school.schoolName||label)},'schoolProfiles')"
+          onclick="manageProfilePeople('SCHOOL','${school.id}','School Personnel','schoolProfiles')"
         >
           Manage Personnel / Photo Chart
         </button>
