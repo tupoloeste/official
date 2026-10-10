@@ -6217,7 +6217,12 @@ function renderOrganizationsAdmin(){
         ${rows.length ? rows.map((x,i)=>`
           <div class="organization-admin-row">
             <div class="organization-admin-main">
-              ${x.logoUrl?`<img src="${esc(x.logoUrl)}" alt="${esc(x.name||'Organization')}" loading="lazy">`
+              ${x.logoUrl?`<img
+                  src="${esc(normalizePortalImageUrl(x.logoUrl))}"
+                  alt="${esc(x.name||'Organization')}"
+                  loading="lazy"
+                  referrerpolicy="no-referrer"
+                >`
                 : `<div class="organization-admin-avatar">${esc((x.name||'O').charAt(0).toUpperCase())}</div>`}
               <div>
                 <strong>${esc(x.name||'Untitled Organization')}</strong>
@@ -9233,16 +9238,23 @@ async function siteMediaForm(){
 function normalizePortalImageUrl(url){
   url=String(url||'').trim();
   if(!url) return '';
+
   if(url.includes('drive.google.com')){
     let id='';
+
     let m=url.match(/[?&]id=([^&]+)/);
-    if(m) id=m[1];
+    if(m) id=decodeURIComponent(m[1]);
+
     if(!id){
-      m=url.match(/\/d\/([^/]+)/);
+      m=url.match(/\/d\/([^/?#]+)/);
       if(m) id=m[1];
     }
-    if(id) return `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w1600`;
+
+    if(id){
+      return `https://lh3.googleusercontent.com/d/${encodeURIComponent(id)}=w1600`;
+    }
   }
+
   return url;
 }
 
