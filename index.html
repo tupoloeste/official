@@ -6272,6 +6272,56 @@ function normalizePublicImageUrl(url){
   return publicImageUrl(url);
 }
 
+function btoOrganizationImageFallback(img){
+  if(!img) return;
+
+  const original=String(
+    img.dataset.btoOriginal || ''
+  ).trim();
+
+  const id=publicDriveId(original);
+
+  if(!id){
+    img.onerror=null;
+    img.style.display='none';
+    return;
+  }
+
+  const stage=Number(img.dataset.btoStage||0);
+
+  const candidates=[
+    `https://lh3.googleusercontent.com/d/${encodeURIComponent(id)}=w1600`,
+    `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w1600`,
+    `https://drive.google.com/uc?export=view&id=${encodeURIComponent(id)}`
+  ];
+
+  const next=stage+1;
+
+  if(next<candidates.length){
+    img.dataset.btoStage=String(next);
+    img.src=candidates[next];
+    return;
+  }
+
+  img.onerror=null;
+  img.style.display='none';
+
+  const parent=img.parentElement;
+
+  if(
+    parent &&
+    parent.classList.contains('organization-officer-avatar')
+  ){
+    const initial=String(
+      img.dataset.btoInitial || 'O'
+    ).trim().charAt(0).toUpperCase() || 'O';
+
+    parent.textContent=initial;
+  }
+}
+
+
+
 
 function contentGalleryUrls(row){
   const raw=String(row['Gallery URLs']||'').trim();
@@ -9241,6 +9291,24 @@ function renderPublicOrganizations(data){
   const root=document.getElementById('publicOrganizationsGrid');
   if(!root) return;
 
+  if(
+    Number(data?.schemaVersion||0) <
+    BTO_ORGANIZATIONS_BROWSER_SCHEMA
+  ){
+    console.warn(
+      '[BTO ORGANIZATIONS] Ignoring old browser data schema',
+      data?.schemaVersion
+    );
+
+    if(typeof loadPublicOrganizationsCloudflare==='function'){
+      setTimeout(()=>{
+        loadPublicOrganizationsCloudflare(true);
+      },0);
+    }
+
+    return;
+  }
+
   BTO_PUBLIC_ORGANIZATIONS=Array.isArray(data.organizations)
     ? data.organizations.slice()
     : [];
@@ -9259,12 +9327,25 @@ function renderPublicOrganizations(data){
     <button class="organization-public-card" onclick="openPublicOrganization('${publicEsc(x.id||'')}')">
       <div class="organization-public-media">
         ${x.featuredPhotoUrl
-          ? `<img class="organization-public-cover" src="${publicEsc(normalizePublicImageUrl(x.featuredPhotoUrl))}"
-               alt="${publicEsc(x.name||'Organization')}" loading="lazy" referrerpolicy="no-referrer">`
+          ? `<img class="organization-public-cover"
+               src="${publicEsc(normalizePublicImageUrl(x.featuredPhotoUrl))}"
+               data-bto-original="${publicEsc(x.featuredPhotoUrl)}"
+               data-bto-stage="0"
+               alt="${publicEsc(x.name||'Organization')}"
+               loading="lazy"
+               referrerpolicy="no-referrer"
+               onerror="btoOrganizationImageFallback(this)">`
           : '<div class="organization-public-cover placeholder">Barangay Organization</div>'}
         <div class="organization-public-logo">
           ${x.logoUrl
-            ? `<img src="${publicEsc(normalizePublicImageUrl(x.logoUrl))}" alt="${publicEsc(x.name||'Organization')} logo" loading="lazy" referrerpolicy="no-referrer">`
+            ? `<img
+                src="${publicEsc(normalizePublicImageUrl(x.logoUrl))}"
+                data-bto-original="${publicEsc(x.logoUrl)}"
+                data-bto-stage="0"
+                alt="${publicEsc(x.name||'Organization')} logo"
+                loading="lazy"
+                referrerpolicy="no-referrer"
+                onerror="btoOrganizationImageFallback(this)">`
             : `<span>${publicEsc((x.acronym||x.name||'O').charAt(0).toUpperCase())}</span>`}
         </div>
       </div>
@@ -9298,17 +9379,25 @@ function openPublicOrganization(id){
     body.innerHTML=`
       ${x.featuredPhotoUrl?`
         <div class="organization-detail-cover">
-          <img src="${publicEsc(normalizePublicImageUrl(x.featuredPhotoUrl))}"
+          <img
+               src="${publicEsc(normalizePublicImageUrl(x.featuredPhotoUrl))}"
+               data-bto-original="${publicEsc(x.featuredPhotoUrl)}"
+               data-bto-stage="0"
                alt="${publicEsc(x.name||'Organization')}"
-               referrerpolicy="no-referrer">
+               referrerpolicy="no-referrer"
+               onerror="btoOrganizationImageFallback(this)">
         </div>`:''}
 
       <section class="organization-detail-profile">
         <div class="organization-detail-logo">
           ${x.logoUrl
-            ? `<img src="${publicEsc(normalizePublicImageUrl(x.logoUrl))}"
+            ? `<img
+                    src="${publicEsc(normalizePublicImageUrl(x.logoUrl))}"
+                    data-bto-original="${publicEsc(x.logoUrl)}"
+                    data-bto-stage="0"
                     alt="${publicEsc(x.name||'Organization')} logo"
-                    referrerpolicy="no-referrer">`
+                    referrerpolicy="no-referrer"
+                    onerror="btoOrganizationImageFallback(this)">`
             : `<span>${publicEsc((x.acronym||x.name||'O').charAt(0).toUpperCase())}</span>`}
         </div>
 
@@ -9373,7 +9462,16 @@ function openPublicOrganization(id){
             <div class="organization-officers-grid">
               ${officers.map(o=>{
                 const initial=(o.name||'O').trim().charAt(0).toUpperCase()||'O';
-                return `<div class="organization-officer-card"><div class="organization-officer-avatar">${o.photoUrl?`<img src="${publicEsc(normalizePublicImageUrl(o.photoUrl))}" alt="${publicEsc(o.name||'Officer / Personnel')}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'">`:publicEsc(initial)}</div><div><strong>${publicEsc(o.name||'')}</strong><span>${publicEsc(o.position||'')}</span>${o.contactNumber?`<small>${publicEsc(o.contactNumber)}</small>`:''}</div></div>`;
+                return `<div class="organization-officer-card"><div class="organization-officer-avatar">${o.photoUrl?`<img
+                  src="${publicEsc(normalizePublicImageUrl(o.photoUrl))}"
+                  data-bto-original="${publicEsc(o.photoUrl)}"
+                  data-bto-stage="0"
+                  data-bto-initial="${publicEsc(initial)}"
+                  alt="${publicEsc(o.name||'Officer / Personnel')}"
+                  loading="lazy"
+                  referrerpolicy="no-referrer"
+                  onerror="btoOrganizationImageFallback(this)"
+                >`:publicEsc(initial)}</div><div><strong>${publicEsc(o.name||'')}</strong><span>${publicEsc(o.position||'')}</span>${o.contactNumber?`<small>${publicEsc(o.contactNumber)}</small>`:''}</div></div>`;
               }).join('')}
             </div>
           </section>`;
@@ -9625,6 +9723,14 @@ function dogStatsCacheGet(allowStale=false){
 
     const obj=JSON.parse(raw);
     if(!obj || !obj.data) return null;
+
+    if(
+      Number(obj.data.schemaVersion||0) <
+      BTO_ORGANIZATIONS_BROWSER_SCHEMA
+    ){
+      localStorage.removeItem(BTO_ORGANIZATIONS_CACHE_KEY);
+      return null;
+    }
 
     const age=Date.now()-Number(obj.savedAt||0);
 
@@ -10212,7 +10318,8 @@ async function loadPublicCommunityProfilesCloudflare(force=false){
 let BTO_PUBLIC_ORGANIZATIONS_LOADING=false;
 let BTO_PUBLIC_ORGANIZATIONS_LOADED=false;
 
-const BTO_ORGANIZATIONS_CACHE_KEY='bto_organizations_cloudflare_v1';
+const BTO_ORGANIZATIONS_CACHE_KEY='bto_organizations_cloudflare_v2';
+const BTO_ORGANIZATIONS_BROWSER_SCHEMA=3;
 const BTO_ORGANIZATIONS_CACHE_MS=10*60*1000;
 const BTO_ORGANIZATIONS_CF_URL=BTO_DOG_STATS_CF_URL;
 
