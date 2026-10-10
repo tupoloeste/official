@@ -6129,6 +6129,15 @@ function showView(name){
     },0);
   }
 
+  // BTO_COMMUNITY_PROFILES_AUTOLOAD
+  if(name==='school-profiles' || name==='health-center'){
+    setTimeout(()=>{
+      if(typeof loadPublicCommunityProfilesCloudflare==='function'){
+        loadPublicCommunityProfilesCloudflare(false);
+      }
+    },0);
+  }
+
   // BTO_UPDATES_VIEW_LIVE_REFRESH
   if(
     name==='announcements' &&
@@ -6260,27 +6269,7 @@ function renderPublicContentList(id,rows){
 
 
 function normalizePublicImageUrl(url){
-  url=String(url||'').trim();
-  if(!url) return '';
-
-  // Google Drive direct/view/uc links -> thumbnail endpoint
-  if(url.includes('drive.google.com')){
-    let id='';
-
-    let m=url.match(/[?&]id=([^&]+)/);
-    if(m) id=m[1];
-
-    if(!id){
-      m=url.match(/\/d\/([^/]+)/);
-      if(m) id=m[1];
-    }
-
-    if(id){
-      return `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w1600`;
-    }
-  }
-
-  return url;
+  return publicImageUrl(url);
 }
 
 
@@ -7671,7 +7660,7 @@ function publicDownloadUrl(url){
 function publicImageUrl(url){
   const id=publicDriveId(url);
   if(id){
-    return `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w1200`;
+    return `https://lh3.googleusercontent.com/d/${encodeURIComponent(id)}=w1600`;
   }
   return String(url||'');
 }
@@ -10123,6 +10112,103 @@ async function loadPublicBarangayStatsCloudflare(force=false){
 
 
 /* ===== CLOUDFLARE BARANGAY ORGANIZATIONS PUBLIC DATA ===== */
+
+let BTO_PUBLIC_COMMUNITY_PROFILES_LOADING=false;
+let BTO_PUBLIC_COMMUNITY_PROFILES_LOADED=false;
+
+async function loadPublicCommunityProfilesCloudflare(force=false){
+  if(BTO_PUBLIC_COMMUNITY_PROFILES_LOADING) return;
+
+  if(BTO_PUBLIC_COMMUNITY_PROFILES_LOADED && !force){
+    return;
+  }
+
+  BTO_PUBLIC_COMMUNITY_PROFILES_LOADING=true;
+
+  try{
+    const res=await fetch(
+      BTO_PUBLIC_CF_BASE +
+      '/community-profiles?_ts=' +
+      Date.now(),
+      {
+        method:'GET',
+        cache:'no-store'
+      }
+    );
+
+    if(!res.ok){
+      throw new Error('HTTP '+res.status);
+    }
+
+    const data=await res.json();
+
+    if(!data || !data.success){
+      throw new Error(
+        data?.message ||
+        'Community profile response was not successful.'
+      );
+    }
+
+    const merged=Object.assign(
+      {},
+      BTO_PUBLIC_LAST_DATA || {},
+      {
+        success:true,
+        schoolProfiles:
+          data.schoolProfiles || {success:true,schools:[]},
+        schoolPersonnel:
+          data.schoolPersonnel || {},
+        healthCenter:
+          data.healthCenter || {success:true,profile:null},
+        healthCenterPersonnel:
+          Array.isArray(data.healthCenterPersonnel)
+            ? data.healthCenterPersonnel
+            : []
+      }
+    );
+
+    BTO_PUBLIC_LAST_DATA=merged;
+
+    renderPublicSchoolProfiles(merged);
+    renderPublicHealthCenter(merged);
+
+    BTO_PUBLIC_COMMUNITY_PROFILES_LOADED=true;
+
+    console.log(
+      '[BTO COMMUNITY PROFILES] Loaded',
+      data.edgeCachedAt || ''
+    );
+
+  }catch(err){
+    console.warn(
+      '[BTO COMMUNITY PROFILES] Unable to load:',
+      err
+    );
+
+    const schoolRoot=document.getElementById('publicSchoolProfiles');
+    const healthRoot=document.getElementById('publicHealthCenter');
+
+    if(
+      schoolRoot &&
+      !(BTO_PUBLIC_LAST_DATA?.schoolProfiles?.schools||[]).length
+    ){
+      schoolRoot.innerHTML=
+        '<div class="live-empty">School profiles are temporarily unavailable.</div>';
+    }
+
+    if(
+      healthRoot &&
+      !BTO_PUBLIC_LAST_DATA?.healthCenter?.profile
+    ){
+      healthRoot.innerHTML=
+        '<div class="live-empty">Health Center profile is temporarily unavailable.</div>';
+    }
+  }finally{
+    BTO_PUBLIC_COMMUNITY_PROFILES_LOADING=false;
+  }
+}
+
+
 let BTO_PUBLIC_ORGANIZATIONS_LOADING=false;
 let BTO_PUBLIC_ORGANIZATIONS_LOADED=false;
 
