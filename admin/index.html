@@ -2489,38 +2489,69 @@ button.danger,
 
 
 
-/* ===== GALLERY PHOTO UPLOAD STATES ===== */
+/* ===== GALLERY INSTANT ACCEPTANCE / UPLOAD STATUS ===== */
 
-.gallery-upload-preview .preview-item .gallery-state-badge.gallery-state-ready{
-  background:rgba(6,118,71,.92);
+.gallery-state-badge.gallery-state-accepted,
+.gallery-state-badge.gallery-state-ready,
+.gallery-state-badge.gallery-state-uploaded{
+  background:rgba(6,118,71,.94);
 }
 
-.gallery-upload-preview .preview-item .gallery-state-preparing,
-.gallery-upload-preview .preview-item .gallery-state-uploading{
-  background:rgba(37,99,235,.94);
+.gallery-state-badge.gallery-state-preparing,
+.gallery-state-badge.gallery-state-uploading{
+  background:rgba(37,99,235,.96);
 }
 
-.gallery-upload-preview .preview-item .gallery-state-uploaded{
-  background:rgba(6,118,71,.96);
-}
-
-.gallery-upload-preview .preview-item .gallery-state-error{
+.gallery-state-badge.gallery-state-error{
   background:rgba(180,35,24,.96);
 }
 
 .gallery-upload-status-text{
   display:block;
-  min-height:15px;
+  min-height:16px;
   padding:0 6px 6px;
   color:#475467;
   font-size:10px;
+  line-height:1.3;
   font-weight:800;
   text-align:center;
 }
 
-.gallery-state-preparing + img,
-.gallery-state-uploading + img{
-  opacity:.78;
+.gallery-photo-state-preparing img,
+.gallery-photo-state-uploading img{
+  opacity:.75;
+}
+
+.gallery-item-progress{
+  position:relative;
+  height:5px;
+  margin:0 7px 7px;
+  overflow:hidden;
+  border-radius:999px;
+  background:#dbeafe;
+}
+
+.gallery-item-progress span{
+  position:absolute;
+  top:0;
+  bottom:0;
+  left:-40%;
+  width:40%;
+  border-radius:999px;
+  background:#2563eb;
+  animation:btoGalleryProgressMove 1s ease-in-out infinite;
+}
+
+@keyframes btoGalleryProgressMove{
+  0%{
+    left:-40%;
+  }
+  55%{
+    left:40%;
+  }
+  100%{
+    left:105%;
+  }
 }
 
 </style>
@@ -6257,41 +6288,20 @@ function btoGalleryFilePreview_(file){
 }
 
 
-function btoContentGalleryStateText_(state,compressed){
-  state=String(state||'').trim().toUpperCase();
+function btoContentGalleryStatusLabel_(state,compressed){
+  const s=String(state||'READY').toUpperCase();
 
-  if(state==='PREPARING') return 'PREPARING';
-  if(state==='UPLOADING') return 'UPLOADING';
-  if(state==='UPLOADED') return 'UPLOADED ✓';
-  if(state==='ERROR') return 'FAILED';
+  if(s==='ACCEPTED') return 'ACCEPTED ✓';
+  if(s==='PREPARING') return 'OPTIMIZING…';
+  if(s==='READY') return compressed ? 'OPTIMIZED ✓' : 'READY ✓';
+  if(s==='UPLOADING') return 'UPLOADING…';
+  if(s==='UPLOADED') return 'UPLOADED ✓';
+  if(s==='ERROR') return 'FAILED';
 
-  return compressed
-    ? 'READY ✓'
-    : 'READY ✓';
+  return 'READY ✓';
 }
 
-function btoContentGallerySetUploadState_(index,state,note){
-  const metas=
-    window.BTO_CONTENT_GALLERY_NEW_META || [];
-
-  const i=Number(index);
-
-  if(!metas[i]) return;
-
-  metas[i].uploadState=
-    String(state||'READY').toUpperCase();
-
-  if(note!==undefined){
-    metas[i].uploadNote=
-      String(note||'');
-  }
-
-  window.BTO_CONTENT_GALLERY_NEW_META=metas;
-
-  renderContentGalleryNew_();
-}
-
-function btoContentGallerySummaryState_(state,title,detail){
+function btoContentGallerySetSummary_(state,title,detail){
   const input=document.getElementById('cGallery');
   if(!input) return;
 
@@ -6301,6 +6311,31 @@ function btoContentGallerySummaryState_(state,title,detail){
     title,
     detail
   );
+}
+
+function btoContentGallerySetItemState_(index,state,note){
+  const i=Number(index);
+  const metas=window.BTO_CONTENT_GALLERY_NEW_META||[];
+
+  if(!metas[i]) return;
+
+  metas[i].uploadState=String(state||'READY').toUpperCase();
+
+  if(note!==undefined){
+    metas[i].uploadNote=String(note||'');
+  }
+
+  window.BTO_CONTENT_GALLERY_NEW_META=metas;
+
+  renderContentGalleryNew_();
+}
+
+function btoContentGalleryObjectPreview_(file){
+  try{
+    return URL.createObjectURL(file);
+  }catch(e){
+    return '';
+  }
 }
 
 
@@ -6316,105 +6351,219 @@ async function previewContentGalleryInput(input){
   const currentMeta=
     Array.from(window.BTO_CONTENT_GALLERY_NEW_META||[]);
 
-  const selected=Array.from(input?.files||[]);
+  const selected=
+    Array.from(input?.files||[])
+      .filter(file=>{
+        const type=String(file?.type||'').toLowerCase();
+        const name=String(file?.name||'').toLowerCase();
+
+        return (
+          type.startsWith('image/') ||
+          /\.(jpe?g|png|webp|gif|bmp|heic|heif)$/i.test(name)
+        );
+      });
+
+  if(!selected.length){
+    btoContentGallerySetSummary_(
+      'error',
+      'No gallery photo selected',
+      'Please choose an image file.'
+    );
+    return;
+  }
 
   const available=Math.max(
     0,
     BTO_CONTENT_GALLERY_MAX-existing.length-currentFiles.length
   );
 
+  if(available<=0){
+    alert(
+      `Maximum ${BTO_CONTENT_GALLERY_MAX} gallery photos already selected.`
+    );
+
+    btoContentGallerySetSummary_(
+      'error',
+      'Gallery is already full',
+      `Maximum ${BTO_CONTENT_GALLERY_MAX} photos.`
+    );
+
+    if(input) input.value='';
+    return;
+  }
+
   if(selected.length>available){
     alert(
       `Maximum ${BTO_CONTENT_GALLERY_MAX} gallery photos only. ` +
-      `You can add ${available} more photo${available===1?'':'s'}.`
+      `Only the first ${available} selected photo${available===1?'':'s'} will be accepted.`
     );
   }
 
   const accepted=selected.slice(0,available);
+
+  /*
+   * IMPORTANT:
+   * Add ORIGINAL files to our persistent gallery arrays IMMEDIATELY.
+   * This gives the user instant proof that the selection was accepted.
+   * Optimization happens only after the cards are already visible.
+   */
+  const baseIndex=currentFiles.length;
+
+  accepted.forEach((file,i)=>{
+    currentFiles.push(file);
+
+    currentPreviews.push(
+      btoContentGalleryObjectPreview_(file)
+    );
+
+    currentMeta.push({
+      originalName:String(file.name||`Gallery photo ${i+1}`),
+      savedName:String(file.name||`Gallery photo ${i+1}`),
+      originalSize:Number(file.size||0),
+      optimizedSize:Number(file.size||0),
+      compressed:false,
+      width:0,
+      height:0,
+      note:'Accepted; waiting for optimizer',
+      uploadState:'ACCEPTED',
+      uploadNote:'Photo accepted'
+    });
+  });
+
+  window.BTO_CONTENT_GALLERY_NEW_FILES=currentFiles;
+  window.BTO_CONTENT_GALLERY_NEW_PREVIEWS=currentPreviews;
+  window.BTO_CONTENT_GALLERY_NEW_META=currentMeta;
+
+  // Render BEFORE optimizer starts.
+  renderContentGalleryNew_();
+  renderContentGalleryExisting_();
+
+  const selectedBytes=
+    accepted.reduce(
+      (sum,file)=>sum+Number(file.size||0),
+      0
+    );
+
+  btoContentGallerySetSummary_(
+    'ready',
+    `${accepted.length} gallery photo${accepted.length===1?'':'s'} accepted ✓`,
+    `${btoFormatFileSize_(selectedBytes)} selected · Optimizer starting…`
+  );
+
+  /*
+   * Clear native input only AFTER files have been safely copied into our
+   * persistent JS arrays. This also allows selecting the same photo again.
+   */
   if(input) input.value='';
 
-  const count=document.getElementById('cGalleryCount');
-
-  if(accepted.length){
-    btoContentGallerySummaryState_(
-      'preparing',
-      `Preparing ${accepted.length} gallery photo${accepted.length===1?'':'s'}…`,
-      'Optimizing images before upload.'
-    );
-  }
-
-  if(count && accepted.length){
-    count.textContent=
-      `Optimizing ${accepted.length} gallery photo${accepted.length===1?'':'s'}...`;
-  }
-
-  const processed=[];
-
+  // Optimize one-by-one in the background.
   for(let i=0;i<accepted.length;i++){
+    const slot=baseIndex+i;
     const originalFile=accepted[i];
 
-    if(count){
-      count.textContent=
-        `Optimizing gallery photo ${i+1} of ${accepted.length}...`;
-    }
+    btoContentGallerySetItemState_(
+      slot,
+      'PREPARING',
+      `Optimizing ${i+1} of ${accepted.length}`
+    );
 
-    btoContentGallerySummaryState_(
+    btoContentGallerySetSummary_(
       'preparing',
-      `Preparing gallery photo ${i+1} of ${accepted.length}…`,
+      `Optimizing gallery photo ${i+1} of ${accepted.length}…`,
       String(originalFile.name||'Selected photo')
     );
 
-    const optimized=
-      await btoOptimizeGalleryImage_(originalFile);
+    try{
+      const optimized=
+        await btoOptimizeGalleryImage_(originalFile);
 
-    const preview=
-      await btoGalleryFilePreview_(optimized.file);
+      const preview=
+        await btoGalleryFilePreview_(optimized.file);
 
-    processed.push({
-      file:optimized.file,
-      preview:preview,
-      meta:{
+      window.BTO_CONTENT_GALLERY_NEW_FILES[slot]=
+        optimized.file;
+
+      /*
+       * Revoke the temporary object URL created for instant preview.
+       * Data URL from the optimized image will replace it.
+       */
+      const oldPreview=
+        String(
+          window.BTO_CONTENT_GALLERY_NEW_PREVIEWS[slot]||''
+        );
+
+      if(oldPreview.startsWith('blob:')){
+        try{
+          URL.revokeObjectURL(oldPreview);
+        }catch(e){}
+      }
+
+      window.BTO_CONTENT_GALLERY_NEW_PREVIEWS[slot]=
+        preview || btoContentGalleryObjectPreview_(optimized.file);
+
+      window.BTO_CONTENT_GALLERY_NEW_META[slot]={
         originalName:String(originalFile.name||''),
         savedName:String(optimized.file?.name||originalFile.name||''),
-        originalSize:Number(optimized.originalSize||0),
-        optimizedSize:Number(optimized.optimizedSize||0),
+        originalSize:Number(optimized.originalSize||originalFile.size||0),
+        optimizedSize:Number(optimized.optimizedSize||optimized.file?.size||0),
         compressed:Boolean(optimized.compressed),
         width:Number(optimized.width||0),
         height:Number(optimized.height||0),
         note:String(optimized.note||''),
         uploadState:'READY',
-        uploadNote:'Ready to upload'
-      }
-    });
+        uploadNote:optimized.compressed
+          ? 'Optimized and ready to upload'
+          : 'Ready to upload'
+      };
+
+      renderContentGalleryNew_();
+
+    }catch(err){
+      /*
+       * Never discard a photo merely because optimization failed.
+       * Keep the original file and allow it to upload.
+       */
+      window.BTO_CONTENT_GALLERY_NEW_FILES[slot]=
+        originalFile;
+
+      const oldMeta=
+        window.BTO_CONTENT_GALLERY_NEW_META[slot]||{};
+
+      window.BTO_CONTENT_GALLERY_NEW_META[slot]={
+        ...oldMeta,
+        originalName:String(originalFile.name||''),
+        savedName:String(originalFile.name||''),
+        originalSize:Number(originalFile.size||0),
+        optimizedSize:Number(originalFile.size||0),
+        compressed:false,
+        note:'Optimizer unavailable; original will be uploaded',
+        uploadState:'READY',
+        uploadNote:'Original photo retained and ready'
+      };
+
+      renderContentGalleryNew_();
+    }
 
     await new Promise(resolve=>setTimeout(resolve,0));
   }
 
-  window.BTO_CONTENT_GALLERY_NEW_FILES=
-    currentFiles.concat(processed.map(x=>x.file));
+  const metas=
+    window.BTO_CONTENT_GALLERY_NEW_META||[];
 
-  window.BTO_CONTENT_GALLERY_NEW_PREVIEWS=
-    currentPreviews.concat(processed.map(x=>x.preview));
+  const totalReadyBytes=
+    metas.reduce(
+      (sum,m)=>sum+Number(m.optimizedSize||0),
+      0
+    );
 
-  window.BTO_CONTENT_GALLERY_NEW_META=
-    currentMeta.concat(processed.map(x=>x.meta));
+  btoContentGallerySetSummary_(
+    'ready',
+    `${accepted.length} gallery photo${accepted.length===1?'':'s'} ready to upload ✓`,
+    `Current new gallery upload size: ${btoFormatFileSize_(totalReadyBytes)}`
+  );
 
   renderContentGalleryNew_();
   renderContentGalleryExisting_();
-
-  if(processed.length){
-    const totalBytes=
-      processed.reduce(
-        (sum,x)=>sum+Number(x.meta?.optimizedSize||0),
-        0
-      );
-
-    btoContentGallerySummaryState_(
-      'ready',
-      `${processed.length} gallery photo${processed.length===1?'':'s'} ready to upload ✓`,
-      `Optimized upload size: ${btoFormatFileSize_(totalBytes)}`
-    );
-  }
 }
 
 function renderContentGalleryNew_(){
@@ -6437,14 +6586,32 @@ function renderContentGalleryNew_(){
       meta.optimizedSize || file.size || 0
     );
 
+    const state=
+      String(meta.uploadState||'READY').toUpperCase();
+
     const sizeText=meta.compressed
       ? `${btoFormatFileSize_(originalSize)} → ${btoFormatFileSize_(optimizedSize)}`
       : `${btoFormatFileSize_(optimizedSize)}`;
 
+    const statusText=
+      state==='ACCEPTED'
+        ? 'Photo accepted ✓'
+        : state==='PREPARING'
+        ? 'Optimizer is reducing photo size…'
+        : state==='UPLOADING'
+        ? 'Uploading photo…'
+        : state==='UPLOADED'
+        ? 'Photo uploaded ✓'
+        : state==='ERROR'
+        ? 'Photo upload failed'
+        : meta.compressed
+        ? 'Optimized · Ready to upload ✓'
+        : 'Ready to upload ✓';
+
     return `
-      <div class="preview-item">
-        <span class="gallery-state-badge gallery-state-${esc(String(meta.uploadState||'READY').toLowerCase())}">
-          ${esc(btoContentGalleryStateText_(meta.uploadState,meta.compressed))}
+      <div class="preview-item gallery-photo-state-${esc(state.toLowerCase())}">
+        <span class="gallery-state-badge gallery-state-${esc(state.toLowerCase())}">
+          ${esc(btoContentGalleryStatusLabel_(state,meta.compressed))}
         </span>
 
         ${preview
@@ -6458,23 +6625,19 @@ function renderContentGalleryNew_(){
         </small>
 
         <small class="gallery-upload-status-text">
-          ${esc(
-            String(meta.uploadState||'READY').toUpperCase()==='UPLOADING'
-              ? 'Uploading photo…'
-              : String(meta.uploadState||'READY').toUpperCase()==='PREPARING'
-              ? 'Preparing photo…'
-              : String(meta.uploadState||'READY').toUpperCase()==='UPLOADED'
-              ? 'Photo uploaded ✓'
-              : String(meta.uploadState||'READY').toUpperCase()==='ERROR'
-              ? 'Photo upload failed'
-              : 'Ready to upload ✓'
-          )}
+          ${esc(statusText)}
         </small>
+
+        ${state==='PREPARING' || state==='UPLOADING'
+          ? `<div class="gallery-item-progress"><span></span></div>`
+          : ''
+        }
 
         <button type="button"
           class="danger"
           style="width:calc(100% - 12px);margin:0 6px 6px;padding:7px 8px;font-size:12px"
-          onclick="removeContentGalleryNew(${i})">
+          onclick="removeContentGalleryNew(${i})"
+          ${state==='UPLOADING'?'disabled':''}>
           Remove
         </button>
       </div>
@@ -6489,15 +6652,30 @@ function renderContentGalleryNew_(){
   const count=document.getElementById('cGalleryCount');
   if(count){
     const existingCount=btoContentGalleryExistingFromInput().length;
+
     const totalBytes=metas.reduce(
       (sum,m)=>sum+Number(m.optimizedSize||0),
       0
     );
 
+    const readyCount=metas.filter(m=>
+      ['READY','UPLOADED'].includes(
+        String(m.uploadState||'READY').toUpperCase()
+      )
+    ).length;
+
+    const preparingCount=metas.filter(m=>
+      ['ACCEPTED','PREPARING'].includes(
+        String(m.uploadState||'').toUpperCase()
+      )
+    ).length;
+
     count.textContent=
       `${existingCount+files.length} / ${BTO_CONTENT_GALLERY_MAX} gallery photos selected` +
       (files.length
-        ? ` · New upload size ${btoFormatFileSize_(totalBytes)}`
+        ? ` · ${readyCount} ready` +
+          (preparingCount ? ` · ${preparingCount} optimizing` : '') +
+          ` · ${btoFormatFileSize_(totalBytes)}`
         : '');
   }
 }
@@ -6895,13 +7073,13 @@ async function saveContent(btn){
           for(let i=0;i<newGalleryFiles.length;i++){
             const galleryFile=newGalleryFiles[i];
 
-            btoContentGallerySetUploadState_(
+            btoContentGallerySetItemState_(
               i,
               'PREPARING',
               `Preparing ${i+1} of ${newGalleryFiles.length}`
             );
 
-            btoContentGallerySummaryState_(
+            btoContentGallerySetSummary_(
               'preparing',
               `Preparing gallery photo ${i+1} of ${newGalleryFiles.length}…`,
               String(galleryFile.name||'Selected photo')
@@ -6909,13 +7087,13 @@ async function saveContent(btn){
 
             const base64=await fileToBase64(galleryFile);
 
-            btoContentGallerySetUploadState_(
+            btoContentGallerySetItemState_(
               i,
               'UPLOADING',
               `Uploading ${i+1} of ${newGalleryFiles.length}`
             );
 
-            btoContentGallerySummaryState_(
+            btoContentGallerySetSummary_(
               'uploading',
               `Uploading gallery photo ${i+1} of ${newGalleryFiles.length}…`,
               String(galleryFile.name||'Selected photo')
@@ -6928,13 +7106,13 @@ async function saveContent(btn){
             });
 
             if(!up.success){
-              btoContentGallerySetUploadState_(
+              btoContentGallerySetItemState_(
                 i,
                 'ERROR',
                 up.message || 'Upload failed'
               );
 
-              btoContentGallerySummaryState_(
+              btoContentGallerySetSummary_(
                 'error',
                 `Gallery photo ${i+1} upload failed`,
                 String(up.message||galleryFile.name||'Please try again.')
@@ -6946,7 +7124,7 @@ async function saveContent(btn){
               );
             }
 
-            btoContentGallerySetUploadState_(
+            btoContentGallerySetItemState_(
               i,
               'UPLOADED',
               `Uploaded ${i+1} of ${newGalleryFiles.length}`
@@ -6957,7 +7135,7 @@ async function saveContent(btn){
             }
           }
 
-          btoContentGallerySummaryState_(
+          btoContentGallerySetSummary_(
             'uploaded',
             `${newGalleryFiles.length} gallery photo${newGalleryFiles.length===1?'':'s'} uploaded ✓`,
             'Gallery upload completed successfully.'
@@ -9212,11 +9390,29 @@ function openCommitteeQuickActivity(){
     galleryInput.addEventListener('change',()=>{
       const preview=document.getElementById('qaGalleryPreview');
       const files=Array.from(galleryInput.files||[]);
+
       preview.innerHTML=files.map(file=>`
         <div class="preview-item">
+          <span class="gallery-state-badge gallery-state-ready">
+            ACCEPTED ✓
+          </span>
           <img src="${URL.createObjectURL(file)}" alt="">
           <small>${esc(file.name)}</small>
+          <small class="gallery-upload-status-text">
+            Ready to upload ✓
+          </small>
         </div>`).join('');
+
+      if(files.length){
+        btoUniversalPhotoSetState_(
+          galleryInput,
+          'ready',
+          `${files.length} gallery photo${files.length===1?'':'s'} accepted ✓`,
+          `${btoUniversalPhotoFormatSize_(
+            files.reduce((sum,file)=>sum+Number(file.size||0),0)
+          )} selected`
+        );
+      }
     });
   }
 }
