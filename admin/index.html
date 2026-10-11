@@ -2487,6 +2487,42 @@ button.danger,
   }
 }
 
+
+
+/* ===== GALLERY PHOTO UPLOAD STATES ===== */
+
+.gallery-upload-preview .preview-item .gallery-state-badge.gallery-state-ready{
+  background:rgba(6,118,71,.92);
+}
+
+.gallery-upload-preview .preview-item .gallery-state-preparing,
+.gallery-upload-preview .preview-item .gallery-state-uploading{
+  background:rgba(37,99,235,.94);
+}
+
+.gallery-upload-preview .preview-item .gallery-state-uploaded{
+  background:rgba(6,118,71,.96);
+}
+
+.gallery-upload-preview .preview-item .gallery-state-error{
+  background:rgba(180,35,24,.96);
+}
+
+.gallery-upload-status-text{
+  display:block;
+  min-height:15px;
+  padding:0 6px 6px;
+  color:#475467;
+  font-size:10px;
+  font-weight:800;
+  text-align:center;
+}
+
+.gallery-state-preparing + img,
+.gallery-state-uploading + img{
+  opacity:.78;
+}
+
 </style>
 </head>
 <body>
@@ -3338,7 +3374,8 @@ document.addEventListener(
     ){
       btoUniversalPhotoRenderSelection_(input);
     }
-  }
+  },
+  true
 );
 
 
@@ -6219,6 +6256,54 @@ function btoGalleryFilePreview_(file){
   });
 }
 
+
+function btoContentGalleryStateText_(state,compressed){
+  state=String(state||'').trim().toUpperCase();
+
+  if(state==='PREPARING') return 'PREPARING';
+  if(state==='UPLOADING') return 'UPLOADING';
+  if(state==='UPLOADED') return 'UPLOADED ✓';
+  if(state==='ERROR') return 'FAILED';
+
+  return compressed
+    ? 'READY ✓'
+    : 'READY ✓';
+}
+
+function btoContentGallerySetUploadState_(index,state,note){
+  const metas=
+    window.BTO_CONTENT_GALLERY_NEW_META || [];
+
+  const i=Number(index);
+
+  if(!metas[i]) return;
+
+  metas[i].uploadState=
+    String(state||'READY').toUpperCase();
+
+  if(note!==undefined){
+    metas[i].uploadNote=
+      String(note||'');
+  }
+
+  window.BTO_CONTENT_GALLERY_NEW_META=metas;
+
+  renderContentGalleryNew_();
+}
+
+function btoContentGallerySummaryState_(state,title,detail){
+  const input=document.getElementById('cGallery');
+  if(!input) return;
+
+  btoUniversalPhotoSetState_(
+    input,
+    state,
+    title,
+    detail
+  );
+}
+
+
 async function previewContentGalleryInput(input){
   const existing=btoContentGalleryExistingFromInput();
 
@@ -6250,6 +6335,14 @@ async function previewContentGalleryInput(input){
 
   const count=document.getElementById('cGalleryCount');
 
+  if(accepted.length){
+    btoContentGallerySummaryState_(
+      'preparing',
+      `Preparing ${accepted.length} gallery photo${accepted.length===1?'':'s'}…`,
+      'Optimizing images before upload.'
+    );
+  }
+
   if(count && accepted.length){
     count.textContent=
       `Optimizing ${accepted.length} gallery photo${accepted.length===1?'':'s'}...`;
@@ -6264,6 +6357,12 @@ async function previewContentGalleryInput(input){
       count.textContent=
         `Optimizing gallery photo ${i+1} of ${accepted.length}...`;
     }
+
+    btoContentGallerySummaryState_(
+      'preparing',
+      `Preparing gallery photo ${i+1} of ${accepted.length}…`,
+      String(originalFile.name||'Selected photo')
+    );
 
     const optimized=
       await btoOptimizeGalleryImage_(originalFile);
@@ -6282,7 +6381,9 @@ async function previewContentGalleryInput(input){
         compressed:Boolean(optimized.compressed),
         width:Number(optimized.width||0),
         height:Number(optimized.height||0),
-        note:String(optimized.note||'')
+        note:String(optimized.note||''),
+        uploadState:'READY',
+        uploadNote:'Ready to upload'
       }
     });
 
@@ -6300,6 +6401,20 @@ async function previewContentGalleryInput(input){
 
   renderContentGalleryNew_();
   renderContentGalleryExisting_();
+
+  if(processed.length){
+    const totalBytes=
+      processed.reduce(
+        (sum,x)=>sum+Number(x.meta?.optimizedSize||0),
+        0
+      );
+
+    btoContentGallerySummaryState_(
+      'ready',
+      `${processed.length} gallery photo${processed.length===1?'':'s'} ready to upload ✓`,
+      `Optimized upload size: ${btoFormatFileSize_(totalBytes)}`
+    );
+  }
 }
 
 function renderContentGalleryNew_(){
@@ -6328,8 +6443,8 @@ function renderContentGalleryNew_(){
 
     return `
       <div class="preview-item">
-        <span class="gallery-state-badge">
-          ${meta.compressed?'OPTIMIZED':'NEW'}
+        <span class="gallery-state-badge gallery-state-${esc(String(meta.uploadState||'READY').toLowerCase())}">
+          ${esc(btoContentGalleryStateText_(meta.uploadState,meta.compressed))}
         </span>
 
         ${preview
@@ -6340,6 +6455,20 @@ function renderContentGalleryNew_(){
 
         <small style="font-weight:800;color:${meta.compressed?'#166534':'#4b5563'}">
           ${esc(sizeText)}
+        </small>
+
+        <small class="gallery-upload-status-text">
+          ${esc(
+            String(meta.uploadState||'READY').toUpperCase()==='UPLOADING'
+              ? 'Uploading photo…'
+              : String(meta.uploadState||'READY').toUpperCase()==='PREPARING'
+              ? 'Preparing photo…'
+              : String(meta.uploadState||'READY').toUpperCase()==='UPLOADED'
+              ? 'Photo uploaded ✓'
+              : String(meta.uploadState||'READY').toUpperCase()==='ERROR'
+              ? 'Photo upload failed'
+              : 'Ready to upload ✓'
+          )}
         </small>
 
         <button type="button"
@@ -6765,7 +6894,32 @@ async function saveContent(btn){
 
           for(let i=0;i<newGalleryFiles.length;i++){
             const galleryFile=newGalleryFiles[i];
+
+            btoContentGallerySetUploadState_(
+              i,
+              'PREPARING',
+              `Preparing ${i+1} of ${newGalleryFiles.length}`
+            );
+
+            btoContentGallerySummaryState_(
+              'preparing',
+              `Preparing gallery photo ${i+1} of ${newGalleryFiles.length}…`,
+              String(galleryFile.name||'Selected photo')
+            );
+
             const base64=await fileToBase64(galleryFile);
+
+            btoContentGallerySetUploadState_(
+              i,
+              'UPLOADING',
+              `Uploading ${i+1} of ${newGalleryFiles.length}`
+            );
+
+            btoContentGallerySummaryState_(
+              'uploading',
+              `Uploading gallery photo ${i+1} of ${newGalleryFiles.length}…`,
+              String(galleryFile.name||'Selected photo')
+            );
 
             const up=await api('uploadBase64',{
               fileName:galleryFile.name,
@@ -6774,16 +6928,40 @@ async function saveContent(btn){
             });
 
             if(!up.success){
+              btoContentGallerySetUploadState_(
+                i,
+                'ERROR',
+                up.message || 'Upload failed'
+              );
+
+              btoContentGallerySummaryState_(
+                'error',
+                `Gallery photo ${i+1} upload failed`,
+                String(up.message||galleryFile.name||'Please try again.')
+              );
+
               throw new Error(
                 up.message ||
                 `Gallery photo ${i+1} upload failed.`
               );
             }
 
+            btoContentGallerySetUploadState_(
+              i,
+              'UPLOADED',
+              `Uploaded ${i+1} of ${newGalleryFiles.length}`
+            );
+
             if(String(up.url||'').trim()){
               uploaded.push(String(up.url).trim());
             }
           }
+
+          btoContentGallerySummaryState_(
+            'uploaded',
+            `${newGalleryFiles.length} gallery photo${newGalleryFiles.length===1?'':'s'} uploaded ✓`,
+            'Gallery upload completed successfully.'
+          );
 
           galleryUrls=[...new Set(
             galleryUrls.concat(uploaded)
