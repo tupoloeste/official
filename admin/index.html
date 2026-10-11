@@ -2554,6 +2554,99 @@ button.danger,
   }
 }
 
+
+
+/* ===== MOBILE-RELIABLE GALLERY SELECTION STATUS ===== */
+
+.gallery-selection-status{
+  display:grid;
+  grid-template-columns:32px minmax(0,1fr);
+  align-items:center;
+  gap:10px;
+  margin-top:9px;
+  padding:11px 12px;
+  border:1px solid #86efac;
+  border-radius:12px;
+  background:#f0fdf4;
+}
+
+.gallery-selection-status.preparing,
+.gallery-selection-status.uploading{
+  border-color:#93c5fd;
+  background:#eff6ff;
+}
+
+.gallery-selection-status.error{
+  border-color:#fca5a5;
+  background:#fef2f2;
+}
+
+.gallery-selection-status-icon{
+  width:30px;
+  height:30px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  border:1px solid #86efac;
+  background:#fff;
+  color:#067647;
+  font-weight:900;
+}
+
+.gallery-selection-status.preparing
+.gallery-selection-status-icon,
+.gallery-selection-status.uploading
+.gallery-selection-status-icon{
+  border-color:#93c5fd;
+  color:#2563eb;
+}
+
+.gallery-selection-status.error
+.gallery-selection-status-icon{
+  border-color:#fca5a5;
+  color:#b42318;
+}
+
+.gallery-selection-status strong{
+  display:block;
+  color:#101828;
+  font-size:12px;
+  line-height:1.35;
+}
+
+.gallery-selection-status-detail{
+  margin-top:2px;
+  color:#667085;
+  font-size:10px;
+  line-height:1.35;
+}
+
+.gallery-selection-status-progress{
+  grid-column:1 / -1;
+  position:relative;
+  height:5px;
+  overflow:hidden;
+  border-radius:999px;
+  background:#dbeafe;
+}
+
+.gallery-selection-status-progress span{
+  position:absolute;
+  top:0;
+  bottom:0;
+  left:-40%;
+  width:40%;
+  border-radius:999px;
+  background:#2563eb;
+  animation:btoGalleryNativeProgress 1s ease-in-out infinite;
+}
+
+@keyframes btoGalleryNativeProgress{
+  0%{left:-40%}
+  55%{left:42%}
+  100%{left:105%}
+}
+
 </style>
 </head>
 <body>
@@ -6339,18 +6432,78 @@ function btoContentGalleryObjectPreview_(file){
 }
 
 
-async function previewContentGalleryInput(input){
-  const existing=btoContentGalleryExistingFromInput();
+function btoContentGalleryFileKey_(file){
+  if(!file) return '';
 
-  const currentFiles=
-    Array.from(window.BTO_CONTENT_GALLERY_NEW_FILES||[]);
+  return [
+    String(file.name||''),
+    Number(file.size||0),
+    Number(file.lastModified||0),
+    String(file.type||'')
+  ].join('|');
+}
 
-  const currentPreviews=
-    Array.from(window.BTO_CONTENT_GALLERY_NEW_PREVIEWS||[]);
+function btoContentGalleryNativeFiles_(){
+  const input=document.getElementById('cGallery');
 
-  const currentMeta=
-    Array.from(window.BTO_CONTENT_GALLERY_NEW_META||[]);
+  return Array.from(input?.files||[])
+    .filter(file=>{
+      const type=String(file?.type||'').toLowerCase();
+      const name=String(file?.name||'').toLowerCase();
 
+      return (
+        type.startsWith('image/') ||
+        /\.(jpe?g|png|webp|gif|bmp|heic|heif)$/i.test(name)
+      );
+    });
+}
+
+function btoContentGalleryShowDedicatedStatus_(
+  state,
+  title,
+  detail
+){
+  const box=document.getElementById(
+    'cGallerySelectionStatus'
+  );
+
+  if(!box) return;
+
+  const s=String(state||'ready').toLowerCase();
+
+  box.className=
+    'gallery-selection-status '+s;
+
+  box.innerHTML=`
+    <div class="gallery-selection-status-icon">
+      ${
+        s==='preparing' || s==='uploading'
+          ? '<span class="bto-photo-mini-spinner"></span>'
+          : s==='error'
+          ? '!'
+          : '✓'
+      }
+    </div>
+
+    <div>
+      <strong>${esc(title||'Gallery photos selected')}</strong>
+      ${detail
+        ? `<div class="gallery-selection-status-detail">${esc(detail)}</div>`
+        : ''
+      }
+    </div>
+
+    ${
+      s==='preparing' || s==='uploading'
+        ? '<div class="gallery-selection-status-progress"><span></span></div>'
+        : ''
+    }
+  `;
+
+  box.style.display='grid';
+}
+
+function previewContentGalleryInput(input){
   const selected=
     Array.from(input?.files||[])
       .filter(file=>{
@@ -6364,51 +6517,111 @@ async function previewContentGalleryInput(input){
       });
 
   if(!selected.length){
-    btoContentGallerySetSummary_(
-      'error',
-      'No gallery photo selected',
-      'Please choose an image file.'
+    return;
+  }
+
+  /*
+   * Android browsers/WebViews may fire both "input" and "change".
+   * Ignore an identical second event.
+   */
+  const signature=selected
+    .map(btoContentGalleryFileKey_)
+    .join('||');
+
+  if(
+    input?.dataset?.btoGalleryLastSignature===
+    signature
+  ){
+    return;
+  }
+
+  if(input?.dataset){
+    input.dataset.btoGalleryLastSignature=
+      signature;
+  }
+
+  const existing=
+    btoContentGalleryExistingFromInput();
+
+  const currentFiles=
+    Array.from(
+      window.BTO_CONTENT_GALLERY_NEW_FILES||[]
+    );
+
+  const currentPreviews=
+    Array.from(
+      window.BTO_CONTENT_GALLERY_NEW_PREVIEWS||[]
+    );
+
+  const currentMeta=
+    Array.from(
+      window.BTO_CONTENT_GALLERY_NEW_META||[]
+    );
+
+  const currentKeys=
+    new Set(
+      currentFiles.map(
+        btoContentGalleryFileKey_
+      )
+    );
+
+  const uniqueSelected=
+    selected.filter(
+      file=>
+        !currentKeys.has(
+          btoContentGalleryFileKey_(file)
+        )
+    );
+
+  if(!uniqueSelected.length){
+    btoContentGalleryShowDedicatedStatus_(
+      'ready',
+      `${selected.length} gallery photo${selected.length===1?'':'s'} already accepted ✓`,
+      'The selected photo is already in the gallery list.'
     );
     return;
   }
 
   const available=Math.max(
     0,
-    BTO_CONTENT_GALLERY_MAX-existing.length-currentFiles.length
+    BTO_CONTENT_GALLERY_MAX -
+    existing.length -
+    currentFiles.length
   );
 
   if(available<=0){
+    btoContentGalleryShowDedicatedStatus_(
+      'error',
+      'Gallery is already full',
+      `Maximum ${BTO_CONTENT_GALLERY_MAX} gallery photos.`
+    );
+
     alert(
       `Maximum ${BTO_CONTENT_GALLERY_MAX} gallery photos already selected.`
     );
 
-    btoContentGallerySetSummary_(
-      'error',
-      'Gallery is already full',
-      `Maximum ${BTO_CONTENT_GALLERY_MAX} photos.`
-    );
-
-    if(input) input.value='';
     return;
   }
 
-  if(selected.length>available){
+  const accepted=
+    uniqueSelected.slice(0,available);
+
+  if(uniqueSelected.length>available){
     alert(
-      `Maximum ${BTO_CONTENT_GALLERY_MAX} gallery photos only. ` +
+      `Maximum ${BTO_CONTENT_GALLERY_MAX} gallery photos only. `+
       `Only the first ${available} selected photo${available===1?'':'s'} will be accepted.`
     );
   }
 
-  const accepted=selected.slice(0,available);
-
-  /*
-   * IMPORTANT:
-   * Add ORIGINAL files to our persistent gallery arrays IMMEDIATELY.
-   * This gives the user instant proof that the selection was accepted.
-   * Optimization happens only after the cards are already visible.
-   */
   const baseIndex=currentFiles.length;
 
+  /*
+   * CRITICAL:
+   * Save ORIGINAL File objects immediately.
+   * Do not clear the native file input.
+   * This keeps Android's "file chosen" text visible and also gives Save
+   * a native fallback if the JS preview layer ever fails.
+   */
   accepted.forEach((file,i)=>{
     currentFiles.push(file);
 
@@ -6417,48 +6630,76 @@ async function previewContentGalleryInput(input){
     );
 
     currentMeta.push({
-      originalName:String(file.name||`Gallery photo ${i+1}`),
-      savedName:String(file.name||`Gallery photo ${i+1}`),
+      originalName:String(
+        file.name ||
+        `Gallery photo ${i+1}`
+      ),
+      savedName:String(
+        file.name ||
+        `Gallery photo ${i+1}`
+      ),
       originalSize:Number(file.size||0),
       optimizedSize:Number(file.size||0),
       compressed:false,
       width:0,
       height:0,
-      note:'Accepted; waiting for optimizer',
+      note:'Accepted; optimizer queued',
       uploadState:'ACCEPTED',
       uploadNote:'Photo accepted'
     });
   });
 
-  window.BTO_CONTENT_GALLERY_NEW_FILES=currentFiles;
-  window.BTO_CONTENT_GALLERY_NEW_PREVIEWS=currentPreviews;
-  window.BTO_CONTENT_GALLERY_NEW_META=currentMeta;
+  window.BTO_CONTENT_GALLERY_NEW_FILES=
+    currentFiles;
 
-  // Render BEFORE optimizer starts.
+  window.BTO_CONTENT_GALLERY_NEW_PREVIEWS=
+    currentPreviews;
+
+  window.BTO_CONTENT_GALLERY_NEW_META=
+    currentMeta;
+
   renderContentGalleryNew_();
   renderContentGalleryExisting_();
 
-  const selectedBytes=
+  const totalBytes=
     accepted.reduce(
-      (sum,file)=>sum+Number(file.size||0),
+      (sum,file)=>
+        sum+Number(file.size||0),
       0
     );
+
+  btoContentGalleryShowDedicatedStatus_(
+    'ready',
+    `${accepted.length} gallery photo${accepted.length===1?'':'s'} accepted ✓`,
+    `${btoFormatFileSize_(totalBytes)} selected · Optimizer will reduce size automatically.`
+  );
 
   btoContentGallerySetSummary_(
     'ready',
     `${accepted.length} gallery photo${accepted.length===1?'':'s'} accepted ✓`,
-    `${btoFormatFileSize_(selectedBytes)} selected · Optimizer starting…`
+    `${btoFormatFileSize_(totalBytes)} selected`
   );
 
   /*
-   * Clear native input only AFTER files have been safely copied into our
-   * persistent JS arrays. This also allows selecting the same photo again.
+   * Do NOT await here.
+   * The event handler returns immediately so Android gets instant UI feedback.
    */
-  if(input) input.value='';
+  setTimeout(()=>{
+    btoOptimizeContentGalleryBatch_(
+      accepted,
+      baseIndex
+    );
+  },0);
+}
 
-  // Optimize one-by-one in the background.
+async function btoOptimizeContentGalleryBatch_(
+  accepted,
+  baseIndex
+){
+  accepted=Array.from(accepted||[]);
+
   for(let i=0;i<accepted.length;i++){
-    const slot=baseIndex+i;
+    const slot=Number(baseIndex)+i;
     const originalFile=accepted[i];
 
     btoContentGallerySetItemState_(
@@ -6467,30 +6708,44 @@ async function previewContentGalleryInput(input){
       `Optimizing ${i+1} of ${accepted.length}`
     );
 
-    btoContentGallerySetSummary_(
+    btoContentGalleryShowDedicatedStatus_(
       'preparing',
       `Optimizing gallery photo ${i+1} of ${accepted.length}…`,
-      String(originalFile.name||'Selected photo')
+      String(
+        originalFile.name||
+        'Selected photo'
+      )
     );
 
     try{
       const optimized=
-        await btoOptimizeGalleryImage_(originalFile);
+        await btoOptimizeGalleryImage_(
+          originalFile
+        );
 
       const preview=
-        await btoGalleryFilePreview_(optimized.file);
+        await btoGalleryFilePreview_(
+          optimized.file
+        );
+
+      /*
+       * The card may have been removed while optimization was running.
+       */
+      if(
+        !window.BTO_CONTENT_GALLERY_NEW_FILES ||
+        !window.BTO_CONTENT_GALLERY_NEW_FILES[slot]
+      ){
+        continue;
+      }
 
       window.BTO_CONTENT_GALLERY_NEW_FILES[slot]=
         optimized.file;
 
-      /*
-       * Revoke the temporary object URL created for instant preview.
-       * Data URL from the optimized image will replace it.
-       */
-      const oldPreview=
-        String(
-          window.BTO_CONTENT_GALLERY_NEW_PREVIEWS[slot]||''
-        );
+      const oldPreview=String(
+        window
+          .BTO_CONTENT_GALLERY_NEW_PREVIEWS?.[slot]
+          || ''
+      );
 
       if(oldPreview.startsWith('blob:')){
         try{
@@ -6499,67 +6754,125 @@ async function previewContentGalleryInput(input){
       }
 
       window.BTO_CONTENT_GALLERY_NEW_PREVIEWS[slot]=
-        preview || btoContentGalleryObjectPreview_(optimized.file);
+        preview ||
+        btoContentGalleryObjectPreview_(
+          optimized.file
+        );
 
       window.BTO_CONTENT_GALLERY_NEW_META[slot]={
-        originalName:String(originalFile.name||''),
-        savedName:String(optimized.file?.name||originalFile.name||''),
-        originalSize:Number(optimized.originalSize||originalFile.size||0),
-        optimizedSize:Number(optimized.optimizedSize||optimized.file?.size||0),
-        compressed:Boolean(optimized.compressed),
-        width:Number(optimized.width||0),
-        height:Number(optimized.height||0),
-        note:String(optimized.note||''),
+        originalName:String(
+          originalFile.name||''
+        ),
+        savedName:String(
+          optimized.file?.name||
+          originalFile.name||
+          ''
+        ),
+        originalSize:Number(
+          optimized.originalSize||
+          originalFile.size||
+          0
+        ),
+        optimizedSize:Number(
+          optimized.optimizedSize||
+          optimized.file?.size||
+          0
+        ),
+        compressed:Boolean(
+          optimized.compressed
+        ),
+        width:Number(
+          optimized.width||0
+        ),
+        height:Number(
+          optimized.height||0
+        ),
+        note:String(
+          optimized.note||''
+        ),
         uploadState:'READY',
-        uploadNote:optimized.compressed
-          ? 'Optimized and ready to upload'
-          : 'Ready to upload'
+        uploadNote:
+          optimized.compressed
+            ? 'Optimized and ready'
+            : 'Ready to upload'
       };
 
       renderContentGalleryNew_();
 
     }catch(err){
+      if(
+        !window.BTO_CONTENT_GALLERY_NEW_FILES ||
+        !window.BTO_CONTENT_GALLERY_NEW_FILES[slot]
+      ){
+        continue;
+      }
+
       /*
-       * Never discard a photo merely because optimization failed.
-       * Keep the original file and allow it to upload.
+       * Optimizer failure must never reject the selected photo.
+       * Retain the original File.
        */
       window.BTO_CONTENT_GALLERY_NEW_FILES[slot]=
         originalFile;
 
       const oldMeta=
-        window.BTO_CONTENT_GALLERY_NEW_META[slot]||{};
+        window
+          .BTO_CONTENT_GALLERY_NEW_META?.[slot]
+          || {};
 
       window.BTO_CONTENT_GALLERY_NEW_META[slot]={
         ...oldMeta,
-        originalName:String(originalFile.name||''),
-        savedName:String(originalFile.name||''),
-        originalSize:Number(originalFile.size||0),
-        optimizedSize:Number(originalFile.size||0),
+        originalName:String(
+          originalFile.name||''
+        ),
+        savedName:String(
+          originalFile.name||''
+        ),
+        originalSize:Number(
+          originalFile.size||0
+        ),
+        optimizedSize:Number(
+          originalFile.size||0
+        ),
         compressed:false,
-        note:'Optimizer unavailable; original will be uploaded',
+        note:'Optimizer unavailable; original retained',
         uploadState:'READY',
-        uploadNote:'Original photo retained and ready'
+        uploadNote:'Original photo ready'
       };
 
       renderContentGalleryNew_();
     }
 
-    await new Promise(resolve=>setTimeout(resolve,0));
+    await new Promise(
+      resolve=>setTimeout(resolve,0)
+    );
   }
 
   const metas=
     window.BTO_CONTENT_GALLERY_NEW_META||[];
 
-  const totalReadyBytes=
-    metas.reduce(
-      (sum,m)=>sum+Number(m.optimizedSize||0),
-      0
-    );
+  const readyCount=metas.filter(
+    meta=>
+      String(
+        meta?.uploadState||''
+      ).toUpperCase()==='READY'
+  ).length;
+
+  const totalBytes=metas.reduce(
+    (sum,meta)=>
+      sum+Number(meta?.optimizedSize||0),
+    0
+  );
+
+  btoContentGalleryShowDedicatedStatus_(
+    'ready',
+    `${readyCount} gallery photo${readyCount===1?'':'s'} ready to upload ✓`,
+    `${btoFormatFileSize_(totalBytes)} total after optimization`
+  );
 
   btoContentGallerySetSummary_(
     'ready',
-    `${accepted.length} gallery photo${accepted.length===1?'':'s'} ready to upload ✓`,
-    `Current new gallery upload size: ${btoFormatFileSize_(totalReadyBytes)}`
+    `${readyCount} gallery photo${readyCount===1?'':'s'} ready to upload ✓`,
+    `${btoFormatFileSize_(totalBytes)} total`
   );
 
   renderContentGalleryNew_();
@@ -6777,7 +7090,12 @@ function renderContentAdmin(){
       <div id="cGalleryWrap" class="hidden" style="margin-top:16px">
         <label>Gallery Photos</label>
         <input id="cGallery" type="file" accept="image/*" multiple
+          oninput="previewContentGalleryInput(this)"
           onchange="previewContentGalleryInput(this)">
+        <div id="cGallerySelectionStatus"
+          class="gallery-selection-status"
+          style="display:none">
+        </div>
         <div class="help">
           Available for ACTIVITY and COMMITTEE UPDATE. Select multiple photos at once.
           Maximum ${BTO_CONTENT_GALLERY_MAX} gallery photos, excluding the Featured Photo.
@@ -7055,8 +7373,47 @@ async function saveContent(btn){
           String(contentType).toUpperCase()
         )
       ){
-        const newGalleryFiles=
-          Array.from(window.BTO_CONTENT_GALLERY_NEW_FILES||[]);
+        let newGalleryFiles=
+          Array.from(
+            window.BTO_CONTENT_GALLERY_NEW_FILES||[]
+          );
+
+        /*
+         * Android/mobile safety fallback:
+         * If a browser did not fire our gallery preview handler correctly,
+         * Save still reads the native input.files directly.
+         */
+        const nativeGalleryFiles=
+          btoContentGalleryNativeFiles_();
+
+        if(nativeGalleryFiles.length){
+          const knownKeys=
+            new Set(
+              newGalleryFiles.map(
+                btoContentGalleryFileKey_
+              )
+            );
+
+          nativeGalleryFiles.forEach(file=>{
+            const key=
+              btoContentGalleryFileKey_(file);
+
+            if(!knownKeys.has(key)){
+              newGalleryFiles.push(file);
+              knownKeys.add(key);
+            }
+          });
+        }
+
+        newGalleryFiles=
+          newGalleryFiles.slice(
+            0,
+            Math.max(
+              0,
+              BTO_CONTENT_GALLERY_MAX-
+              galleryUrls.length
+            )
+          );
 
         if(
           galleryUrls.length+newGalleryFiles.length >
@@ -7151,6 +7508,25 @@ async function saveContent(btn){
           window.BTO_CONTENT_GALLERY_NEW_FILES=[];
           window.BTO_CONTENT_GALLERY_NEW_PREVIEWS=[];
           window.BTO_CONTENT_GALLERY_NEW_META=[];
+
+          const galleryInput=
+            document.getElementById('cGallery');
+
+          if(galleryInput){
+            galleryInput.value='';
+            galleryInput.dataset.btoGalleryLastSignature='';
+          }
+
+          const galleryStatus=
+            document.getElementById(
+              'cGallerySelectionStatus'
+            );
+
+          if(galleryStatus){
+            galleryStatus.style.display='none';
+            galleryStatus.innerHTML='';
+          }
+
           renderContentGalleryNew_();
           renderContentGalleryExisting_();
         }
