@@ -2296,6 +2296,197 @@ button.danger,
 .profile-person-admin-avatar{display:grid;place-items:center;background:#fff1f3;color:#991b1b;font-size:30px;font-weight:900}
 .profile-person-admin-info{display:grid;gap:3px;margin-bottom:10px}
 .profile-person-admin-info strong{color:#101828}.profile-person-admin-info span{color:#991b1b;font-size:12px;font-weight:800}.profile-person-admin-info small{color:#667085;font-size:10px}
+
+
+/* ===== GLOBAL PHOTO UPLOAD INDICATOR ===== */
+
+.bto-photo-upload-indicator{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  gap:11px;
+  align-items:center;
+  margin-top:9px;
+  padding:10px;
+  border:1px solid #d0d5dd;
+  border-radius:12px;
+  background:#f8fafc;
+  box-shadow:0 2px 6px rgba(16,24,40,.04);
+}
+
+.bto-photo-upload-indicator.ready{
+  border-color:#86efac;
+  background:#f0fdf4;
+}
+
+.bto-photo-upload-indicator.preparing,
+.bto-photo-upload-indicator.uploading{
+  border-color:#93c5fd;
+  background:#eff6ff;
+}
+
+.bto-photo-upload-indicator.uploaded{
+  border-color:#4ade80;
+  background:#ecfdf3;
+}
+
+.bto-photo-upload-indicator.error{
+  border-color:#fca5a5;
+  background:#fef2f2;
+}
+
+.bto-photo-indicator-preview{
+  display:flex;
+  align-items:center;
+  min-width:58px;
+  max-width:158px;
+  gap:4px;
+}
+
+.bto-photo-indicator-preview img{
+  width:54px;
+  height:54px;
+  flex:0 0 54px;
+  border-radius:9px;
+  object-fit:cover;
+  object-position:center;
+  border:1px solid #d0d5dd;
+  background:#fff;
+}
+
+.bto-photo-more-count{
+  width:34px;
+  height:34px;
+  flex:0 0 34px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:#344054;
+  color:#fff;
+  font-size:10px;
+  font-weight:900;
+}
+
+.bto-photo-indicator-main{
+  min-width:0;
+}
+
+.bto-photo-indicator-top{
+  display:grid;
+  grid-template-columns:26px minmax(0,1fr);
+  gap:8px;
+  align-items:center;
+}
+
+.bto-photo-indicator-icon{
+  width:26px;
+  height:26px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:#fff;
+  border:1px solid #d0d5dd;
+  font-size:13px;
+  font-weight:900;
+}
+
+.bto-photo-upload-indicator.ready
+.bto-photo-indicator-icon,
+.bto-photo-upload-indicator.uploaded
+.bto-photo-indicator-icon{
+  color:#067647;
+  border-color:#86efac;
+}
+
+.bto-photo-upload-indicator.error
+.bto-photo-indicator-icon{
+  color:#b42318;
+  border-color:#fca5a5;
+}
+
+.bto-photo-indicator-title{
+  display:block;
+  color:#101828;
+  font-size:12px;
+  line-height:1.3;
+}
+
+.bto-photo-indicator-detail{
+  margin-top:2px;
+  color:#667085;
+  font-size:10px;
+  line-height:1.35;
+  overflow-wrap:anywhere;
+}
+
+.bto-photo-indicator-progress{
+  display:none;
+  position:relative;
+  height:5px;
+  margin-top:8px;
+  overflow:hidden;
+  border-radius:999px;
+  background:#dbeafe;
+}
+
+.bto-photo-indicator-progress span{
+  position:absolute;
+  top:0;
+  bottom:0;
+  left:0;
+  width:38%;
+  border-radius:999px;
+  background:#2563eb;
+}
+
+.bto-photo-indicator-progress span.is-running{
+  animation:btoPhotoUploadProgress 1.05s ease-in-out infinite;
+}
+
+.bto-photo-mini-spinner{
+  width:14px;
+  height:14px;
+  border:2px solid #bfdbfe;
+  border-top-color:#2563eb;
+  border-radius:50%;
+  animation:btoPhotoSpin .75s linear infinite;
+}
+
+@keyframes btoPhotoSpin{
+  to{
+    transform:rotate(360deg);
+  }
+}
+
+@keyframes btoPhotoUploadProgress{
+  0%{
+    left:-42%;
+  }
+
+  55%{
+    left:42%;
+  }
+
+  100%{
+    left:104%;
+  }
+}
+
+@media(max-width:560px){
+  .bto-photo-upload-indicator{
+    grid-template-columns:1fr;
+  }
+
+  .bto-photo-indicator-preview{
+    max-width:100%;
+  }
+
+  .bto-photo-indicator-preview img{
+    width:50px;
+    height:50px;
+    flex-basis:50px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -2618,6 +2809,539 @@ function apiConfigured(){
   return /^https:\/\/script\.google\.com\/macros\/s\/.+\/exec/.test(API_URL);
 }
 
+
+/* ============================================================
+   GLOBAL PHOTO / IMAGE UPLOAD INDICATOR
+
+   Automatically applies to EVERY file input used for images,
+   including dynamically rendered forms.
+
+   States:
+   - Selected / Ready to Upload
+   - Preparing
+   - Uploading
+   - Uploaded
+   - Error
+   ============================================================ */
+
+window.BTO_PHOTO_PREVIEW_URLS =
+  window.BTO_PHOTO_PREVIEW_URLS || new WeakMap();
+
+window.BTO_LAST_PHOTO_INPUT_ID =
+  window.BTO_LAST_PHOTO_INPUT_ID || '';
+
+let BTO_PHOTO_INPUT_SEQ =
+  Number(window.BTO_PHOTO_INPUT_SEQ||0);
+
+function btoUniversalPhotoIsImageFile_(file){
+  if(!file) return false;
+
+  const type=String(file.type||'').toLowerCase();
+  const name=String(file.name||'').toLowerCase();
+
+  return (
+    type.startsWith('image/') ||
+    /\.(jpe?g|png|webp|gif|bmp|heic|heif)$/i.test(name)
+  );
+}
+
+function btoUniversalPhotoInputEligible_(input){
+  if(
+    !input ||
+    String(input.type||'').toLowerCase()!=='file'
+  ){
+    return false;
+  }
+
+  const accept=String(
+    input.getAttribute('accept')||''
+  ).toLowerCase();
+
+  if(accept.includes('image')){
+    return true;
+  }
+
+  return Array.from(input.files||[])
+    .some(btoUniversalPhotoIsImageFile_);
+}
+
+function btoUniversalPhotoFormatSize_(bytes){
+  const n=Number(bytes||0);
+
+  if(!Number.isFinite(n) || n<=0){
+    return '0 KB';
+  }
+
+  if(n<1024){
+    return n+' B';
+  }
+
+  if(n<1024*1024){
+    return (n/1024).toFixed(
+      n<10*1024 ? 1 : 0
+    )+' KB';
+  }
+
+  return (n/(1024*1024)).toFixed(1)+' MB';
+}
+
+function btoUniversalPhotoIndicatorId_(input){
+  if(!input) return '';
+
+  if(input.dataset.btoPhotoIndicatorId){
+    return input.dataset.btoPhotoIndicatorId;
+  }
+
+  BTO_PHOTO_INPUT_SEQ++;
+
+  const id=
+    'btoPhotoIndicator_' +
+    BTO_PHOTO_INPUT_SEQ;
+
+  input.dataset.btoPhotoIndicatorId=id;
+
+  if(!input.id){
+    input.dataset.btoPhotoInputGenerated='1';
+  }
+
+  return id;
+}
+
+function btoUniversalPhotoEnsureIndicator_(input){
+  if(!btoUniversalPhotoInputEligible_(input)){
+    return null;
+  }
+
+  const id=btoUniversalPhotoIndicatorId_(input);
+
+  let box=document.getElementById(id);
+
+  if(box){
+    return box;
+  }
+
+  box=document.createElement('div');
+  box.id=id;
+  box.className='bto-photo-upload-indicator';
+  box.style.display='none';
+
+  box.innerHTML=`
+    <div class="bto-photo-indicator-preview"></div>
+
+    <div class="bto-photo-indicator-main">
+      <div class="bto-photo-indicator-top">
+        <span class="bto-photo-indicator-icon">📷</span>
+
+        <div>
+          <strong class="bto-photo-indicator-title">
+            Photo selected
+          </strong>
+
+          <div class="bto-photo-indicator-detail"></div>
+        </div>
+      </div>
+
+      <div class="bto-photo-indicator-progress">
+        <span></span>
+      </div>
+    </div>
+  `;
+
+  input.insertAdjacentElement(
+    'afterend',
+    box
+  );
+
+  return box;
+}
+
+function btoUniversalPhotoClearPreviewUrls_(input){
+  const oldUrls=
+    window.BTO_PHOTO_PREVIEW_URLS.get(input) || [];
+
+  oldUrls.forEach(url=>{
+    try{
+      URL.revokeObjectURL(url);
+    }catch(e){}
+  });
+
+  window.BTO_PHOTO_PREVIEW_URLS.delete(input);
+}
+
+function btoUniversalPhotoSetState_(
+  input,
+  state,
+  title,
+  detail
+){
+  const box=btoUniversalPhotoEnsureIndicator_(input);
+  if(!box) return;
+
+  const normalized=
+    String(state||'ready').toLowerCase();
+
+  box.className=
+    'bto-photo-upload-indicator '+
+    normalized;
+
+  const icon=
+    box.querySelector(
+      '.bto-photo-indicator-icon'
+    );
+
+  const titleEl=
+    box.querySelector(
+      '.bto-photo-indicator-title'
+    );
+
+  const detailEl=
+    box.querySelector(
+      '.bto-photo-indicator-detail'
+    );
+
+  const progress=
+    box.querySelector(
+      '.bto-photo-indicator-progress'
+    );
+
+  const progressBar=
+    progress?.querySelector('span');
+
+  if(titleEl){
+    titleEl.textContent=
+      title ||
+      (
+        normalized==='ready'
+          ? 'Ready to Upload ✓'
+          : normalized==='preparing'
+          ? 'Preparing photo…'
+          : normalized==='uploading'
+          ? 'Uploading photo…'
+          : normalized==='uploaded'
+          ? 'Photo uploaded ✓'
+          : normalized==='error'
+          ? 'Photo upload failed'
+          : 'Photo selected'
+      );
+  }
+
+  if(detailEl){
+    detailEl.textContent=
+      String(detail||'');
+  }
+
+  if(icon){
+    if(
+      normalized==='preparing' ||
+      normalized==='uploading'
+    ){
+      icon.innerHTML=
+        '<span class="bto-photo-mini-spinner"></span>';
+    }else if(
+      normalized==='ready' ||
+      normalized==='uploaded'
+    ){
+      icon.textContent='✓';
+    }else if(normalized==='error'){
+      icon.textContent='!';
+    }else{
+      icon.textContent='📷';
+    }
+  }
+
+  if(progress){
+    if(
+      normalized==='preparing' ||
+      normalized==='uploading'
+    ){
+      progress.style.display='block';
+
+      if(progressBar){
+        progressBar.classList.add(
+          'is-running'
+        );
+      }
+    }else{
+      progress.style.display='none';
+
+      if(progressBar){
+        progressBar.classList.remove(
+          'is-running'
+        );
+      }
+    }
+  }
+
+  box.style.display='grid';
+}
+
+function btoUniversalPhotoRenderSelection_(input){
+  if(!input) return;
+
+  const files=
+    Array.from(input.files||[])
+      .filter(btoUniversalPhotoIsImageFile_);
+
+  const box=
+    btoUniversalPhotoEnsureIndicator_(input);
+
+  if(!box) return;
+
+  btoUniversalPhotoClearPreviewUrls_(input);
+
+  if(!files.length){
+    box.style.display='none';
+    return;
+  }
+
+  window.BTO_LAST_PHOTO_INPUT_ID=
+    String(input.id||'');
+
+  const preview=
+    box.querySelector(
+      '.bto-photo-indicator-preview'
+    );
+
+  if(preview){
+    preview.innerHTML='';
+
+    const urls=[];
+
+    files.slice(0,4).forEach(file=>{
+      const url=URL.createObjectURL(file);
+      urls.push(url);
+
+      const img=document.createElement('img');
+      img.src=url;
+      img.alt=file.name||'Selected photo';
+      img.loading='lazy';
+
+      preview.appendChild(img);
+    });
+
+    window.BTO_PHOTO_PREVIEW_URLS.set(
+      input,
+      urls
+    );
+
+    if(files.length>4){
+      const more=document.createElement('span');
+      more.className='bto-photo-more-count';
+      more.textContent='+'+(files.length-4);
+      preview.appendChild(more);
+    }
+  }
+
+  const totalBytes=
+    files.reduce(
+      (sum,file)=>sum+Number(file.size||0),
+      0
+    );
+
+  const detail=
+    files.length===1
+      ? `${files[0].name||'Photo'} · ${btoUniversalPhotoFormatSize_(files[0].size)}`
+      : `${files.length} photos selected · ${btoUniversalPhotoFormatSize_(totalBytes)} total`;
+
+  btoUniversalPhotoSetState_(
+    input,
+    'ready',
+    files.length===1
+      ? 'Photo selected · Ready to Upload ✓'
+      : `${files.length} photos selected · Ready to Upload ✓`,
+    detail
+  );
+}
+
+function btoUniversalPhotoSelectedInputs_(){
+  return Array.from(
+    document.querySelectorAll(
+      'input[type="file"]'
+    )
+  ).filter(input=>
+    btoUniversalPhotoInputEligible_(input) &&
+    Array.from(input.files||[])
+      .some(btoUniversalPhotoIsImageFile_)
+  );
+}
+
+function btoUniversalPhotoInputsForFile_(file){
+  const all=
+    btoUniversalPhotoSelectedInputs_();
+
+  if(!file){
+    return all;
+  }
+
+  const exact=all.filter(input=>
+    Array.from(input.files||[])
+      .some(x=>
+        x===file ||
+        (
+          String(x.name||'')===
+            String(file.name||'') &&
+          Number(x.size||0)===
+            Number(file.size||0)
+        )
+      )
+  );
+
+  if(exact.length){
+    return exact;
+  }
+
+  const byName=all.filter(input=>
+    Array.from(input.files||[])
+      .some(x=>
+        String(x.name||'')===
+        String(file.name||'')
+      )
+  );
+
+  if(byName.length){
+    return byName;
+  }
+
+  if(window.BTO_LAST_PHOTO_INPUT_ID){
+    const last=document.getElementById(
+      window.BTO_LAST_PHOTO_INPUT_ID
+    );
+
+    if(
+      last &&
+      btoUniversalPhotoInputEligible_(last) &&
+      Array.from(last.files||[]).length
+    ){
+      return [last];
+    }
+  }
+
+  return all.length===1
+    ? all
+    : [];
+}
+
+function btoUniversalPhotoMarkFile_(
+  file,
+  state,
+  title,
+  detail
+){
+  if(!btoUniversalPhotoIsImageFile_(file)){
+    return;
+  }
+
+  const targets=
+    btoUniversalPhotoInputsForFile_(file);
+
+  targets.forEach(input=>
+    btoUniversalPhotoSetState_(
+      input,
+      state,
+      title,
+      detail
+    )
+  );
+}
+
+function btoUniversalPhotoLooksLikeUploadData_(data){
+  data=data||{};
+
+  const mime=String(
+    data.mimeType||''
+  ).toLowerCase();
+
+  const name=String(
+    data.fileName||''
+  ).toLowerCase();
+
+  return (
+    mime.startsWith('image/') ||
+    /\.(jpe?g|png|webp|gif|bmp|heic|heif)$/i.test(name)
+  );
+}
+
+function btoUniversalPhotoMarkUploadData_(
+  data,
+  state,
+  title,
+  detail
+){
+  if(!btoUniversalPhotoLooksLikeUploadData_(data)){
+    return;
+  }
+
+  const pseudoFile={
+    name:String(data.fileName||''),
+    size:Number(data.fileSize||0),
+    type:String(data.mimeType||'')
+  };
+
+  let targets=
+    btoUniversalPhotoInputsForFile_(
+      pseudoFile
+    );
+
+  if(!targets.length){
+    const selected=
+      btoUniversalPhotoSelectedInputs_();
+
+    if(window.BTO_LAST_PHOTO_INPUT_ID){
+      const last=document.getElementById(
+        window.BTO_LAST_PHOTO_INPUT_ID
+      );
+
+      if(last && selected.includes(last)){
+        targets=[last];
+      }
+    }
+
+    if(!targets.length && selected.length===1){
+      targets=selected;
+    }
+  }
+
+  targets.forEach(input=>{
+    const count=
+      Array.from(input.files||[])
+        .filter(btoUniversalPhotoIsImageFile_)
+        .length;
+
+    const autoDetail=
+      detail ||
+      (
+        count>1
+          ? `${count} selected photos`
+          : String(data.fileName||'Selected photo')
+      );
+
+    btoUniversalPhotoSetState_(
+      input,
+      state,
+      title,
+      autoDetail
+    );
+  });
+}
+
+/* Apply automatically to all current and future image file inputs. */
+document.addEventListener(
+  'change',
+  event=>{
+    const input=event.target;
+
+    if(
+      input &&
+      String(input.tagName||'').toUpperCase()==='INPUT' &&
+      String(input.type||'').toLowerCase()==='file' &&
+      btoUniversalPhotoInputEligible_(input)
+    ){
+      btoUniversalPhotoRenderSelection_(input);
+    }
+  }
+);
+
+
 async function api(action,data={}){
   if(!apiConfigured()){
     return {success:false,message:'Apps Script API URL is not configured.'};
@@ -2715,6 +3439,60 @@ async function api(action,data={}){
     if(useModal) hideProcessModal();
   }
 }
+
+
+/* ============================================================
+   GLOBAL IMAGE UPLOAD API STATE
+   Covers ALL modules that call uploadBase64.
+   ============================================================ */
+
+const BTO_API_BEFORE_PHOTO_INDICATOR=api;
+
+api=async function(action,data={}){
+  const isPhotoUpload=
+    action==='uploadBase64' &&
+    btoUniversalPhotoLooksLikeUploadData_(data);
+
+  if(isPhotoUpload){
+    btoUniversalPhotoMarkUploadData_(
+      data,
+      'uploading',
+      'Uploading photo…',
+      String(data.fileName||'Selected photo')
+    );
+  }
+
+  const result=
+    await BTO_API_BEFORE_PHOTO_INDICATOR(
+      action,
+      data
+    );
+
+  if(isPhotoUpload){
+    if(result && result.success!==false){
+      btoUniversalPhotoMarkUploadData_(
+        data,
+        'uploaded',
+        'Photo uploaded ✓',
+        String(data.fileName||'Selected photo')
+      );
+    }else{
+      btoUniversalPhotoMarkUploadData_(
+        data,
+        'error',
+        'Photo upload failed',
+        String(
+          result?.message ||
+          data.fileName ||
+          'Please try again.'
+        )
+      );
+    }
+  }
+
+  return result;
+};
+
 
 
 function showForcedPasswordChange(){
@@ -9485,10 +10263,43 @@ function showModuleError(message){
 }
 
 function fileToBase64(file){
+  if(btoUniversalPhotoIsImageFile_(file)){
+    btoUniversalPhotoMarkFile_(
+      file,
+      'preparing',
+      'Preparing photo…',
+      `${file.name||'Selected photo'} · ${btoUniversalPhotoFormatSize_(file.size)}`
+    );
+  }
+
   return new Promise((resolve,reject)=>{
     const reader=new FileReader();
-    reader.onload=()=>resolve(String(reader.result).split(',')[1]||'');
-    reader.onerror=reject;
+
+    reader.onload=()=>{
+      resolve(
+        String(reader.result)
+          .split(',')[1]||''
+      );
+    };
+
+    reader.onerror=()=>{
+      if(btoUniversalPhotoIsImageFile_(file)){
+        btoUniversalPhotoMarkFile_(
+          file,
+          'error',
+          'Unable to prepare photo',
+          file.name||'Selected photo'
+        );
+      }
+
+      reject(
+        reader.error ||
+        new Error(
+          'Unable to read the selected file.'
+        )
+      );
+    };
+
     reader.readAsDataURL(file);
   });
 }
