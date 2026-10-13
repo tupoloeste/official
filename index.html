@@ -5121,30 +5121,34 @@ body.bto-site-loading{overflow:hidden!important}
   }
 }
 
-/* ===== Home Website Visitor Counter ===== */
-.home-visitor-section{
-  background:#fff;
-  padding:14px 0 0;
+
+
+/* ===== Bottom Website Visitor Statistics ===== */
+.home-visitor-stats-section{
+  background:#f8f9fb;
+  padding:24px 0 26px;
+  border-top:1px solid #eceff3;
 }
 
-.home-visitor-card{
+.home-visitor-stats-card{
+  border:1px solid #ead9dc;
+  border-radius:18px;
+  background:#fff;
+  padding:18px;
+  box-shadow:0 8px 24px rgba(16,24,40,.06);
+}
+
+.home-visitor-stats-head{
   display:flex;
   align-items:center;
-  gap:13px;
-  width:max-content;
-  max-width:100%;
-  margin-left:auto;
-  padding:11px 15px;
-  border:1px solid #f1d6da;
-  border-radius:15px;
-  background:linear-gradient(135deg,#fff,#fff7f8);
-  box-shadow:0 7px 20px rgba(92,20,35,.07);
+  gap:12px;
+  margin-bottom:16px;
 }
 
-.home-visitor-icon{
-  width:42px;
-  height:42px;
-  flex:0 0 42px;
+.home-visitor-stats-icon{
+  width:44px;
+  height:44px;
+  flex:0 0 44px;
   display:grid;
   place-items:center;
   border-radius:13px;
@@ -5153,51 +5157,79 @@ body.bto-site-loading{overflow:hidden!important}
   font-size:20px;
 }
 
-.home-visitor-copy{
-  display:grid;
-  grid-template-columns:auto auto;
-  align-items:baseline;
-  column-gap:9px;
+.home-visitor-stats-head h3{
+  margin:0;
+  color:#1d2939;
+  font-size:17px;
 }
 
-.home-visitor-copy > span{
-  color:#475467;
-  font-size:12px;
+.home-visitor-stats-head p{
+  margin:3px 0 0;
+  color:#667085;
+  font-size:11px;
+  line-height:1.4;
+}
+
+.home-visitor-stats-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+}
+
+.home-visitor-stat{
+  padding:13px 10px;
+  border:1px solid #f1e3e6;
+  border-radius:14px;
+  background:#fff8f9;
+  text-align:center;
+}
+
+.home-visitor-stat span{
+  display:block;
+  color:#667085;
+  font-size:10px;
   font-weight:800;
 }
 
-.home-visitor-copy > strong{
+.home-visitor-stat strong{
+  display:block;
+  margin-top:5px;
   color:var(--red-dark);
-  font-size:25px;
+  font-size:23px;
   line-height:1;
   font-variant-numeric:tabular-nums;
 }
 
-.home-visitor-copy > small{
-  grid-column:1 / -1;
-  margin-top:4px;
+.home-visitor-note{
+  display:block;
+  margin-top:12px;
   color:#98a2b3;
-  font-size:10px;
-  line-height:1.3;
+  font-size:9px;
+  line-height:1.4;
+  text-align:center;
 }
 
 @media(max-width:760px){
-  .home-visitor-section{
-    padding-top:10px;
+  .home-visitor-stats-section{
+    padding:18px 0 20px;
   }
 
-  .home-visitor-card{
-    width:100%;
-    margin:0;
-    padding:10px 12px;
+  .home-visitor-stats-card{
+    padding:14px;
+    border-radius:16px;
   }
 
-  .home-visitor-copy{
-    flex:1;
+  .home-visitor-stats-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
   }
 
-  .home-visitor-copy > strong{
-    font-size:23px;
+  .home-visitor-stat{
+    padding:12px 8px;
+  }
+
+  .home-visitor-stat strong{
+    font-size:22px;
   }
 }
 
@@ -5229,10 +5261,7 @@ body.bto-site-loading{overflow:hidden!important}
 
 
 <div class="topbar">
-  <div class="container">
-    <span>Republic of the Philippines · Municipality of Cabatuan · Province of Iloilo</span>
-    <span>Official Barangay Information Portal</span>
-  </div>
+  
 </div>
 
 <header class="site-header" id="siteHeader">
@@ -5314,18 +5343,7 @@ body.bto-site-loading{overflow:hidden!important}
     </div>
   </section>
 
-  <section class="home-visitor-section" aria-label="Website visitor count">
-    <div class="container">
-      <div class="home-visitor-card">
-        <div class="home-visitor-icon" aria-hidden="true">👁️</div>
-        <div class="home-visitor-copy">
-          <span>Website Visitors</span>
-          <strong id="btoVisitorCount">—</strong>
-          <small>Visitors who checked the official barangay website</small>
-        </div>
-      </div>
-    </div>
-  </section>
+  
 
   <section class="portal-home-section">
     <div class="container">
@@ -6216,6 +6234,47 @@ body.bto-site-loading{overflow:hidden!important}
     </div>
   </div>
 </div>
+
+
+<section class="home-visitor-stats-section" aria-label="Website visitor statistics">
+  <div class="container">
+    <div class="home-visitor-stats-card">
+      <div class="home-visitor-stats-head">
+        <div class="home-visitor-stats-icon" aria-hidden="true">👁️</div>
+        <div>
+          <h3>Website Visitors</h3>
+          <p>People checking the official Barangay Tupol Oeste website.</p>
+        </div>
+      </div>
+
+      <div class="home-visitor-stats-grid">
+        <div class="home-visitor-stat">
+          <span>Today</span>
+          <strong id="btoVisitorToday">—</strong>
+        </div>
+
+        <div class="home-visitor-stat">
+          <span>This Week</span>
+          <strong id="btoVisitorWeek">—</strong>
+        </div>
+
+        <div class="home-visitor-stat">
+          <span>This Month</span>
+          <strong id="btoVisitorMonth">—</strong>
+        </div>
+
+        <div class="home-visitor-stat">
+          <span>All Visitors</span>
+          <strong id="btoVisitorAll">—</strong>
+        </div>
+      </div>
+
+      <small class="home-visitor-note">
+        Counts are approximate unique browsers/devices and do not collect names or contact details.
+      </small>
+    </div>
+  </div>
+</section>
 
 <footer id="siteFooter">
   <div class="container">
@@ -9925,16 +9984,25 @@ function btoVisitorBrowserId(){
   }
 }
 
-function btoRenderVisitorCount(value){
-  const el=document.getElementById('btoVisitorCount');
-  if(!el) return;
+function btoRenderVisitorStats(data){
+  const values={
+    btoVisitorToday:data?.today,
+    btoVisitorWeek:data?.week,
+    btoVisitorMonth:data?.month,
+    btoVisitorAll:data?.all
+  };
 
-  const count=Number(value);
+  Object.entries(values).forEach(([id,value])=>{
+    const el=document.getElementById(id);
+    if(!el) return;
 
-  el.textContent=
-    Number.isFinite(count) && count>=0
-      ? new Intl.NumberFormat('en-PH').format(count)
-      : '—';
+    const count=Number(value);
+
+    el.textContent=
+      Number.isFinite(count) && count>=0
+        ? new Intl.NumberFormat('en-PH').format(count)
+        : '—';
+  });
 }
 
 async function btoRegisterWebsiteVisitor(){
@@ -9969,7 +10037,7 @@ async function btoRegisterWebsiteVisitor(){
       );
     }
 
-    btoRenderVisitorCount(data.count);
+    btoRenderVisitorStats(data);
 
   }catch(err){
     console.warn(
@@ -9977,7 +10045,7 @@ async function btoRegisterWebsiteVisitor(){
       err
     );
 
-    btoRenderVisitorCount(null);
+    btoRenderVisitorStats(null);
   }
 }
 
