@@ -10008,8 +10008,14 @@ function btoRenderVisitorStats(data){
 }
 
 async function btoRegisterWebsiteVisitor(){
-  const el=document.getElementById('btoVisitorCount');
-  if(!el) return;
+  const hasVisitorStats=[
+    'btoVisitorToday',
+    'btoVisitorWeek',
+    'btoVisitorMonth',
+    'btoVisitorAll'
+  ].some(id=>document.getElementById(id));
+
+  if(!hasVisitorStats) return;
 
   try{
     const response=await fetch(
@@ -10043,11 +10049,44 @@ async function btoRegisterWebsiteVisitor(){
 
   }catch(err){
     console.warn(
-      '[BTO VISITOR COUNT] Unable to update:',
+      '[BTO VISITOR COUNT] Registration failed; loading current totals:',
       err
     );
 
-    btoRenderVisitorStats(null);
+    try{
+      const fallback=await fetch(
+        BTO_PUBLIC_VISITOR_COUNT_URL +
+        '?_ts=' +
+        Date.now(),
+        {
+          method:'GET',
+          cache:'no-store'
+        }
+      );
+
+      if(!fallback.ok){
+        throw new Error('HTTP '+fallback.status);
+      }
+
+      const stats=await fallback.json();
+
+      if(!stats || !stats.success){
+        throw new Error(
+          stats?.message ||
+          'Visitor totals unavailable.'
+        );
+      }
+
+      btoRenderVisitorStats(stats);
+
+    }catch(fallbackErr){
+      console.warn(
+        '[BTO VISITOR COUNT] Totals fallback failed:',
+        fallbackErr
+      );
+
+      btoRenderVisitorStats(null);
+    }
   }
 }
 
