@@ -1102,27 +1102,85 @@ footer .container{display:flex;justify-content:space-between;align-items:center;
   display:none;
   align-items:center;
   justify-content:center;
-  background:rgba(0,0,0,.88);
-  padding:20px;
+  width:100%;
+  height:100vh;
+  height:100dvh;
+  box-sizing:border-box;
+  background:rgba(0,0,0,.90);
+  padding:
+    max(58px,calc(env(safe-area-inset-top) + 50px))
+    max(14px,env(safe-area-inset-right))
+    max(18px,env(safe-area-inset-bottom))
+    max(14px,env(safe-area-inset-left));
+  overflow:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-y pinch-zoom;
 }
 .public-gallery-viewer.active{display:flex}
 .public-gallery-viewer img{
+  display:block;
   max-width:min(1100px,96vw);
-  max-height:88vh;
+  max-height:calc(100dvh - 92px);
+  width:auto;
+  height:auto;
   object-fit:contain;
+  border-radius:4px;
+  user-select:none;
+  -webkit-user-drag:none;
 }
 .public-gallery-close{
-  position:absolute;
-  top:14px;
-  right:18px;
-  width:42px;
-  height:42px;
+  position:fixed;
+  top:max(12px,calc(env(safe-area-inset-top) + 8px));
+  right:max(12px,calc(env(safe-area-inset-right) + 8px));
+  z-index:10001;
+  width:46px;
+  height:46px;
+  display:grid;
+  place-items:center;
   border-radius:50%;
   border:0;
   background:#fff;
   color:#111;
-  font-size:23px;
+  font-size:27px;
+  line-height:1;
   font-weight:900;
+  cursor:pointer;
+  box-shadow:0 5px 18px rgba(0,0,0,.28);
+  touch-action:manipulation;
+}
+.public-gallery-close:focus-visible{
+  outline:3px solid #fff;
+  outline-offset:3px;
+}
+.public-gallery-help{
+  position:fixed;
+  left:50%;
+  bottom:max(10px,calc(env(safe-area-inset-bottom) + 6px));
+  transform:translateX(-50%);
+  z-index:10000;
+  padding:7px 11px;
+  border-radius:999px;
+  background:rgba(0,0,0,.58);
+  color:#fff;
+  font-size:11px;
+  font-weight:700;
+  pointer-events:none;
+  white-space:nowrap;
+}
+@media(max-width:520px){
+  .public-gallery-viewer{
+    padding-left:10px;
+    padding-right:10px;
+  }
+  .public-gallery-viewer img{
+    max-width:100%;
+    max-height:calc(100dvh - 100px);
+  }
+  .public-gallery-close{
+    width:44px;
+    height:44px;
+  }
 }
 
 
@@ -6054,6 +6112,14 @@ const navLinks=document.getElementById('navLinks');
 menuBtn.addEventListener('click',()=>navLinks.classList.toggle('show'));
 
 function showView(name){
+  if(
+    document
+      .getElementById('public-gallery-viewer')
+      ?.classList.contains('active')
+  ){
+    closePublicGallery();
+  }
+
   document.querySelectorAll('.view').forEach(v=>{
     v.classList.remove('active');
     v.setAttribute('aria-hidden','true');
@@ -6351,22 +6417,152 @@ function galleryHtml(row){
   </div>`;
 }
 
+let BTO_PUBLIC_GALLERY_LAST_FOCUS=null;
+
 function openPublicGallery(url,event){
-  if(event) event.stopPropagation();
-  const viewer=document.getElementById('public-gallery-viewer');
-  const img=document.getElementById('public-gallery-viewer-img');
+  if(event){
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  const viewer=
+    document.getElementById(
+      'public-gallery-viewer'
+    );
+
+  const img=
+    document.getElementById(
+      'public-gallery-viewer-img'
+    );
+
+  const closeBtn=
+    viewer?.querySelector(
+      '.public-gallery-close'
+    );
+
   if(!viewer || !img) return;
-  img.src=url;
+
+  BTO_PUBLIC_GALLERY_LAST_FOCUS=
+    document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+
+  /*
+   * IMPORTANT:
+   * Do NOT set body overflow:hidden here.
+   * On Android/mobile, a missed close event can leave the whole website
+   * permanently scroll-locked. The fixed viewer already covers the page.
+   */
+  document.body.style.overflow='';
+
+  img.src=String(url||'');
   viewer.classList.add('active');
-  document.body.style.overflow='hidden';
+  viewer.setAttribute('aria-hidden','false');
+  viewer.scrollTop=0;
+
+  if(typeof pauseHighlightsSlideshow==='function'){
+    pauseHighlightsSlideshow();
+  }
+
+  requestAnimationFrame(()=>{
+    try{
+      closeBtn?.focus({
+        preventScroll:true
+      });
+    }catch(e){
+      closeBtn?.focus();
+    }
+  });
 }
 
 function closePublicGallery(event){
-  if(event) event.stopPropagation();
-  const viewer=document.getElementById('public-gallery-viewer');
-  if(viewer) viewer.classList.remove('active');
+  if(event){
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  const viewer=
+    document.getElementById(
+      'public-gallery-viewer'
+    );
+
+  const img=
+    document.getElementById(
+      'public-gallery-viewer-img'
+    );
+
+  if(viewer){
+    viewer.classList.remove('active');
+    viewer.setAttribute('aria-hidden','true');
+  }
+
+  /*
+   * Always release any old/stale body scroll lock, including locks left by
+   * older cached versions of the viewer.
+   */
   document.body.style.overflow='';
+  document.documentElement.style.overflow='';
+
+  if(img){
+    img.removeAttribute('src');
+  }
+
+  if(typeof resumeHighlightsSlideshow==='function'){
+    resumeHighlightsSlideshow();
+  }
+
+  const previous=
+    BTO_PUBLIC_GALLERY_LAST_FOCUS;
+
+  BTO_PUBLIC_GALLERY_LAST_FOCUS=null;
+
+  if(
+    previous &&
+    document.contains(previous)
+  ){
+    try{
+      previous.focus({
+        preventScroll:true
+      });
+    }catch(e){}
+  }
 }
+
+function btoPublicGalleryBackdropClick_(event){
+  if(
+    event &&
+    event.target===event.currentTarget
+  ){
+    closePublicGallery(event);
+  }
+}
+
+document.addEventListener(
+  'keydown',
+  event=>{
+    if(
+      event.key==='Escape' &&
+      document
+        .getElementById('public-gallery-viewer')
+        ?.classList.contains('active')
+    ){
+      closePublicGallery(event);
+    }
+  }
+);
+
+/*
+ * Safety release:
+ * if browser history/navigation changes while the photo viewer is open,
+ * never leave the website scroll-locked.
+ */
+window.addEventListener(
+  'pageshow',
+  ()=>{
+    document.body.style.overflow='';
+    document.documentElement.style.overflow='';
+  }
+);
 
 
 const eventCarouselTimers=new Map();
@@ -10546,9 +10742,25 @@ function btoScheduleAnnouncementBoundaryRefresh_(){
 
 </script>
 
-<div class="public-gallery-viewer" id="public-gallery-viewer" onclick="closePublicGallery(event)">
-  <button class="public-gallery-close" type="button" onclick="closePublicGallery(event)">×</button>
-  <img id="public-gallery-viewer-img" alt="Activity photo">
+<div
+  class="public-gallery-viewer"
+  id="public-gallery-viewer"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Activity photo viewer"
+  aria-hidden="true"
+  onclick="btoPublicGalleryBackdropClick_(event)">
+  <button
+    class="public-gallery-close"
+    type="button"
+    aria-label="Close photo viewer"
+    title="Close"
+    onclick="closePublicGallery(event)">×</button>
+  <img
+    id="public-gallery-viewer-img"
+    alt="Activity photo"
+    onclick="event.stopPropagation()">
+  <div class="public-gallery-help">Tap outside the photo or × to close</div>
 </div>
 
 </body>
