@@ -5234,6 +5234,16 @@ body.bto-site-loading{overflow:hidden!important}
 }
 
 </style>
+<style>
+/* Online certificate services */
+.certificate-service-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin:24px 0 12px}
+.certificate-service-button{display:inline-flex;justify-content:center;align-items:center;min-height:46px;padding:12px 22px;border:1px solid #c7183c;border-radius:10px;background:#c7183c;color:#fff!important;text-decoration:none;font-weight:700;line-height:1.4}
+.certificate-service-secondary{background:#fff;color:#b91336!important}
+.certificate-service-button:hover{background:#a71230;color:#fff!important}
+.certificate-service-button:focus-visible{outline:3px solid #f3a9b9;outline-offset:3px}
+.service-placeholder-card .certificate-service-help{font-size:14px;margin-top:18px}
+@media(max-width:560px){.certificate-service-actions{flex-direction:column}.certificate-service-button{width:100%;box-sizing:border-box}}
+</style>
 </head>
 <body>
 
@@ -5538,7 +5548,7 @@ body.bto-site-loading{overflow:hidden!important}
           <div class="icon">📄</div>
           <h3>Barangay Services</h3>
           <p>Barangay clearances, certifications, residency, indigency, and other official services.</p>
-          <span class="service-coming-badge">Online Request — Coming Soon</span>
+          <span class="service-coming-badge">Online Requests Available</span>
           <span class="module-link">View Services</span>
         </button>
 
@@ -5747,10 +5757,13 @@ body.bto-site-loading{overflow:hidden!important}
         <div class="service-placeholder-icon">📄</div>
         <h2>Online Barangay Services</h2>
         <p>
-          Online requests for barangay clearances and certificates are being prepared.
-          Residents may continue to coordinate with the Barangay Office for current service requirements.
+          Request barangay clearances and certificates online. Payment is collected at the Barangay Office upon pickup.
         </p>
-        <span class="service-coming-badge">Coming Soon</span>
+        <div class="certificate-service-actions">
+          <a class="certificate-service-button" href="https://bto-desktop-sync.tupoloestecabatauaniloilo.workers.dev/certificate-requests#requestForm" target="_blank" rel="noopener noreferrer">Request a Certificate</a>
+          <a class="certificate-service-button certificate-service-secondary" href="https://bto-desktop-sync.tupoloestecabatauaniloilo.workers.dev/certificate-requests#trackSection" target="_blank" rel="noopener noreferrer">Check Request Status</a>
+        </div>
+        <p class="certificate-service-help">To check your status, use your request reference number and date of birth. No account is required.</p>
       </div>
     </div>
   </div>
