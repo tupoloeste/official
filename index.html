@@ -5256,15 +5256,23 @@ body.bto-site-loading{overflow:hidden!important}
 <script>
 function openCertificateService(mode){
  const panel=document.getElementById('certificateServicePanel'),frame=document.getElementById('certificateServiceFrame'),loading=document.getElementById('certificateServiceLoading');
- panel.hidden=false;loading.hidden=false;
+ document.body.appendChild(panel);panel.hidden=false;loading.hidden=false;document.body.classList.add('certificate-form-open');
  document.getElementById('certificateServiceTitle').textContent=mode==='track'?'Check Request Status':'Request a Certificate';
  frame.title=mode==='track'?'Check certificate request status':'Request a certificate';
  frame.onload=function(){loading.hidden=true;};
- frame.src='https://bto-desktop-sync.tupoloestecabatauaniloilo.workers.dev/certificate-requests#'+(mode==='track'?'trackSection':'requestForm');
- panel.scrollIntoView({behavior:'smooth',block:'start'});
+ frame.src='https://bto-desktop-sync.tupoloestecabatauaniloilo.workers.dev/certificate-requests?embed=1#'+(mode==='track'?'trackSection':'requestForm');
+ frame.focus();
 }
-function closeCertificateService(){document.getElementById('certificateServicePanel').hidden=true;document.querySelector('.certificate-service-actions')?.scrollIntoView({behavior:'smooth',block:'center'});}
+function closeCertificateService(){document.getElementById('certificateServicePanel').hidden=true;document.body.classList.remove('certificate-form-open');}
 </script>
+<style>
+body.certificate-form-open{overflow:hidden!important}
+#certificateServicePanel:not([hidden]){position:fixed!important;inset:0!important;z-index:2147483000;display:flex;flex-direction:column;width:100%;height:100vh;height:100dvh;margin:0!important;border:0;border-radius:0;box-sizing:border-box}
+#certificateServicePanel .certificate-service-toolbar{flex:0 0 auto;min-height:54px;box-sizing:border-box;padding:9px 18px}
+#certificateServicePanel #certificateServiceFrame{flex:1 1 0;min-height:0;height:0;width:100%;border:0}
+#certificateServicePanel #certificateServiceLoading{flex:0 0 auto}
+.certificate-direct-card .certificate-service-help{font-size:13px}
+</style>
 </head>
 <body>
 
@@ -5565,13 +5573,16 @@ function closeCertificateService(){document.getElementById('certificateServicePa
   <div class="page-content">
     <div class="container">
       <div class="services-main-grid">
-        <button class="module-card service-main-card" onclick="showView('services')">
+        <div class="module-card service-main-card certificate-direct-card">
           <div class="icon">📄</div>
-          <h3>Barangay Services</h3>
-          <p>Barangay clearances, certifications, residency, indigency, and other official services.</p>
-          <span class="service-coming-badge">Online Requests Available</span>
-          <span class="module-link">View Services</span>
-        </button>
+          <h3>Online Barangay Services</h3>
+          <p>Request barangay clearances and certificates online. Payment is collected at the Barangay Office upon pickup.</p>
+          <div class="certificate-service-actions">
+            <button type="button" class="certificate-service-button" onclick="openCertificateService('request')">Request a Certificate</button>
+            <button type="button" class="certificate-service-button certificate-service-secondary" onclick="openCertificateService('track')">Check Request Status</button>
+          </div>
+          <p class="certificate-service-help">Use your request reference number and date of birth to check status. No account is required.</p>
+        </div>
 
         <div class="module-card service-main-card dog-service-card">
           <div class="icon">🐕</div>
