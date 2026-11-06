@@ -5297,6 +5297,7 @@ body.certificate-form-open{overflow:hidden!important}
 #view-statistics #ageChartCard .age-bar-summary{margin-bottom:4px}
 @media(max-width:999px){#view-statistics .population-donut-grid{grid-template-columns:1fr}#view-statistics #ageChartCard{grid-column:auto}}
 </style>
+<style>.management-content-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin:16px 0}.management-content-gallery img{width:100%;height:120px;object-fit:cover;border-radius:10px;cursor:pointer}</style>
 </head>
 <body>
 
@@ -7982,7 +7983,8 @@ function publicPrintFile(url,title){
         iframe{width:100%;height:calc(100% - 53px);border:0}
         @media print{.bar{display:none}iframe{height:100vh}}
       </style>
-    </head>
+    <style>.management-content-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin:16px 0}.management-content-gallery img{width:100%;height:120px;object-fit:cover;border-radius:10px;cursor:pointer}</style>
+</head>
     <body>
       <div class="bar">
         <button onclick="window.print()">Print</button>
@@ -8538,6 +8540,12 @@ function btoHealthServicesHtml_(text){
   `;
 }
 
+function managementPhotoGallery(record,key){
+ const photos=(record?.photoGalleries?.[key]||[]).slice(1).filter(url=>/^https:\/\//i.test(url));
+ if(!photos.length)return '';
+ return '<div class="management-content-gallery">'+photos.map((url,i)=>`<img src="${publicEsc(publicImageUrl(url))}" alt="Additional photo ${i+1}" loading="lazy" referrerpolicy="no-referrer" onclick="openPublicGallery(this.src,event)">`).join('')+'</div>';
+}
+
 function renderPublicHealthCenter(data){
   const root=document.getElementById('publicHealthCenter');
   if(!root) return;
@@ -8617,6 +8625,7 @@ function renderPublicHealthCenter(data){
           }
         </div>
 
+        ${managementPhotoGallery(x,'photoUrl')}
         ${btoPublicPersonnelChartHtml_(data?.healthCenterPersonnel || [],'Health Center Personnel / Organizational Chart')}
 
         ${x.servicesOffered
@@ -8737,6 +8746,7 @@ function renderPublicSchoolProfiles(data){
             }
           </div>
 
+          ${managementPhotoGallery(s,'photoUrl')}
           ${btoPublicPersonnelChartHtml_((data?.schoolPersonnel && data.schoolPersonnel[String(s.id||'')]) || [],'Personnel / Organizational Chart')}
 
           ${s.pdfUrl
@@ -9664,6 +9674,7 @@ function openPublicOrganization(id){
           <p>${publicEsc(x.description)}</p>
         </section>`:''}
 
+      ${managementPhotoGallery(x,'featuredPhotoUrl')}
       <div class="organization-detail-grid">
         ${Number(x.totalRegisteredMembers||0)>0?`
           <div class="organization-detail-card organization-member-count">
