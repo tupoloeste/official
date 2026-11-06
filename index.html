@@ -5279,6 +5279,24 @@ body.certificate-form-open{overflow:hidden!important}
 #view-services-resources .dog-service-card .dog-service-actions .dog-service-btn{min-width:0;box-sizing:border-box;padding:10px 8px!important;min-height:66px;font-size:13px;line-height:1.35;white-space:normal;overflow-wrap:break-word}
 @media(max-width:600px){#view-services-resources .dog-service-card .dog-service-actions{grid-template-columns:1fr!important}#view-services-resources .dog-service-card .dog-service-actions .dog-service-btn{min-height:44px}}
 </style>
+<style>
+/* Management population charts: one desktop row. */
+@media(min-width:1000px){
+ #view-statistics .population-donut-grid{grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch}
+ #view-statistics #ageChartCard{grid-column:auto}
+ #view-statistics .population-donut-layout{grid-template-columns:130px minmax(0,1fr);gap:12px;min-height:235px}
+ #view-statistics .population-donut{width:130px;height:130px}
+ #view-statistics .population-donut-hole{inset:25px;padding:5px}
+ #view-statistics .population-donut-head p{min-height:38px;margin-bottom:10px}
+}
+#view-statistics #ageChartCard .age-bar-chart{min-width:0;width:100%;box-sizing:border-box;height:235px;grid-template-columns:repeat(var(--age-bar-count),minmax(0,1fr));gap:5px;padding:5px 0 0}
+#view-statistics #ageChartCard .age-bar-column{min-width:0;grid-template-rows:20px 1fr 36px 18px}
+#view-statistics #ageChartCard .age-bar-track{min-height:120px;background:transparent;border-radius:0}
+#view-statistics #ageChartCard .age-bar-scroll{overflow-x:hidden;padding:0}
+#view-statistics #ageChartCard .age-bar-label{font-size:10px;overflow-wrap:normal}
+#view-statistics #ageChartCard .age-bar-summary{margin-bottom:4px}
+@media(max-width:999px){#view-statistics .population-donut-grid{grid-template-columns:1fr}#view-statistics #ageChartCard{grid-column:auto}}
+</style>
 </head>
 <body>
 
