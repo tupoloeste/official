@@ -7926,11 +7926,16 @@ window.BTO_PUBLIC_DISCLOSURE=[];
 window.BTO_PUBLIC_DISCLOSURE_CATEGORIES=[];
 
 function publicDriveId(url){
-  const s=String(url||'');
-  let m=s.match(/[?&]id=([^&]+)/);
-  if(m) return decodeURIComponent(m[1]);
-  m=s.match(/\/d\/([^/]+)/);
-  return m ? m[1] : '';
+  try{
+    const parsed=new URL(String(url||''));
+    const host=parsed.hostname.toLowerCase();
+    if(!['drive.google.com','docs.google.com','drive.usercontent.google.com'].includes(host)&&!/(^|\.)googleusercontent\.com$/.test(host))return '';
+    let candidate=parsed.searchParams.get('id')||parsed.pathname.match(/\/d\/([^/]+)/)?.[1]||'';
+    // A Google image sizing suffix is not part of the Drive file ID.
+    // Decode old malformed sizing links too, so existing imports need no reset.
+    for(let i=0;i<2&&/%[0-9a-f]{2}/i.test(candidate);i++){try{candidate=decodeURIComponent(candidate);}catch(_){break;}}
+    return candidate.match(/^[A-Za-z0-9_-]+/)?.[0]||'';
+  }catch(_){return '';}
 }
 
 function publicViewUrl(url){
