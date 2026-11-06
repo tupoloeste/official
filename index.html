@@ -4708,7 +4708,11 @@ body.bto-site-loading{overflow:hidden!important}
 .school-public-photo img{
   width:100%;
   height:100%;
-  object-fit:cover;
+  object-fit:contain;
+  object-position:center;
+  box-sizing:border-box;
+  padding:12px;
+  background:#fff;
   display:block;
 }
 
@@ -9608,8 +9612,29 @@ function renderPublicLivestock(data){
 
 let BTO_PUBLIC_ORGANIZATIONS=[];
 let BTO_PUBLIC_ORGANIZATION_OFFICERS={};
+let BTO_PUBLIC_SELECTED_ORGANIZATION='';
+let BTO_PUBLIC_ORGANIZATION_REVISION=-1;
+let BTO_PUBLIC_ORGANIZATION_PUBLISHED_AT=-1;
+function publicOrganizationOfficers(id){
+ const normalize=value=>String(value||'').replace(/^(?:IMPORTED-organizations-)+/,'').replace(/[^a-zA-Z0-9_-]/g,'_');
+ const key=normalize(id),matches=(BTO_PUBLIC_ORGANIZATIONS||[]).filter(o=>normalize(o.id)===key);
+ const lists=matches.length===1?Object.entries(BTO_PUBLIC_ORGANIZATION_OFFICERS||{}).filter(([parent])=>normalize(parent)===key).map(([,rows])=>rows):[(BTO_PUBLIC_ORGANIZATION_OFFICERS||{})[String(id)]||[]];
+ const seen=new Set(),result=[];for(const list of lists)for(const row of Array.isArray(list)?list:[]){const signature=row.id||JSON.stringify([row.name,row.position,row.contactNumber]);if(seen.has(signature))continue;seen.add(signature);result.push(row);}return result;
+}
+function refreshPublicOrganizationDetail(){
+ if(!document.getElementById('view-organization-detail')?.classList.contains('active'))return;
+ let id=BTO_PUBLIC_SELECTED_ORGANIZATION;try{if(!id)id=sessionStorage.getItem('bto_selected_public_organization')||'';}catch(_){}
+ if(id&&(BTO_PUBLIC_ORGANIZATIONS||[]).some(o=>String(o.id)===String(id))){openPublicOrganization(id,false);return;}
+ const body=document.getElementById('organizationDetailBody');if(body)body.innerHTML='<div class="live-empty">Select an organization from the Organizations page.</div>';
+ const title=document.getElementById('organizationDetailPageTitle');if(title)title.textContent='Organization Profile';
+ const subtitle=document.getElementById('organizationDetailPageSubtitle');if(subtitle)subtitle.textContent='Barangay Tupol Oeste';
+}
+
 
 function renderPublicOrganizations(data){
+  if(data?.source!=='management')return;
+  const revision=Number(data.revision||0),publishedAt=Number(data.publishedAt||0);
+  if(revision<BTO_PUBLIC_ORGANIZATION_REVISION||(revision===BTO_PUBLIC_ORGANIZATION_REVISION&&publishedAt<BTO_PUBLIC_ORGANIZATION_PUBLISHED_AT))return;
   const root=document.getElementById('publicOrganizationsGrid');
   if(!root) return;
 
@@ -9631,6 +9656,7 @@ function renderPublicOrganizations(data){
     return;
   }
 
+  BTO_PUBLIC_ORGANIZATION_REVISION=revision;BTO_PUBLIC_ORGANIZATION_PUBLISHED_AT=publishedAt;
   BTO_PUBLIC_ORGANIZATIONS=Array.isArray(data.organizations)
     ? data.organizations.slice()
     : [];
@@ -9642,6 +9668,7 @@ function renderPublicOrganizations(data){
 
   if(!BTO_PUBLIC_ORGANIZATIONS.length){
     root.innerHTML='<div class="live-empty">No barangay organizations have been published yet.</div>';
+    refreshPublicOrganizationDetail();
     return;
   }
 
@@ -9679,11 +9706,13 @@ function renderPublicOrganizations(data){
         <span class="module-link">View Organization</span>
       </div>
     </button>`).join('');
+  refreshPublicOrganizationDetail();
 }
 
-function openPublicOrganization(id){
+function openPublicOrganization(id,navigate=true){
   const x=(BTO_PUBLIC_ORGANIZATIONS||[]).find(o=>String(o.id)===String(id));
   if(!x) return;
+  BTO_PUBLIC_SELECTED_ORGANIZATION=String(x.id);try{sessionStorage.setItem('bto_selected_public_organization',BTO_PUBLIC_SELECTED_ORGANIZATION);}catch(_){}
 
   const title=document.getElementById('organizationDetailPageTitle');
   const subtitle=document.getElementById('organizationDetailPageSubtitle');
@@ -9776,8 +9805,8 @@ function openPublicOrganization(id){
       </div>
 
       ${(()=>{
-        const officers=(BTO_PUBLIC_ORGANIZATION_OFFICERS||{})[String(x.id||'')]||[];
-        if(!officers.length) return '';
+        const officers=publicOrganizationOfficers(x.id);
+        if(!officers.length)return '<section class="organization-detail-card organization-officers-section"><h3>Officers / Personnel</h3><p class="live-empty">No published officers yet.</p></section>';
 
         return `
           <section class="organization-detail-card organization-officers-section">
@@ -9802,7 +9831,7 @@ function openPublicOrganization(id){
     `;
   }
 
-  showView('organization-detail');
+  if(navigate)showView('organization-detail');
 }
 
 
@@ -10763,7 +10792,7 @@ async function loadPublicCommunityProfilesCloudflare(force=false){
 let BTO_PUBLIC_ORGANIZATIONS_LOADING=false;
 let BTO_PUBLIC_ORGANIZATIONS_LOADED=false;
 
-const BTO_ORGANIZATIONS_CACHE_KEY='bto_organizations_management_v183';
+const BTO_ORGANIZATIONS_CACHE_KEY='bto_organizations_management_v1836';
 const BTO_ORGANIZATIONS_BROWSER_SCHEMA=3;
 const BTO_ORGANIZATIONS_CACHE_MS=10*60*1000;
 const BTO_ORGANIZATIONS_CF_URL=BTO_DOG_STATS_CF_URL;
