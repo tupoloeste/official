@@ -6015,7 +6015,7 @@ body.certificate-form-open{overflow:hidden!important}
       <section id="populationIndicatorsCard" class="population-indicators-section" style="display:none">
         <div class="population-section-title">
           <h3>Population Indicators</h3>
-          <p>Automatically calculated from the latest validated Population Profile.</p>
+          <p>Automatically calculated from the Management Resident Registry.</p>
         </div>
         <div id="populationIndicatorsGrid" class="population-indicators-grid"></div>
       </section>
@@ -8810,8 +8810,9 @@ function renderPublicSchoolProfiles(data){
 
 
 function renderEnhancedBarangayStats(data){
+  if(data?.source!=='management')return;
   const s=data?.enhancedBarangayStats||{};
-  const basic=Array.isArray(s.basic)?s.basic:[];
+  const basic=(Array.isArray(s.basic)?s.basic:[]).filter(x=>!['REGISTERED_VOTERS','VOTERS'].includes(String(x.key||'').toUpperCase())&&!/registered\s+voters/i.test(String(x.label||'')));
   const demographics=Array.isArray(s.demographics)?s.demographics:[];
 
   const populationProfile=(
@@ -8848,7 +8849,7 @@ function renderEnhancedBarangayStats(data){
     }
 
     asOf.textContent=parts.length
-      ? parts.join(' • ')
+      ? parts.join(' • ')+' • Management System'
       : 'Validated figures will appear once encoded.';
   }
 
@@ -8899,6 +8900,7 @@ function renderEnhancedBarangayStats(data){
       : btoNumberOrNull(female?.value)
   );
 
+  const unknownSexN=btoNumberOrNull(basic.find(x=>x.key==='UNSPECIFIED_SEX')?.value)||0;
   const sexCard=document.getElementById('sexChartCard');
   const sexBody=document.getElementById('sexChartBody');
 
@@ -8907,15 +8909,16 @@ function renderEnhancedBarangayStats(data){
     sexBody &&
     maleN!==null &&
     femaleN!==null &&
-    (maleN+femaleN)>0
+    (maleN+femaleN+unknownSexN)>0
   ){
     sexBody.innerHTML=btoStatsDonutHtml_(
       [
         {label:'Male',value:maleN,color:'#ef233c'},
-        {label:'Female',value:femaleN,color:'#252525'}
+        {label:'Female',value:femaleN,color:'#252525'},
+        ...(unknownSexN?[{label:'Not recorded',value:unknownSexN,color:'#8b8b8b'}]:[])
       ],
       'Total Population',
-      maleN+femaleN
+      maleN+femaleN+unknownSexN
     );
 
     sexCard.style.display='';
@@ -10538,9 +10541,9 @@ async function loadPublicLivestockCloudflare(force=false){
 let BTO_PUBLIC_BARANGAY_STATS_LOADING=false;
 let BTO_PUBLIC_BARANGAY_STATS_LOADED=false;
 
-const BTO_BARANGAY_STATS_CACHE_KEY='bto_barangay_stats_cloudflare_v1';
-const BTO_BARANGAY_STATS_CACHE_MS=10*60*1000;
-const BTO_BARANGAY_STATS_CF_URL=BTO_DOG_STATS_CF_URL;
+const BTO_BARANGAY_STATS_CACHE_KEY='bto_management_statistics_v182';
+const BTO_BARANGAY_STATS_CACHE_MS=60*1000;
+const BTO_BARANGAY_STATS_CF_URL='https://bto-desktop-sync.tupoloestecabatauaniloilo.workers.dev/v6/public';
 
 function barangayStatsCacheGet(allowStale=false){
   try{
@@ -10611,7 +10614,7 @@ async function barangayStatsFetchWithFallback_(){
   }
 
   return barangayStatsFetchJson_(
-    cfBase+'/barangay-stats',
+    cfBase+'/statistics',
     10000
   );
 }
@@ -10997,5 +11000,6 @@ function btoScheduleAnnouncementBoundaryRefresh_(){
   <img id="public-gallery-viewer-img" alt="Activity photo">
 </div>
 
+<script>setInterval(()=>{const page=document.getElementById('view-statistics');if(page&&page.classList.contains('active')&&!document.hidden)loadPublicBarangayStatsCloudflare(true);},60000);</script>
 </body>
 </html>
