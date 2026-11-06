@@ -5837,7 +5837,7 @@ body.certificate-form-open{overflow:hidden!important}
     <div class="container page-head-row">
       <div>
         <h1>Officials & Personnel</h1>
-        <p>Barangay Officials, Sangguniang Kabataan, and Barangay Tanods.</p>
+        <p>Barangay officials and personnel from the Management System.</p>
       </div>
       <button class="back-btn" onclick="showView('governance')">← Back to Governance</button>
     </div>
@@ -6280,7 +6280,7 @@ body.certificate-form-open{overflow:hidden!important}
       </div>
     </div>
   </div>
-</div>
+<div class="container" id="managementOtherDocuments"></div></div>
 
 <!-- DOWNLOADS -->
 <!-- CONTACT -->
@@ -6473,9 +6473,9 @@ function switchTab(scope,panelId,btn){
 
 
 const BTO_PUBLIC_CF_BASE = "https://bto-dog-stats.tupoloestecabatauaniloilo.workers.dev";
-const BTO_PUBLIC_SITE_DATA_URL = BTO_PUBLIC_CF_BASE + "/site-data";
+const BTO_PUBLIC_SITE_DATA_URL = "https://bto-desktop-sync.tupoloestecabatauaniloilo.workers.dev/v7/public/content";
 const BTO_PUBLIC_VISITOR_COUNT_URL = BTO_PUBLIC_CF_BASE + "/visitor-count";
-const BTO_PUBLIC_CACHE_KEY = 'bto_public_data_cf_v1';
+const BTO_PUBLIC_CACHE_KEY = 'bto_public_management_v183';
 const BTO_PUBLIC_CACHE_MS = 5 * 60 * 1000;
 
 function publicEsc(v){
@@ -7892,93 +7892,22 @@ function deDuplicateOfficials(rows){
 }
 
 function renderOfficialsPersonnel(data){
-  console.log('[BTO PUBLIC PERSONNEL — LIVE ONLY]',{
-    officials:(data.officials||[]).length,
-    barangayOfficials:(data.barangayOfficials||[]).length,
-    skOfficials:(data.skOfficials||[]).length,
-    tanods:(data.tanods||[]).length
-  });
-
-  const isActiveOfficial=o=>{
-    const status=String(
-      o?.Status ||
-      o?.status ||
-      'ACTIVE'
-    ).trim().toUpperCase();
-
-    return ![
-      'INACTIVE',
-      'DELETED',
-      'ARCHIVED'
-    ].includes(status);
-  };
-
-  // Main OFFICIALS array is preferred because it contains enriched
-  // committee assignments for Barangay Officials.
-  const active=deDuplicateOfficials(
-    (Array.isArray(data.officials) ? data.officials : [])
-      .filter(isActiveOfficial)
-  );
-
-  const barangay=deDuplicateOfficials(
-    active.filter(isBarangayOfficial)
-  );
-
-  const skSource=
-    Array.isArray(data.skOfficials) && data.skOfficials.length
-      ? data.skOfficials
-      : active.filter(isSKOfficial);
-
-  const sk=deDuplicateOfficials(
-    skSource.filter(isActiveOfficial)
-  );
-
-  const tanodSource=
-    Array.isArray(data.tanods) && data.tanods.length
-      ? data.tanods
-      : active.filter(isTanodOfficial);
-
-  const tanod=deDuplicateOfficials(
-    tanodSource.filter(isActiveOfficial)
-  );
-
-  console.log('[BTO BARANGAY OFFICIALS — LIVE]',barangay.map(o=>({
-    name:o['Full Name']||o.fullName||'',
-    position:o['Position']||o.position||'',
-    committees:(o.committees||[]).length
-  })));
-
-  const brgyRoot=document.getElementById('public-officials-barangay');
-  const skRoot=document.getElementById('public-officials-sk');
-  const tanodRoot=document.getElementById('public-officials-tanod');
-
-  if(brgyRoot){
-    brgyRoot.innerHTML=barangay.length
-      ? barangay.map(o=>{
-          const p=officialPosition(o).toUpperCase();
-          const primary=p.includes('PUNONG BARANGAY');
-          return renderOfficialCard(o,primary);
-        }).join('')
-      : '<div class="live-empty">No active Barangay Officials encoded.</div>';
+  if(data.source!=='management')return;
+  const host=document.querySelector('#view-officials .page-content .container');if(!host)return;
+  const groups=Array.isArray(data.groups)?data.groups:[];
+  const active=host.querySelector('.tab-btn.active')?.dataset.group||groups[0]?.id;
+  host.innerHTML='<div class="tabs officials-tabs" aria-label="Officials and personnel groups"></div><div class="management-officials-panels"></div>';
+  const tabs=host.querySelector('.tabs'),panels=host.querySelector('.management-officials-panels');
+  for(const g of groups){
+    const btn=document.createElement('button');btn.className='tab-btn';btn.textContent=g.name;btn.dataset.group=g.id;tabs.appendChild(btn);
+    const panel=document.createElement('div');panel.className='officials-live-grid';panel.dataset.group=g.id;
+    const officials=(data.officials||[]).filter(o=>o.group===g.id);
+    panel.innerHTML=officials.length?officials.map(o=>renderOfficialCard(o,/punong barangay|sk chairperson/i.test(o.position||''))).join(''):'<div class="live-empty">No published personnel in this category.</div>';panels.appendChild(panel);
+    const select=()=>{for(const x of tabs.children)x.classList.toggle('active',x===btn);for(const x of panels.children){x.hidden=x!==panel;x.style.display=x===panel?'grid':'none';}};btn.onclick=select;
   }
-
-  if(skRoot){
-    skRoot.innerHTML=sk.length
-      ? sk.map(o=>{
-          const p=officialPosition(o).toUpperCase();
-          const primary=p.includes('CHAIR');
-          return renderOfficialCard(o,primary);
-        }).join('')
-      : '<div class="live-empty">No active Sangguniang Kabataan officials encoded.</div>';
-  }
-
-  if(tanodRoot){
-    tanodRoot.innerHTML=tanod.length
-      ? tanod.map(o=>renderOfficialCard(o,false)).join('')
-      : '<div class="live-empty">No active Barangay Tanods encoded.</div>';
-  }
+  const selected=Array.from(tabs.children).find(b=>b.dataset.group===active)||tabs.firstElementChild;selected?.click();
+  if(!groups.length)panels.innerHTML='<div class="live-empty">No officials published from Management yet.</div>';
 }
-
 
 /* ===== PUBLIC ORDINANCES / RESOLUTIONS / FULL DISCLOSURE ===== */
 
@@ -8015,6 +7944,7 @@ function publicPreviewUrl(url){
 }
 
 function publicDownloadUrl(url){
+  if(String(url).includes("/v7/public/assets/"))return String(url)+"?download=1";
   const id=publicDriveId(url);
   return id ? `https://drive.google.com/uc?export=download&id=${encodeURIComponent(id)}` : String(url||'');
 }
@@ -9823,6 +9753,9 @@ function applyPublicData(data){
   btoScheduleAnnouncementBoundaryRefresh_();
   renderPublicHealthCenter(data);
   renderPublicSchoolProfiles(data);
+  renderPublicLivestock(data);
+  renderPublicOrganizations(data);
+  renderManagementOtherDocuments(data);
 }
 
 
@@ -9860,8 +9793,8 @@ async function refreshPublicUpdatesFromCloudflare(force=false){
   if(force) BTO_PUBLIC_UPDATES_LAST_FORCE=now;
 
   try{
-    const url=BTO_PUBLIC_CF_BASE +
-      '/updates' +
+    const url=BTO_PUBLIC_SITE_DATA_URL +
+      '' +
       (force ? '?fresh=1&' : '?') +
       '_ts=' + Date.now();
 
@@ -9882,41 +9815,8 @@ async function refreshPublicUpdatesFromCloudflare(force=false){
       );
     }
 
-    const merged=Object.assign(
-      {},
-      BTO_PUBLIC_LAST_DATA || {},
-      {
-        success:true,
-        content:Array.isArray(fresh.content)
-          ? fresh.content
-          : [],
-        committees:Array.isArray(fresh.committees)
-          ? fresh.committees
-          : (
-              Array.isArray(BTO_PUBLIC_LAST_DATA?.committees)
-                ? BTO_PUBLIC_LAST_DATA.committees
-                : []
-            )
-      }
-    );
-
-    BTO_PUBLIC_LAST_DATA=merged;
-
-    // Refresh every visible area that is driven by Announcements/Activities.
-    renderAnnouncementTicker(merged);
-    renderHighlightsLive(merged);
-    renderHighlightsActivityGallery(merged);
-    renderHeroActivityCarousel(merged);
-    renderHomeAnnouncements(merged);
-    renderHomeRecentActivities(merged);
-    renderAllAnnouncements(merged);
-    btoScheduleAnnouncementBoundaryRefresh_();
-
-    console.log(
-      '[BTO PUBLIC UPDATES] Refreshed from Cloudflare',
-      fresh.edgeCachedAt || ''
-    );
-
+    applyPublicData(data);
+    publicCacheSet(data);
   }catch(err){
     // Silent public fallback: keep the last good data already on screen.
     console.warn(
@@ -10428,7 +10328,7 @@ function renderPublicDogStats(data){
 let BTO_PUBLIC_LIVESTOCK_LOADING=false;
 let BTO_PUBLIC_LIVESTOCK_LOADED=false;
 
-const BTO_LIVESTOCK_CACHE_KEY='bto_livestock_cloudflare_v1';
+const BTO_LIVESTOCK_CACHE_KEY='bto_livestock_management_v183';
 const BTO_LIVESTOCK_CACHE_MS=10*60*1000;
 const BTO_LIVESTOCK_CF_URL=BTO_DOG_STATS_CF_URL;
 
@@ -10501,7 +10401,7 @@ async function livestockFetchWithFallback_(){
   }
 
   return livestockFetchJson_(
-    cfBase+'/livestock',
+    BTO_PUBLIC_SITE_DATA_URL,
     10000
   );
 }
@@ -10700,8 +10600,8 @@ async function loadPublicCommunityProfilesCloudflare(force=false){
 
   try{
     const res=await fetch(
-      BTO_PUBLIC_CF_BASE +
-      '/community-profiles?_ts=' +
+      BTO_PUBLIC_SITE_DATA_URL +
+      '?_ts=' +
       Date.now(),
       {
         method:'GET',
@@ -10785,7 +10685,7 @@ async function loadPublicCommunityProfilesCloudflare(force=false){
 let BTO_PUBLIC_ORGANIZATIONS_LOADING=false;
 let BTO_PUBLIC_ORGANIZATIONS_LOADED=false;
 
-const BTO_ORGANIZATIONS_CACHE_KEY='bto_organizations_cloudflare_v2';
+const BTO_ORGANIZATIONS_CACHE_KEY='bto_organizations_management_v183';
 const BTO_ORGANIZATIONS_BROWSER_SCHEMA=3;
 const BTO_ORGANIZATIONS_CACHE_MS=10*60*1000;
 const BTO_ORGANIZATIONS_CF_URL=BTO_DOG_STATS_CF_URL;
@@ -10859,7 +10759,7 @@ async function organizationsFetchWithFallback_(){
   }
 
   return organizationsFetchJson_(
-    cfBase+'/organizations',
+    BTO_PUBLIC_SITE_DATA_URL,
     10000
   );
 }
@@ -11019,5 +10919,13 @@ function btoScheduleAnnouncementBoundaryRefresh_(){
 </div>
 
 <script>setInterval(()=>{const page=document.getElementById('view-statistics');if(page&&page.classList.contains('active')&&!document.hidden)loadPublicBarangayStatsCloudflare(true);},60000);</script>
+<script>
+function renderManagementOtherDocuments(data){
+ const root=document.getElementById('managementOtherDocuments');if(!root)return;
+ const rows=data.otherDocuments||[];
+ root.innerHTML=rows.length?'<h2>Other Documents</h2>'+rows.map(d=>`<div class="public-legislative-row"><div><strong>${btoEsc(d.title)}</strong><p>${btoEsc(d.date)}</p></div><div class="public-doc-actions"><a href="${btoEsc(d.pdfUrl)}" target="_blank" rel="noopener">View</a><a href="${btoEsc(publicDownloadUrl(d.pdfUrl))}" target="_blank" rel="noopener">Download</a></div></div>`).join(''):'';
+}
+setInterval(()=>{if(!document.hidden&&navigator.onLine)refreshPublicUpdatesFromCloudflare(false);},60000);
+</script>
 </body>
 </html>
