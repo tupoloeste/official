@@ -5362,6 +5362,7 @@ return {clean,driveId,normalize,candidates,install};
 });
 
 </script>
+<style>#dogServiceLinksEmpty[hidden]{display:none!important}</style>
 </head>
 <body>
 
@@ -5681,19 +5682,19 @@ return {clean,driveId,normalize,candidates,install};
           <div class="dog-service-actions">
             <a id="dogPortalPublicBtn"
                class="dog-service-btn primary"
-               href="#"
+               href="https://brcc-tupoloeste.github.io/brcc-dms-public/"
                target="_blank"
                rel="noopener"
-               style="display:none">
+               style="display:flex">
               Open Dog Registration Portal
             </a>
 
             <a id="dogAppPublicBtn"
                class="dog-service-btn"
-               href="#"
+               href="https://github.com/brcc-tupoloeste/brcc-dms-public/releases/latest/download/TupolOeste-DogServices.apk"
                target="_blank"
                rel="noopener"
-               style="display:none">
+               style="display:flex">
               Download Android App
             </a>
 
@@ -5703,7 +5704,7 @@ return {clean,driveId,normalize,candidates,install};
               View Dog &amp; Rabies Statistics
             </button>
 
-            <div id="dogServiceLinksEmpty" class="service-coming-badge">
+            <div id="dogServiceLinksEmpty" class="service-coming-badge" hidden>
               Links will be available once configured.
             </div>
           </div>
@@ -9375,40 +9376,42 @@ function closeProgramDetail(event){
 
 
 /* ===== PUBLIC SERVICE LINKS ===== */
+/* Dog Services retain their BRCC-DMS configuration and operational sources. */
+const BTO_RETAINED_DOG_SERVICE_DEFAULTS=Object.freeze({
+ dogPortalUrl:'https://brcc-tupoloeste.github.io/brcc-dms-public/',
+ dogAppUrl:'https://github.com/brcc-tupoloeste/brcc-dms-public/releases/latest/download/TupolOeste-DogServices.apk'
+});
+let BTO_RETAINED_DOG_SERVICE_LINKS={...BTO_RETAINED_DOG_SERVICE_DEFAULTS};
+let BTO_DOG_LINKS_LOADING=false,BTO_DOG_LINKS_LAST_CHECK=0;
+const BTO_DOG_LINKS_CACHE_KEY='bto_retained_brcc_service_links_v1';
+function safeDogServiceUrl(value){try{const u=new URL(String(value||'').trim());return u.protocol==='https:'?u.href:'';}catch(_){return '';}}
 function renderPublicServiceLinks(data){
-  const links=data?.serviceLinks||{};
-  const portal=document.getElementById('dogPortalPublicBtn');
-  const app=document.getElementById('dogAppPublicBtn');
-  const empty=document.getElementById('dogServiceLinksEmpty');
-
-  const portalUrl=String(links.dogPortalUrl||'').trim();
-  const appUrl=String(links.dogAppUrl||'').trim();
-
-  if(portal){
-    if(portalUrl){
-      portal.href=portalUrl;
-      portal.style.display='flex';
-    }else{
-      portal.style.display='none';
-      portal.removeAttribute('href');
-    }
-  }
-
-  if(app){
-    if(appUrl){
-      app.href=appUrl;
-      app.style.display='flex';
-    }else{
-      app.style.display='none';
-      app.removeAttribute('href');
-    }
-  }
-
-  if(empty){
-    empty.style.display=(portalUrl||appUrl)?'none':'inline-flex';
-  }
+ // Management content refreshes must not clear or replace retained BRCC links.
+ if(data?.source==='brcc-dms'){
+  const links=data.serviceLinks||{};
+  for(const key of ['dogPortalUrl','dogAppUrl']){const value=safeDogServiceUrl(links[key]);if(value)BTO_RETAINED_DOG_SERVICE_LINKS[key]=value;}
+ }
+ for(const [id,key]of [['dogPortalPublicBtn','dogPortalUrl'],['dogAppPublicBtn','dogAppUrl']]){
+  const button=document.getElementById(id);if(!button)continue;button.href=BTO_RETAINED_DOG_SERVICE_LINKS[key];button.style.display='flex';button.hidden=false;
+ }
+ const empty=document.getElementById('dogServiceLinksEmpty');if(empty){empty.hidden=true;empty.style.display='none';}
 }
-
+async function loadRetainedDogServiceLinks(force=false){
+ if(BTO_DOG_LINKS_LOADING)return;
+ try{const cached=JSON.parse(localStorage.getItem(BTO_DOG_LINKS_CACHE_KEY)||'null');if(cached?.links)renderPublicServiceLinks({source:'brcc-dms',serviceLinks:cached.links});}catch(_){}
+ renderPublicServiceLinks();
+ if(!force&&Date.now()-BTO_DOG_LINKS_LAST_CHECK<300000)return;
+ BTO_DOG_LINKS_LOADING=true;BTO_DOG_LINKS_LAST_CHECK=Date.now();const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),5000);
+ try{
+  const response=await fetch(BTO_PUBLIC_CF_BASE+'/site-data',{cache:'no-store',signal:ctl.signal});
+  if(!response.ok)throw Error('BRCC links HTTP '+response.status);const payload=await response.json();if(!payload.success)throw Error('BRCC configuration unavailable.');
+  renderPublicServiceLinks({source:'brcc-dms',serviceLinks:payload.serviceLinks||{}});
+  try{localStorage.setItem(BTO_DOG_LINKS_CACHE_KEY,JSON.stringify({links:BTO_RETAINED_DOG_SERVICE_LINKS,savedAt:Date.now()}));}catch(_){}
+ }catch(_){renderPublicServiceLinks();}finally{clearTimeout(timer);BTO_DOG_LINKS_LOADING=false;}
+}
+document.addEventListener('DOMContentLoaded',()=>loadRetainedDogServiceLinks());
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&document.getElementById('view-services-resources')?.classList.contains('active'))loadRetainedDogServiceLinks();});
+setInterval(()=>{if(!document.hidden&&document.getElementById('view-services-resources')?.classList.contains('active'))loadRetainedDogServiceLinks();},300000);
 
 
 /* ===== PUBLIC OFFICERS OF THE DAY ===== */
