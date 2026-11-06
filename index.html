@@ -5273,6 +5273,12 @@ body.certificate-form-open{overflow:hidden!important}
 #certificateServicePanel #certificateServiceLoading{flex:0 0 auto}
 .certificate-direct-card .certificate-service-help{font-size:13px}
 </style>
+<style>
+/* Dog Services: one action row on desktop. */
+#view-services-resources .dog-service-card .dog-service-actions{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;align-items:stretch}
+#view-services-resources .dog-service-card .dog-service-actions .dog-service-btn{min-width:0;box-sizing:border-box;padding:10px 8px!important;min-height:66px;font-size:13px;line-height:1.35;white-space:normal;overflow-wrap:break-word}
+@media(max-width:600px){#view-services-resources .dog-service-card .dog-service-actions{grid-template-columns:1fr!important}#view-services-resources .dog-service-card .dog-service-actions .dog-service-btn{min-height:44px}}
+</style>
 </head>
 <body>
 
