@@ -5298,6 +5298,66 @@ body.certificate-form-open{overflow:hidden!important}
 @media(max-width:999px){#view-statistics .population-donut-grid{grid-template-columns:1fr}#view-statistics #ageChartCard{grid-column:auto}}
 </style>
 <style>.management-content-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin:16px 0}.management-content-gallery img{width:100%;height:120px;object-fit:cover;border-radius:10px;cursor:pointer}</style>
+<script>
+(function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else{root.BTO_IMAGE_LINKS=api;api.install(root);}})(typeof window!=='undefined'?window:globalThis,()=>{
+'use strict';
+function clean(value){
+ if(value&&typeof value==='object')value=value.url||value.photoUrl||value.src||'';
+ let s=String(value||'').trim().replace(/&amp;/gi,'&');
+ const formula=s.match(/^=IMAGE\(\s*["']([^"']+)["']/i);if(formula)s=formula[1];
+ if((s.startsWith('"')&&s.endsWith('"'))||(s.startsWith("'")&&s.endsWith("'")))s=s.slice(1,-1).trim();return s;
+}
+function driveId(value){
+ const raw=clean(value);if(/^[A-Za-z0-9_-]{20,200}$/.test(raw)&&!/^(?:undefined|null|none|notavailable)$/i.test(raw))return raw;
+ try{const u=new URL(raw.startsWith('//')?'https:'+raw:raw);if(!['drive.google.com','docs.google.com','drive.usercontent.google.com'].includes(u.hostname)&&!/(^|\.)googleusercontent\.com$/.test(u.hostname))return '';
+  let id=u.searchParams.get('id')||u.pathname.match(/\/d\/([^/]+)/)?.[1]||'';
+  for(let i=0;i<3&&/%[a-f0-9]{2}/i.test(id);i++){try{id=decodeURIComponent(id);}catch(_){break;}}
+  return id.match(/^[A-Za-z0-9_-]+/)?.[0]||'';
+ }catch(_){return '';}
+}
+function normalize(value,{base='https://tupoloeste.github.io/official/',allowRelative=true}={}){
+ const raw=clean(value);if(!raw||/^(?:-|n\/?a|none|null|undefined|no photo|no image|coming soon|\[object Object\])$/i.test(raw))return '';
+ if(/^data:image\/(?:jpeg|png|webp|gif);base64,[A-Za-z0-9+/]+={0,2}$/i.test(raw)||/^blob:https?:\/\//i.test(raw))return raw;
+ const id=driveId(raw);if(id)return 'https://lh3.googleusercontent.com/d/'+id+'=w1600';
+ const absolute=/^(?:https?:)?\/\//i.test(raw);
+ if(!absolute&&(!allowRelative||!(/^(?:\.?\.?\/|\/)/.test(raw)||/\.(?:jpe?g|png|webp|gif|svg|avif)(?:[?#].*)?$/i.test(raw))))return '';
+ try{const u=new URL(raw,base);if(!['http:','https:'].includes(u.protocol))return '';if(u.protocol==='http:'&&base.startsWith('https:'))u.protocol='https:';return u.href;}catch(_){return '';}
+}
+function candidates(value,options){
+ const first=normalize(value,options);if(!first)return [];const id=driveId(value);if(!id)return [first];
+ return [...new Set([first,'https://drive.google.com/thumbnail?id='+id+'&sz=w1600','https://lh3.googleusercontent.com/d/'+id,'https://drive.google.com/uc?export=view&id='+id])];
+}
+function install(window){
+ const document=window.document;if(!document||window.__btoImageLinksInstalled)return;window.__btoImageLinksInstalled=true;
+ const states=new WeakMap();
+ function clear(img,state){if(state.placeholder){state.placeholder.remove();state.placeholder=null;}if(state.failed){img.style.display=state.display||'';img.hidden=false;state.failed=false;}}
+ function prepare(img){
+  if(String(img.tagName).toUpperCase()!=='IMG')return null;
+  const raw=img.getAttribute('src');let state=states.get(img);if(!raw){if(state?.placeholder)state.placeholder.remove();if(state?.failed)img.hidden=false;states.delete(img);return null;}if(state&&raw===state.active)return state;
+  if(state)clear(img,state);
+  const list=candidates(raw,{base:document.baseURI,allowRelative:true});state={source:raw,active:list[0]||raw,list,index:0,failed:false,display:img.style.display,placeholder:null};states.set(img,state);
+  if(state.active!==raw)img.setAttribute('src',state.active);if(/^https?:/i.test(state.active))img.referrerPolicy='no-referrer';return state;
+ }
+ function unavailable(img,state){
+  if(state.failed)return;state.failed=true;state.display=img.style.display;img.style.display='none';img.hidden=true;
+  const box=document.createElement('span');box.className='bto-photo-unavailable';box.setAttribute('role','status');box.textContent='Photo unavailable';box.style.cssText='display:flex;align-items:center;justify-content:center;min-height:70px;padding:8px;background:#fff2f5;color:#825b65;border-radius:8px;font-size:12px;text-align:center;box-sizing:border-box';
+  if(window.BTO_APP_ACCOUNT?.authenticated&&(driveId(state.source)||/^https:\/\//i.test(clean(state.source)))){const link=document.createElement('a'),id=driveId(state.source);link.href=id?'https://drive.google.com/file/d/'+id+'/view':clean(state.source);link.target='_blank';link.rel='noopener noreferrer';link.textContent='Open Original';link.style.cssText='margin-left:8px;color:#b7193e;text-decoration:underline';box.appendChild(link);}
+  img.insertAdjacentElement('afterend',box);state.placeholder=box;
+ }
+ function error(event){const img=event.target;if(String(img?.tagName).toUpperCase()!=='IMG')return;const raw=img.getAttribute('src'),state=prepare(img);if(!state)return;
+  // Capture stops older inline handlers from hiding an image before fallback finishes.
+  event.stopImmediatePropagation();if(state.active!==raw)return;if(state.index+1<state.list.length){state.index++;state.active=state.list[state.index];img.setAttribute('src',state.active);}else unavailable(img,state);
+ }
+ function scan(root){if(root?.tagName==='IMG')prepare(root);for(const img of root?.querySelectorAll?.('img[src]')||[])prepare(img);}
+ document.addEventListener('error',error,true);document.addEventListener('load',event=>{const state=states.get(event.target);if(state)clear(event.target,state);},true);
+ if(window.MutationObserver&&document.documentElement)new window.MutationObserver(records=>{for(const r of records){if(r.type==='attributes')prepare(r.target);else for(const node of r.addedNodes)if(node.nodeType===1)scan(node);}}).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['src']});
+ document.addEventListener('DOMContentLoaded',()=>scan(document));scan(document);
+ return {scan,prepare,error};
+}
+return {clean,driveId,normalize,candidates,install};
+});
+
+</script>
 </head>
 <body>
 
@@ -7927,6 +7987,7 @@ window.BTO_PUBLIC_DISCLOSURE=[];
 window.BTO_PUBLIC_DISCLOSURE_CATEGORIES=[];
 
 function publicDriveId(url){
+  if(typeof window!=='undefined'&&window.BTO_IMAGE_LINKS)return window.BTO_IMAGE_LINKS.driveId(url);
   try{
     const parsed=new URL(String(url||''));
     const host=parsed.hostname.toLowerCase();
@@ -7956,6 +8017,7 @@ function publicDownloadUrl(url){
 }
 
 function publicImageUrl(url){
+  if(typeof window!=='undefined'&&window.BTO_IMAGE_LINKS)return window.BTO_IMAGE_LINKS.normalize(url)||String(url||'');
   const id=publicDriveId(url);
   if(id){
     return `https://lh3.googleusercontent.com/d/${encodeURIComponent(id)}=w1600`;
