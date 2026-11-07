@@ -9770,6 +9770,9 @@ function openPublicOrganization(id,navigate=true){
 
       ${managementPhotoGallery(x,'featuredPhotoUrl')}
       <div class="organization-detail-grid">
+        ${x.totalActiveMembers!==undefined&&x.totalActiveMembers!==''?`<div class="organization-detail-card organization-member-count"><small>Total Active Members</small><strong>${publicEsc(Number(x.totalActiveMembers).toLocaleString('en-PH'))}</strong></div>`:''}
+        ${x.totalRiceArea!==undefined&&x.totalRiceArea!==''?`<div class="organization-detail-card organization-member-count"><small>Total Rice Area</small><strong>${publicEsc(Number(x.totalRiceArea).toLocaleString('en-PH',{maximumFractionDigits:2}))} <small>hectares</small></strong></div>`:''}
+
         ${Number(x.totalRegisteredMembers||0)>0?`
           <div class="organization-detail-card organization-member-count">
             <small>${/farmer/i.test(String(x.category||''))?'Total Registered Farmers':'Total Registered Members'}</small>
