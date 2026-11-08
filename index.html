@@ -5363,6 +5363,21 @@ return {clean,driveId,normalize,candidates,install};
 
 </script>
 <style>#dogServiceLinksEmpty[hidden]{display:none!important}</style>
+<style id="bto-full-activity-photos-v1856">
+/* Full activity photos, including older embedded Chromium without inset support. */
+#hero-activity-carousel .hero-carousel-track,#hero-activity-carousel .hero-carousel-slide{min-height:0!important}
+.highlights-slide,.event-photo-slide,.hero-carousel-track,.hero-carousel-slide{top:0;right:0;bottom:0;left:0;width:100%;height:100%;box-sizing:border-box}
+.highlights-slide img,.event-photo-slide img,#hero-activity-carousel img,
+.public-gallery-grid img,.highlights-gallery-grid img,
+.highlights-gallery-grid.one-photo img,.highlights-gallery-grid.two-photos img,.highlights-gallery-grid.multi-photos img,
+.activity-gallery-card .event-photo-slide img,.management-content-gallery img{
+ object-fit:contain!important;object-position:center center!important;background:#f5f5f5;transform:none!important;box-sizing:border-box;max-width:100%
+}
+.highlights-slide img,.event-photo-slide img,#hero-activity-carousel .hero-carousel-slide img{display:block;width:100%!important;height:100%!important;min-height:0!important}
+.public-gallery-grid img:hover,.highlights-gallery-grid img:hover{transform:none!important}
+.public-gallery-viewer{top:0;right:0;bottom:0;left:0}
+.public-gallery-viewer img{max-width:96vw;max-height:88vh;object-fit:contain;object-position:center}
+</style>
 </head>
 <body>
 
